@@ -1,0 +1,46 @@
+# .windsurfrules
+
+## Project Overview
+
+*   **Type:** Internal web-based tool (Single-Page Application)
+*   **Description:** A web-based internal tool for company staff to automate transaction processing, replacing a manual workflow with a secure and user-friendly interface.
+*   **Primary Goal:** Automate transaction processing securely and efficiently.
+
+## Project Structure
+
+### Framework-Specific Routing
+
+*   **Directory Rules:**
+
+    *   "VanillaJS SPA": Use a single-page structure with a main entry point at `index.html`, avoiding complex multi-page routing.
+    *   Example: `index.html` serves as the central hub, with subdirectories for assets and backend scripts.
+
+### Core Directories
+
+*   **Versioned Structure:**
+
+    *   `public/`: Contains static assets including `index.html`, CSS files (with dark mode support), and client-side JavaScript.
+    *   `server/`: Houses server-side scripts responsible for form data processing, file manipulation (TXT file operations), encryption, and logging.
+
+### Key Files
+
+*   **Stack-Versioned Patterns:**
+
+    *   `index.html`: Main HTML file hosting the single-page interface.
+    *   `server/processTransaction.js`: Handles form submissions, input validation, secure file operations (with file locking/timestamping), and encryption using the latest libraries.
+    *   `css/style.css`: Primary stylesheet supporting both default and dark mode themes.
+
+## Tech Stack Rules
+
+*   **Version Enforcement:**
+
+    *   "VanillaJS@ES6": Use modern ECMAScript 6+ conventions for client-side development.
+    *   "EncryptionLib@latest": Integrate the most current encryption libraries to secure data during transmission and at rest.
+
+## PRD Compliance
+
+*   **Non-Negotiable:**
+
+    *   "Automate transaction processing with a secure and user-friendly interface." : The implementation must enforce robust input validations (both client and server side), secure file handling (with file locks/timestamps), and comprehensive encryption and logging as stipulated in the PRD.
+
+

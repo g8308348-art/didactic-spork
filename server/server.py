@@ -12,7 +12,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import from main_logic.py
 from main_logic import (
     process_transaction, setup_logging, 
-    INCOMING_DIR, OUTPUT_DIR, LOG_FILE
 )
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -75,10 +74,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # Create a temporary file with the transaction data
             try:
                 # Ensure input directory exists
-                os.makedirs(INCOMING_DIR, exist_ok=True)
-                
-                # Create a temporary file with the transaction data
-                temp_file_path = os.path.join(INCOMING_DIR, f"{data['transaction']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
                 with open(temp_file_path, 'w') as f:
                     f.write(f"{data['transaction']}\n{data['action']}\n{data['user_comment']}")
                 

@@ -25,28 +25,6 @@ def setup_logging():
         ]
     )
 
-# --- File Utilities ---
-def get_txt_files(folder):
-    return [f for f in os.listdir(folder) if f.endswith(".txt")]
-
-def parse_txt_file(path):
-    with open(path, "r") as f:
-        lines = [line.strip() for line in f if line.strip()]
-    if len(lines) < 3:
-        raise ValueError("Txt must contain transaction, action, and user comment on separate lines")
-    return lines[0], lines[1], lines[2]
-
-def move_screenshots_to_folder(dest_folder):
-    for file in os.listdir("."):
-        if file.endswith(".png"):
-            shutil.move(file, os.path.join(dest_folder, file))
-
-def create_output_structure(transaction):
-    now = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    transaction_folder = os.path.join(OUTPUT_DIR, now, transaction)
-    os.makedirs(transaction_folder, exist_ok=True)
-    return transaction_folder, os.path.join(OUTPUT_DIR, now)
-
 # --- Firco Login ---
 def login_to_firco(page: Page, url=TEST_URL, username=USERNAME, password=PASSWORD):
     logging.info("Logging to Firco.")

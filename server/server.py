@@ -4,6 +4,7 @@ import os
 import signal
 import sys
 import logging
+import tempfile
 from datetime import datetime
 
 # Add the parent directory to sys.path to allow importing from helpers
@@ -11,8 +12,40 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import from main_logic.py
 from main_logic import (
-    process_transaction, setup_logging, 
+    process_transaction, setup_logging, INCOMING_DIR, OUTPUT_DIR
 )
+
+# Helper functions that are missing in main_logic.py
+def parse_txt_file(txt_path):
+    """Parse transaction file to extract transaction, action, and user comment."""
+    with open(txt_path, 'r') as f:
+        lines = f.readlines()
+    
+    transaction = lines[0].strip() if len(lines) > 0 else ""
+    action = lines[1].strip() if len(lines) > 1 else "STP-Release"
+    user_comment = lines[2].strip() if len(lines) > 2 else ""
+    
+    return transaction, action, user_comment
+
+def create_output_structure(transaction):
+    """Create output folder structure for transaction."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    date_folder = os.path.join(OUTPUT_DIR, today)
+    transaction_folder = os.path.join(date_folder, transaction)
+    
+    os.makedirs(date_folder, exist_ok=True)
+    os.makedirs(transaction_folder, exist_ok=True)
+    
+    return transaction_folder, date_folder
+
+def move_screenshots_to_folder(target_folder):
+    """Move screenshots from current directory to target folder."""
+    for file in os.listdir('.'):
+        if file.endswith('.png') and 'screenshot' in file:
+            try:
+                os.rename(file, os.path.join(target_folder, file))
+            except Exception as e:
+                logging.error(f"Failed to move screenshot {file}: {e}")
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):
@@ -64,35 +97,50 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Ensure required fields are present
-            if not all(key in data for key in ['transaction', 'action', 'user_comment']):
+            required_fields = ['transaction', 'action', 'comment']
+            if not all(key in data for key in required_fields):
                 self.send_response(400)
                 self._set_cors_headers()
                 self.end_headers()
-                self.wfile.write(b'Missing required fields: transaction, action, user_comment')
+                self.wfile.write(f'Missing required fields: {", ".join(required_fields)}'.encode('utf-8'))
                 return
-            
+        
             # Create a temporary file with the transaction data
             try:
-                # Ensure input directory exists
-                with open(temp_file_path, 'w') as f:
-                    f.write(f"{data['transaction']}\n{data['action']}\n{data['user_comment']}")
-                
+                # Create a temporary file
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=INCOMING_DIR, suffix='.txt') as temp_file:
+                    temp_file_path = temp_file.name
+                    # Format the data as expected by parse_txt_file
+                    temp_file.write(f"{data['transaction']}\n{data['action']}\n{data['comment']}")
+            
+                logging.info(f"Created temporary file: {temp_file_path}")
+            
                 # Process the transaction using our main logic
                 from playwright.sync_api import sync_playwright
                 with sync_playwright() as playwright:
                     process_transaction(playwright, temp_file_path)
-                
+            
                 response = {
-                    'status': 'success',
-                    'message': f"Transaction {data['transaction']} processed successfully"
+                    'success': True,
+                    'message': f"Transaction {data['transaction']} processed successfully",
+                    'transactionId': os.path.basename(temp_file_path).split('.')[0]
                 }
+            
             except Exception as e:
                 logging.error(f"Error processing transaction: {str(e)}")
                 response = {
-                    'status': 'error',
+                    'success': False,
                     'message': str(e)
                 }
-                
+            
+                # If temp file was created but processing failed, we should clean it up
+                if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+                    try:
+                        os.remove(temp_file_path)
+                        logging.info(f"Cleaned up temporary file: {temp_file_path}")
+                    except Exception as cleanup_error:
+                        logging.error(f"Failed to clean up temporary file: {cleanup_error}")
+            
             response_data = json.dumps(response).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-type', 'application/json')

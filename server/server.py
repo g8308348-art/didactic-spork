@@ -2,6 +2,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 import random
+import signal
+import sys
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):
@@ -86,11 +88,29 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, 'Endpoint not found')
 
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
+def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8080):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f'Starting server on port {port}...')
-    httpd.serve_forever()
+    
+    # Set up signal handler for graceful shutdown
+    def signal_handler(sig, frame):
+        print('\nShutting down the server gracefully...')
+        httpd.server_close()
+        print('Server has been shut down')
+        sys.exit(0)
+    
+    # Register the signal handler for CTRL+C (SIGINT)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    print('Press CTRL+C to stop the server')
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        httpd.server_close()
+        print('Server has been shut down')
 
 if __name__ == '__main__':
     run()

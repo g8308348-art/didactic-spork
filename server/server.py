@@ -1,11 +1,9 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
-import random
 import signal
 import sys
 import logging
-import tempfile
 from datetime import datetime
 
 # Add the parent directory to sys.path to allow importing from helpers

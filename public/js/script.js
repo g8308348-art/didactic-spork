@@ -238,7 +238,7 @@ transactionForm.addEventListener('submit', async (e) => {
             submitButton.textContent = 'Process Transaction';
             
             // Clear status message after 5 seconds for success, 8 seconds for errors
-            const clearTimeout = response.success ? 5000 : 8000;
+            const clearTimeout = response.success ? 5000 : 8080;
             setTimeout(() => {
                 submissionStatus.style.display = 'none';
             }, clearTimeout);
@@ -298,7 +298,7 @@ async function simulateServerSubmission(data) {
 async function sendTransactionToServer(data) {
     try {
         // Use the actual server endpoint since it's running on port 8000
-        const response = await fetch('http://localhost:8000/api', {
+        const response = await fetch('http://localhost:8080/api', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

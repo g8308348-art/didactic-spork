@@ -4,10 +4,18 @@ import os
 import random
 import signal
 import sys
+import logging
+import tempfile
+from datetime import datetime
 
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from helpers.process_transaction import process_transaction
+
+# Import from main_logic.py
+from main_logic import (
+    process_transaction, setup_logging, 
+    INCOMING_DIR, OUTPUT_DIR, LOG_FILE
+)
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):
@@ -58,9 +66,39 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b'Invalid JSON')
                 return
 
-            # Process the transaction using our helper module
-            # We'll use the non-browser version for now (use_browser=False)
-            response = process_transaction(data, use_browser=False)
+            # Ensure required fields are present
+            if not all(key in data for key in ['transaction', 'action', 'user_comment']):
+                self.send_response(400)
+                self._set_cors_headers()
+                self.end_headers()
+                self.wfile.write(b'Missing required fields: transaction, action, user_comment')
+                return
+            
+            # Create a temporary file with the transaction data
+            try:
+                # Ensure input directory exists
+                os.makedirs(INCOMING_DIR, exist_ok=True)
+                
+                # Create a temporary file with the transaction data
+                temp_file_path = os.path.join(INCOMING_DIR, f"{data['transaction']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+                with open(temp_file_path, 'w') as f:
+                    f.write(f"{data['transaction']}\n{data['action']}\n{data['user_comment']}")
+                
+                # Process the transaction using our main logic
+                from playwright.sync_api import sync_playwright
+                with sync_playwright() as playwright:
+                    process_transaction(playwright, temp_file_path)
+                
+                response = {
+                    'status': 'success',
+                    'message': f"Transaction {data['transaction']} processed successfully"
+                }
+            except Exception as e:
+                logging.error(f"Error processing transaction: {str(e)}")
+                response = {
+                    'status': 'error',
+                    'message': str(e)
+                }
                 
             response_data = json.dumps(response).encode('utf-8')
             self.send_response(200)
@@ -73,28 +111,35 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, 'Endpoint not found')
 
 def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8080):
+    # Set up logging
+    setup_logging()
+    logging.info(f"Starting server on port {port}...")
+    
+    # Ensure directories exist
+    os.makedirs(INCOMING_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
-    print(f'Starting server on port {port}...')
     
     # Set up signal handler for graceful shutdown
     def signal_handler(sig, frame):
-        print('\nShutting down the server gracefully...')
+        logging.info('Shutting down the server gracefully...')
         httpd.server_close()
-        print('Server has been shut down')
+        logging.info('Server has been shut down')
         sys.exit(0)
     
     # Register the signal handler for CTRL+C (SIGINT)
     signal.signal(signal.SIGINT, signal_handler)
     
-    print('Press CTRL+C to stop the server')
+    logging.info('Press CTRL+C to stop the server')
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         httpd.server_close()
-        print('Server has been shut down')
+        logging.info('Server has been shut down')
 
 if __name__ == '__main__':
     run()

@@ -5,6 +5,10 @@ import random
 import signal
 import sys
 
+# Add the parent directory to sys.path to allow importing from helpers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from helpers.process_transaction import process_transaction
+
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):
         """Set headers for CORS support"""
@@ -54,29 +58,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b'Invalid JSON')
                 return
 
-            # Process the data - mock success/failure for testing
-            # 70% chance of success
-            if random.random() < 0.7:
-                response = {
-                    'success': True, 
-                    'message': 'Transaction processed successfully', 
-                    'received': data,
-                    'transactionId': f'TXN-{random.randint(1000, 9999)}'
-                }
-            else:
-                # Generate different types of errors
-                error_types = [
-                    'Transaction validation failed',
-                    'Server processing error',
-                    'Database connection timeout',
-                    'Invalid transaction format'
-                ]
-                error_message = random.choice(error_types)
-                response = {
-                    'success': False,
-                    'message': error_message,
-                    'errorCode': random.randint(400, 500)
-                }
+            # Process the transaction using our helper module
+            # We'll use the non-browser version for now (use_browser=False)
+            response = process_transaction(data, use_browser=False)
                 
             response_data = json.dumps(response).encode('utf-8')
             self.send_response(200)

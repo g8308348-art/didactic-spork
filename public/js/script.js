@@ -164,19 +164,19 @@ transactionForm.addEventListener('submit', async (e) => {
             // Disable submit button and show loading state
             const submitButton = transactionForm.querySelector('button[type="submit"]');
             submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitButton.textContent = 'Processing...';
             
-            // Show loading state
-            submissionStatus.textContent = 'Processing transaction...';
-            submissionStatus.className = 'submission-status loading';
+            // Show status message
+            submissionStatus.innerHTML = 'Processing transaction...';
+            submissionStatus.className = 'submission-status info';
             submissionStatus.style.display = 'block';
             
-            // Convert transactions to array (split by comma and trim)
-            const transactionsArray = transactionsValue.split(',').map(item => item.trim()).filter(item => item);
+            // Parse transactions (comma-separated values)
+            const transactionsArray = transactionsValue.split(',').map(t => t.trim()).filter(t => t);
             
-            // Prepare data for server submission
+            // Prepare data for server
             const data = {
-                transactions: transactionsArray,
+                transaction: transactionsArray.join(', '),
                 comment: commentValue,
                 action: actionValue,
                 timestamp: new Date().toISOString()
@@ -192,9 +192,8 @@ transactionForm.addEventListener('submit', async (e) => {
                     comment: commentValue,
                     action: actionValue,
                     timestamp: data.timestamp,
-                    transactionId: response.transactionId || 'Unknown',
                     status: 'success',
-                    statusMessage: response.message || 'Transaction processed successfully'
+                    transactionId: response.transactionId
                 });
                 
                 // Show success message
@@ -238,7 +237,7 @@ transactionForm.addEventListener('submit', async (e) => {
             submitButton.textContent = 'Process Transaction';
             
             // Clear status message after 5 seconds for success, 8 seconds for errors
-            const clearTimeout = response.success ? 5000 : 8080;
+            const clearTimeout = response.success ? 5000 : 8000;
             setTimeout(() => {
                 submissionStatus.style.display = 'none';
             }, clearTimeout);
@@ -297,7 +296,7 @@ async function simulateServerSubmission(data) {
 // New function to send transaction data to the server
 async function sendTransactionToServer(data) {
     try {
-        // Use the actual server endpoint since it's running on port 8000
+        // Use the actual server endpoint
         const response = await fetch('http://localhost:8080/api', {
             method: 'POST',
             headers: {
@@ -310,7 +309,12 @@ async function sendTransactionToServer(data) {
             throw new Error(`Server responded with status: ${response.status}`);
         }
         
-        return await response.json();
+        const responseData = await response.json();
+        return {
+            success: responseData.success,
+            message: responseData.message,
+            transactionId: responseData.transactionId
+        };
         
         // Use mock function for testing if server is unavailable
         // return await mockProcessTransaction(data);

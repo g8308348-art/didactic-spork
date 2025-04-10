@@ -118,19 +118,39 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 # Process the transaction using our main logic
                 from playwright.sync_api import sync_playwright
                 with sync_playwright() as playwright:
-                    process_transaction(playwright, temp_file_path)
-            
-                response = {
-                    'success': True,
-                    'message': f"Transaction {data['transaction']} processed successfully",
-                    'transactionId': os.path.basename(temp_file_path).split('.')[0]
-                }
+                    result_json = process_transaction(playwright, temp_file_path)
+                    result = json.loads(result_json)
+                
+                # Check if processing was successful
+                if result['success']:
+                    response = {
+                        'success': True,
+                        'message': result['message'],
+                        'transactionId': os.path.basename(temp_file_path).split('.')[0]
+                    }
+                else:
+                    # Include detailed error information
+                    response = {
+                        'success': False,
+                        'message': result['message'],
+                        'errorCode': result['error_code'],
+                        'screenshotPath': result['screenshot_path']
+                    }
+                    
+                    # If temp file was created but processing failed, we should clean it up
+                    if os.path.exists(temp_file_path):
+                        try:
+                            os.remove(temp_file_path)
+                            logging.info(f"Cleaned up temporary file after error: {temp_file_path}")
+                        except Exception as cleanup_error:
+                            logging.error(f"Failed to clean up temporary file: {cleanup_error}")
             
             except Exception as e:
                 logging.error(f"Error processing transaction: {str(e)}")
                 response = {
                     'success': False,
-                    'message': str(e)
+                    'message': str(e),
+                    'errorCode': 500
                 }
             
                 # If temp file was created but processing failed, we should clean it up

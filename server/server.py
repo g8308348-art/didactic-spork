@@ -6,6 +6,8 @@ import sys
 import logging
 import tempfile
 from datetime import datetime
+from utils import parse_txt_file, create_output_structure, move_screenshots_to_folder
+
 
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

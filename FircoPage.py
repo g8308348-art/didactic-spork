@@ -1,6 +1,14 @@
 import logging
 from playwright.sync_api import Page, expect
 
+class TransactionError(Exception):
+    """Custom exception for transaction processing errors with error codes and detailed messages."""
+    def __init__(self, message, error_code, screenshot_path=None):
+        self.message = message
+        self.error_code = error_code
+        self.screenshot_path = screenshot_path
+        super().__init__(f"Error {error_code}: {message}")
+
 class FircoPage:
     def __init__(self, page: Page):
         self.page = page
@@ -75,23 +83,51 @@ class FircoPage:
                 logging.error("couldn't click row, proceeding")
 
     def verify_search_results(self, transaction: str):
+        """
+        Verify search results for a transaction and provide detailed error information.
+        
+        Args:
+            transaction: Transaction ID to verify
+            
+        Raises:
+            TransactionError: If transaction cannot be found or has issues
+        """
+        # Check if no transactions found
         if self.noDataNotice.is_visible():
-            self.page.screenshot(path="noTransactions.png", full_page=True)
-            raise Exception("No transaction found!")
+            screenshot_path = "noTransactions.png"
+            self.page.screenshot(path=screenshot_path, full_page=True)
+            raise TransactionError(
+                f"No transaction found for ID: {transaction}",
+                error_code=404,
+                screenshot_path=screenshot_path
+            )
 
+        # Check if more than one transaction found
         odd_row_text = (self.firstOddRow_tdText.text_content() or "").strip()
-
         if odd_row_text:
-            self.page.screenshot(path="moreTransactions.png", full_page=True)
-            raise Exception("More than one transaction found!")
+            screenshot_path = "moreTransactions.png"
+            self.page.screenshot(path=screenshot_path, full_page=True)
+            raise TransactionError(
+                f"Multiple transactions found for ID: {transaction}. Please provide a more specific ID.",
+                error_code=409,
+                screenshot_path=screenshot_path
+            )
 
-        self.page.screenshot(path="transaction_one.png", full_page=True)
+        # Take screenshot of the found transaction
+        screenshot_path = "transaction_one.png"
+        self.page.screenshot(path=screenshot_path, full_page=True)
 
+        # Try to click on the transaction row
         try:
             self.firstRowSelector.click()
-        except:
-            self.page.screenshot(path="transaction_notActive.png", full_page=True)
-            raise Exception("transaction not active!")
+        except Exception as e:
+            screenshot_path = "transaction_notActive.png"
+            self.page.screenshot(path=screenshot_path, full_page=True)
+            raise TransactionError(
+                f"Transaction {transaction} found but cannot be selected: {str(e)}",
+                error_code=422,
+                screenshot_path=screenshot_path
+            )
 
     def fill_comment_field(self, text: str):
         expect(self.commentField).to_be_visible()
@@ -102,12 +138,31 @@ class FircoPage:
         self.logoutBtn.click()
         logging.info("logged out!")
 
-    def perform_action(self, action: str):
-        if action == "STP-RELEASE":
-            self.page.screenshot(path="stp_release_1.png", full_page=True)
-            self.stpReleaseBtn.click()
-            self.page.screenshot(path="stp_release_2.png", full_page=True)
-            # self.confirmBtn.click()
-            # self.page.screenshot(path="stp_release_3.png", full_page=True)
-        else:
-            logging.info("not implemented yet")
+def perform_action(self, action: str):
+    action_button_map = {
+        "STP-Release": self.stpReleaseBtn,
+        "Release": self.releaseBtn,
+        "Block": self.blockBtn,
+        "Reject": self.rejectBtn
+    }
+    
+    if action in action_button_map:
+        # Convert action name to lowercase for screenshot naming
+        action_name = action.lower().replace('-', '_')
+        
+        # Take screenshot before action
+        self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
+        
+        # Click the action button
+        action_button_map[action].click()
+        
+        # Take screenshot after action button click
+        self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
+        
+        # Click confirm button
+        self.confirmBtn.click()
+        
+        # Take screenshot after confirmation
+        self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
+    else:
+        logging.info("YOU SHOULD NEVER GET HERE!")

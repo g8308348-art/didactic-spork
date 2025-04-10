@@ -138,31 +138,31 @@ class FircoPage:
         self.logoutBtn.click()
         logging.info("logged out!")
 
-def perform_action(self, action: str):
-    action_button_map = {
-        "STP-Release": self.stpReleaseBtn,
-        "Release": self.releaseBtn,
-        "Block": self.blockBtn,
-        "Reject": self.rejectBtn
-    }
-    
-    if action in action_button_map:
-        # Convert action name to lowercase for screenshot naming
-        action_name = action.lower().replace('-', '_')
+    def perform_action(self, action: str):
+        action_button_map = {
+            "STP-Release": self.stpReleaseBtn,
+            "Release": self.releaseBtn,
+            "Block": self.blockBtn,
+            "Reject": self.rejectBtn
+        }
         
-        # Take screenshot before action
-        self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
-        
-        # Click the action button
-        action_button_map[action].click()
-        
-        # Take screenshot after action button click
-        self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
-        
-        # Click confirm button
-        self.confirmBtn.click()
-        
-        # Take screenshot after confirmation
-        self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
-    else:
-        logging.info("YOU SHOULD NEVER GET HERE!")
+        if action in action_button_map:
+            # Convert action name to lowercase for screenshot naming
+            action_name = action.lower().replace('-', '_')
+            
+            # Take screenshot before action
+            self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
+            
+            # Click the action button
+            action_button_map[action].click()
+            
+            # Take screenshot after action button click
+            self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
+            
+            # Click confirm button
+            self.confirmBtn.click()
+            
+            # Take screenshot after confirmation
+            self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
+        else:
+            logging.info("YOU SHOULD NEVER GET HERE!")

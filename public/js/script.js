@@ -87,7 +87,7 @@ commentInput.addEventListener('input', () => {
 // Form validation functions
 function validateTransactions(value) {
     // Allow alphanumeric characters, commas, and spaces
-    const regex = /^[a-zA-Z0-9, ]+$/;
+    const regex = /^[a-zA-Z0-9, _-]+$/;
     
     if (!value.trim()) {
         showError(transactionsError, 'Transaction details are required');

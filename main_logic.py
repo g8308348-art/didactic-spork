@@ -3,14 +3,19 @@ import logging
 import shutil
 import time
 import json
+import sys
 from datetime import datetime
 from playwright.sync_api import Page, expect, sync_playwright
 from FircoPage import FircoPage, TransactionError
 
+# Import helper functions from utils.py
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils import parse_txt_file, create_output_structure, move_screenshots_to_folder, get_txt_files
+
 # --- Config ---
 INCOMING_DIR = "input"
 OUTPUT_DIR = "output"
-LOG_FILE = "trasactions.log"
+LOG_FILE = "transactions.log"
 TEST_URL = "https://example.com"
 USERNAME = "user"
 PASSWORD = "pass"
@@ -77,7 +82,7 @@ def process_firco_transaction(page, transaction, action, user_comment, needs_esc
 # --- Transaction Processor ---
 def process_transaction(playwright, txt_path):
     transaction, action, user_comment = parse_txt_file(txt_path)
-    transaction_folder, date_folder = create_output_structure(transaction)
+    transaction_folder, date_folder = create_output_structure(transaction, OUTPUT_DIR)
 
     browser = playwright.chromium.connect_over_cdp("http://localhost:9222")
     page = browser.new_page()

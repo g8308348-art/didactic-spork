@@ -9,6 +9,7 @@ class TransactionError(Exception):
         self.screenshot_path = screenshot_path
         super().__init__(f"Error {error_code}: {message}")
 
+
 class FircoPage:
     def __init__(self, page: Page):
         self.page = page
@@ -32,11 +33,13 @@ class FircoPage:
         self.logoutBtn = page.locator("#logout-button")
         self.escalateBtn = page.locator("input[value='Esc_Sanctions']")
 
+
     def clear_filtered_column(self):
         if self.filteredColumnIcon.is_visible(timeout=60000):
             self.filteredColumnIcon.click()
         else:
             logging.info("No filter in transaction column.")
+
 
     def search_transaction(self, transaction: str):
         self.menuOpenerSelector.click()
@@ -47,6 +50,7 @@ class FircoPage:
             self.page.wait_for_selector(".loading-indicator", state="hidden", timeout=5000)
         except:
             logging.error("didn't catch the loading indicator")
+
 
     def go_to_transaction_details(self, transaction: str, comment: str):
         self.menuItemSelector.click()
@@ -67,6 +71,7 @@ class FircoPage:
         self.fill_comment_field(comment)
         self.click_all_hits(transaction, True)
 
+
     def click_all_hits(self, transaction: str, screenshots: bool):
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
@@ -81,6 +86,7 @@ class FircoPage:
                     self.page.screenshot(path=f"hit{i-2}.png", full_page=True)
             except:
                 logging.error("couldn't click row, proceeding")
+
 
     def verify_search_results(self, transaction: str):
         """

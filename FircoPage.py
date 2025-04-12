@@ -69,7 +69,7 @@ class FircoPage:
 
     def click_all_hits(self, transaction: str, screenshots: bool):
         if screenshots:
-            self.page.screenshot(path="git_0.png", full_page=True)
+            self.page.screenshot(path="hit_0.png", full_page=True)
 
         rows = self.tableSelector.all()
 

@@ -167,60 +167,65 @@ transactionForm.addEventListener('submit', async (e) => {
             submitButton.textContent = 'Processing...';
             
             // Show status message
-            submissionStatus.innerHTML = 'Processing transaction...';
+            submissionStatus.innerHTML = 'Processing transactions...';
             submissionStatus.className = 'submission-status info';
             submissionStatus.style.display = 'block';
             
             // Parse transactions (comma-separated values)
             const transactionsArray = transactionsValue.split(',').map(t => t.trim()).filter(t => t);
             
-            // Prepare data for server
-            const data = {
-                transaction: transactionsArray.join(', '),
-                comment: commentValue,
-                action: actionValue,
-                timestamp: new Date().toISOString()
-            };
+            let successCount = 0;
+            let failCount = 0;
+            let failedTransactions = [];
+            let succeededTransactions = [];
             
-            // Send data to server
-            const response = await sendTransactionToServer(data);
-            
-            if (response.success) {
-                // Save transaction to local storage for history
-                saveTransaction({
-                    transaction: transactionsArray.join(', '),
-                    comment: commentValue,
-                    action: actionValue,
-                    timestamp: data.timestamp,
-                    status: 'success',
-                    transactionId: response.transactionId
-                });
-                
-                // Show success message
-                submissionStatus.innerHTML = `<strong>Success:</strong> ${response.message}`;
-                submissionStatus.className = 'submission-status success';
-            } else {
-                // Save failed transaction to history
-                saveTransaction({
-                    transaction: transactionsArray.join(', '),
-                    comment: commentValue,
-                    action: actionValue,
-                    timestamp: data.timestamp,
-                    status: 'failed',
-                    statusMessage: response.message || 'Transaction processing failed',
-                    errorCode: response.errorCode
-                });
-                
-                // Show detailed error message
-                submissionStatus.innerHTML = `<strong>Error:</strong> ${response.message}`;
-                if (response.errorCode) {
-                    submissionStatus.innerHTML += `<br>Error code: ${response.errorCode}`;
+            for (const txn of transactionsArray) {
+                // Validate each transaction again for safety
+                if (!validateTransactions(txn)) {
+                    failCount++;
+                    failedTransactions.push({txn, error: 'Invalid transaction format'});
+                    continue;
                 }
-                submissionStatus.className = 'submission-status error';
-                
-                // Log error details to console for debugging
-                console.error('Transaction processing error:', response);
+                const data = {
+                    transaction: txn,
+                    comment: commentValue,
+                    action: actionValue,
+                    timestamp: new Date().toISOString()
+                };
+                const response = await sendTransactionToServer(data);
+                if (response.success) {
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: data.timestamp,
+                        status: 'success',
+                        transactionId: response.transactionId
+                    });
+                    successCount++;
+                    succeededTransactions.push(txn);
+                } else {
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: data.timestamp,
+                        status: 'failed',
+                        statusMessage: response.message || 'Transaction processing failed',
+                        errorCode: response.errorCode
+                    });
+                    failCount++;
+                    failedTransactions.push({txn, error: response.message || 'Transaction processing failed'});
+                }
             }
+            // Show summary message
+            let summary = `<strong>Processed ${transactionsArray.length} transaction(s):</strong> <br>`;
+            summary += `<span class='success'>${successCount} succeeded</span>, <span class='error'>${failCount} failed</span>`;
+            if (failCount > 0) {
+                summary += '<br>Failed: ' + failedTransactions.map(f => `${escapeHtml(f.txn)} (${escapeHtml(f.error)})`).join(', ');
+            }
+            submissionStatus.innerHTML = summary;
+            submissionStatus.className = failCount === 0 ? 'submission-status success' : 'submission-status error';
             
             // Reset form
             transactionForm.reset();
@@ -234,7 +239,7 @@ transactionForm.addEventListener('submit', async (e) => {
             submitButton.textContent = 'Process Transaction';
             
             // Clear status message after 5 seconds for success, 8 seconds for errors
-            const clearTimeout = response.success ? 5000 : 8000;
+            const clearTimeout = failCount === 0 ? 5000 : 8000;
             setTimeout(() => {
                 submissionStatus.style.display = 'none';
             }, clearTimeout);

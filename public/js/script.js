@@ -198,9 +198,6 @@ transactionForm.addEventListener('submit', async (e) => {
                 
                 // Show success message
                 submissionStatus.innerHTML = `<strong>Success:</strong> ${response.message}`;
-                if (response.transactionId) {
-                    submissionStatus.innerHTML += `<br>Transaction ID: ${response.transactionId}`;
-                }
                 submissionStatus.className = 'submission-status success';
             } else {
                 // Save failed transaction to history
@@ -416,9 +413,6 @@ function loadTransactions() {
         let statusHtml = '';
         if (transaction.status === 'success') {
             statusHtml = `<span class="status-badge success">Success</span>`;
-            if (transaction.transactionId) {
-                statusHtml += `<br><small>ID: ${transaction.transactionId}</small>`;
-            }
         } else if (transaction.status === 'failed') {
             statusHtml = `<span class="status-badge error">Failed</span>`;
             if (transaction.errorCode) {

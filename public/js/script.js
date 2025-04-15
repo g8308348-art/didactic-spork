@@ -419,10 +419,15 @@ function loadTransactions() {
         if (transaction.status === 'success') {
             statusHtml = `<span class="status-badge success">Success</span>`;
         } else if (transaction.status === 'failed') {
-            statusHtml = `<span class="status-badge error">Failed</span>`;
-            if (transaction.errorCode) {
-                statusHtml += `<br><small>Error: ${transaction.errorCode}</small>`;
+            // Compose tooltip message for failed status
+            let tooltip = '';
+            if (transaction.statusMessage) {
+                tooltip += escapeHtml(transaction.statusMessage);
             }
+            if (transaction.errorCode) {
+                tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;
+            }
+            statusHtml = `<span class="status-badge error"${tooltip ? ` title="${tooltip}"` : ''}>Failed</span>`;
         } else {
             // For older transactions that don't have status
             statusHtml = `<span class="status-badge">Unknown</span>`;

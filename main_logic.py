@@ -61,7 +61,7 @@ def process_firco_transaction(page, transaction, action, user_comment, needs_esc
         True if escalation was performed and manager processing is needed
     """
     fircoPage = FircoPage(page)
-    fircoPage.go_to_live_messages(transaction, user_comment)
+    fircoPage.go_to_live_messages()
     
     if action == "STP-Release":
         fircoPage.perform_action(action)

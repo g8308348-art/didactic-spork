@@ -170,6 +170,21 @@ class FircoPage:
             )
 
 
+    def click_transaction_row_if_single(self) -> None:
+        """
+        Click the transaction row only if there is exactly one result in the main tab.
+        Does nothing if there are zero or more than one rows.
+        """
+        rows = self.tableSelector.all()
+        # Typically, header rows may be present, so filter for data rows only if needed
+        data_rows = [row for row in rows if row.is_visible()]
+        if len(data_rows) == 1:
+            try:
+                data_rows[0].click()
+            except Exception as e:
+                logging.error(f"Could not click transaction row: {e}")
+
+
     def fill_comment_field(self, text: str) -> None:
         """
         Fill the comment field with the provided text.

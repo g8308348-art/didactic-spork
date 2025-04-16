@@ -7,22 +7,20 @@ import sys
 from datetime import datetime
 from playwright.sync_api import Page, expect, sync_playwright
 from FircoPage import FircoPage, TransactionError
-from dotenv import load_dotenv
 
 # Import helper functions from utils.py
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils import parse_txt_file, create_output_structure, move_screenshots_to_folder, get_txt_files
 
 # --- Config ---
-load_dotenv()
-INCOMING_DIR = os.getenv("INCOMING_DIR", "input")
-OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
-LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
-TEST_URL = os.getenv("TEST_URL", "https://example.com")
-USERNAME = os.getenv("USERNAME", "user")
-PASSWORD = os.getenv("PASSWORD", "pass")
-MANAGER_USERNAME = os.getenv("MANAGER_USERNAME", "manager")
-MANAGER_PASSWORD = os.getenv("MANAGER_PASSWORD", "pass")
+INCOMING_DIR = "input"
+OUTPUT_DIR = "output"
+LOG_FILE = "transactions.log"
+TEST_URL = "https://example.com"
+USERNAME = "user"
+PASSWORD = "pass"
+MANAGER_USERNAME = "manager"
+MANAGER_PASSWORD = "pass"
 
 # --- Logging Setup ---
 def setup_logging():
@@ -63,7 +61,7 @@ def process_firco_transaction(page, transaction, action, user_comment, needs_esc
         True if escalation was performed and manager processing is needed
     """
     fircoPage = FircoPage(page)
-    fircoPage.go_to_live_messages()
+    fircoPage.go_to_transaction_details(transaction, user_comment)
     
     if action == "STP-Release":
         fircoPage.perform_action(action)
@@ -100,22 +98,6 @@ def process_transaction(playwright, txt_path):
         # First user login and process
         login_to_firco(page, url=TEST_URL, username=USERNAME, password=PASSWORD)
         
-        fircoPage = FircoPage(page)
-        # Verify transaction presence and location
-        try:
-            location = fircoPage.verify_search_results(transaction)
-            if location == "main":
-                fircoPage.click_transaction_row_if_single()
-            elif location == "history":
-                result['message'] = f"Transaction {transaction} already processed (found in history tab)."
-                result['success'] = True
-                return result
-        except TransactionError as e:
-            result['message'] = str(e)
-            result['error_code'] = getattr(e, 'error_code', None)
-            result['screenshot_path'] = getattr(e, 'screenshot_path', None)
-            return result
-
         needs_manager = False
         if action != "STP-Release":
             # For non-STP actions, we need escalation and manager processing

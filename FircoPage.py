@@ -11,9 +11,20 @@ class TransactionError(Exception):
 
 
 class FircoPage:
+    """
+    Page Object Model for interacting with the Firco transaction processing UI.
+    Encapsulates browser automation actions for searching, verifying, and processing transactions.
+    """
     def __init__(self, page: Page):
+        """
+        Initialize FircoPage with Playwright Page instance and set up selectors.
+        
+        Args:
+            page (Page): Playwright Page object representing the browser context.
+        """
         self.page = page
-        self.menuItemSelector = page.locator('li#root-menu-0')
+        self.mainLiveMessagesSelector = page.locator('li#root-menu-0')
+        self.historyLiveMessagesSelector = page.locator('li#root-menu-1')
         self.liveMessagesSelector = page.locator('div.stick#text-element-8')
         self.liveMessagesTab = page.locator("a.tab-center").filter(has_text='Live Messages')
         self.filteredColumnIcon = page.locator('a.column-filtered-icon')
@@ -35,6 +46,9 @@ class FircoPage:
 
 
     def clear_filtered_column(self):
+        """
+        Clear any active filter in the transaction column if present.
+        """
         if self.filteredColumnIcon.is_visible(timeout=60000):
             self.filteredColumnIcon.click()
         else:
@@ -42,6 +56,12 @@ class FircoPage:
 
 
     def search_transaction(self, transaction: str):
+        """
+        Search for a transaction by ID using the filter input and trigger the search.
+        
+        Args:
+            transaction (str): Transaction ID to search for.
+        """
         self.menuOpenerSelector.click()
         self.inputFileSelector.fill(transaction)
         self.searchTransactionBtn.click()
@@ -52,8 +72,11 @@ class FircoPage:
             logging.error("didn't catch the loading indicator")
 
 
-    def go_to_transaction_details(self, transaction: str, comment: str):
-        self.menuItemSelector.click()
+    def go_to_live_messages(self) -> None:
+        """
+        Navigate to the live messages tab and prepare for processing.
+        """
+        self.mainLiveMessagesSelector.click()
         expect(self.liveMessagesSelector).to_contain_text("Live Messages")
 
         try:
@@ -65,14 +88,15 @@ class FircoPage:
             self.liveMessagesTab.click()
             expect(self.liveMessagesTab).to_have_class(r"tab-center tab-center-selected")
 
-        self.clear_filtered_column()
-        self.search_transaction(transaction)
-        self.verify_search_results(transaction)
-        self.fill_comment_field(comment)
-        self.click_all_hits(transaction, True)
-
 
     def click_all_hits(self, transaction: str, screenshots: bool):
+        """
+        Click all transaction rows (hits) in the table, optionally taking screenshots.
+        
+        Args:
+            transaction (str): Transaction ID being processed.
+            screenshots (bool): If True, take screenshots after each click.
+        """
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
 
@@ -93,12 +117,19 @@ class FircoPage:
         Verify search results for a transaction and provide detailed error information.
         
         Args:
-            transaction: Transaction ID to verify
-            
+            transaction (str): Transaction ID to verify.
+        
         Raises:
-            TransactionError: If transaction cannot be found or has issues
+            TransactionError: If transaction cannot be found, multiple found, or cannot be selected.
         """
-        # Check if no transactions found
+        self._check_no_transactions_found(transaction)
+        self._check_multiple_transactions_found(transaction)
+        self._screenshot_found_transaction()
+        self._try_click_transaction_row(transaction)
+
+
+    def _check_no_transactions_found(self, transaction: str):
+        """Raise TransactionError if no transactions are found."""
         if self.noDataNotice.is_visible():
             screenshot_path = "noTransactions.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
@@ -108,43 +139,64 @@ class FircoPage:
                 screenshot_path=screenshot_path
             )
 
-        # Check if more than one transaction found
+    def _check_multiple_transactions_found(self, transaction: str) -> None:
+        """Raise TransactionError if multiple transactions are found."""
         odd_row_text = (self.firstOddRow_tdText.text_content() or "").strip()
         if odd_row_text:
             screenshot_path = "moreTransactions.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
             raise TransactionError(
-                f"Multiple transactions found for ID: {transaction}. Please provide a more specific ID.",
+                f"Multiple transactions found for ID: {transaction}.",
                 error_code=409,
                 screenshot_path=screenshot_path
             )
 
-        # Take screenshot of the found transaction
+    def _screenshot_found_transaction(self) -> None:
+        """Take a screenshot of the found transaction."""
         screenshot_path = "transaction_one.png"
         self.page.screenshot(path=screenshot_path, full_page=True)
 
-        # Try to click on the transaction row
+    def _try_click_transaction_row(self, transaction: str) -> None:
+        """Try to click on the transaction row, raise TransactionError if not clickable."""
         try:
             self.firstRowSelector.click()
         except Exception as e:
             screenshot_path = "transaction_notActive.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
             raise TransactionError(
-                f"Transaction {transaction} found but cannot be selected: {str(e)}",
+                f"Transaction {transaction} found, but cannot be selected: {str(e)}",
                 error_code=422,
                 screenshot_path=screenshot_path
             )
 
-    def fill_comment_field(self, text: str):
+
+    def fill_comment_field(self, text: str) -> None:
+        """
+        Fill the comment field with the provided text.
+        
+        Args:
+            text (str): Comment to enter in the field.
+        """
         expect(self.commentField).to_be_visible()
         self.commentField.fill(text)
 
-    def logout(self):
+
+    def logout(self) -> None:
+        """
+        Log out the current user from the Firco application.
+        """
         self.page.wait_for_timeout(2000)
         self.logoutBtn.click()
         logging.info("logged out!")
 
-    def perform_action(self, action: str):
+
+    def perform_action(self, action: str) -> None:
+        """
+        Perform the specified transaction action (e.g., Release, Block, Reject).
+        
+        Args:
+            action (str): Action to perform. Must be one of 'STP-Release', 'Release', 'Block', or 'Reject'.
+        """
         action_button_map = {
             "STP-Release": self.stpReleaseBtn,
             "Release": self.releaseBtn,
@@ -155,20 +207,10 @@ class FircoPage:
         if action in action_button_map:
             # Convert action name to lowercase for screenshot naming
             action_name = action.lower().replace('-', '_')
-            
-            # Take screenshot before action
-            self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
-            
-            # Click the action button
+            # self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
             action_button_map[action].click()
-            
-            # Take screenshot after action button click
-            self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
-            
-            # Click confirm button
+            # self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
             self.confirmBtn.click()
-            
-            # Take screenshot after confirmation
-            self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
+            # self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
         else:
             logging.info("YOU SHOULD NEVER GET HERE!")

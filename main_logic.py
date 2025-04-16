@@ -61,7 +61,7 @@ def process_firco_transaction(page, transaction, action, user_comment, needs_esc
         True if escalation was performed and manager processing is needed
     """
     fircoPage = FircoPage(page)
-    fircoPage.go_to_transaction_details(transaction, user_comment)
+    fircoPage.go_to_live_messages(transaction, user_comment)
     
     if action == "STP-Release":
         fircoPage.perform_action(action)
@@ -98,6 +98,22 @@ def process_transaction(playwright, txt_path):
         # First user login and process
         login_to_firco(page, url=TEST_URL, username=USERNAME, password=PASSWORD)
         
+        fircoPage = FircoPage(page)
+        # Verify transaction presence and location
+        try:
+            location = fircoPage.verify_search_results(transaction)
+            if location == "main":
+                fircoPage.click_transaction_row_if_single()
+            elif location == "history":
+                result['message'] = f"Transaction {transaction} already processed (found in history tab)."
+                result['success'] = True
+                return result
+        except TransactionError as e:
+            result['message'] = str(e)
+            result['error_code'] = getattr(e, 'error_code', None)
+            result['screenshot_path'] = getattr(e, 'screenshot_path', None)
+            return result
+
         needs_manager = False
         if action != "STP-Release":
             # For non-STP actions, we need escalation and manager processing

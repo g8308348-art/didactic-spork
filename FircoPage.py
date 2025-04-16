@@ -1,8 +1,11 @@
 import logging
 from playwright.sync_api import Page, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
 
 class TransactionError(Exception):
     """Custom exception for transaction processing errors with error codes and detailed messages."""
+
     def __init__(self, message, error_code, screenshot_path=None):
         self.message = message
         self.error_code = error_code
@@ -10,73 +13,134 @@ class TransactionError(Exception):
         super().__init__(f"Error {error_code}: {message}")
 
 
-class FircoPage:
-    def __init__(self, page: Page):
-        self.page = page
-        self.menuItemSelector = page.locator('li#root-menu-0')
-        self.liveMessagesSelector = page.locator('div.stick#text-element-8')
-        self.liveMessagesTab = page.locator("a.tab-center").filter(has_text='Live Messages')
-        self.filteredColumnIcon = page.locator('a.column-filtered-icon')
-        self.menuOpenerSelector = page.locator('#fmf-table-column-message-id-col-menu-opener')
-        self.inputFileSelector = page.locator('input.quick-filter-input')
-        self.searchTransactionBtn = page.locator('div.quick-filter-icon')
-        self.noDataNotice = page.locator('div.no-data-notice')
-        self.firstOddRow_tdText = page.locator('tr.odd-row').first.locator('td').first
-        self.firstRowSelector = page.locator('tr.even-row.clickable-row')
-        self.commentField = page.locator("textarea.stick.ui-autocomplete-input[name='COMMENT']")
-        self.tableSelector = page.locator("table.hit-table.live tbody tr")
-        self.stpReleaseBtn = page.locator("input[value='STP_Release']")
-        self.confirmBtn = page.locator("input#Confirm\\ Button")
-        self.releaseBtn = page.locator("input[value='Release']")
-        self.rejectBtn = page.locator("input[value='Reject']")
-        self.blockBtn = page.locator("input[value='Block']")
-        self.logoutBtn = page.locator("#logout-button")
-        self.escalateBtn = page.locator("input[value='Esc_Sanctions']")
+class Selectors:
+    """Container for page selectors to reduce attribute count in the main class."""
 
+    def __init__(self, page: Page):
+        # Navigation selectors
+        self.menu_item = page.locator("li#root-menu-0")
+        self.history_item = page.locator("li#root-menu-1")
+        self.live_messages = page.locator("div.stick#text-element-8")
+        self.live_messages_tab = page.locator("a.tab-center").filter(
+            has_text="Live Messages"
+        )
+        self.filtered_column_icon = page.locator("a.column-filtered-icon")
+
+        # Search selectors
+        self.menu_opener = page.locator("#fmf-table-column-message-id-col-menu-opener")
+        self.input_field = page.locator("input.quick-filter-input")
+        self.search_btn = page.locator("div.quick-filter-icon")
+        self.no_data_notice = page.locator("div.no-data-notice")
+        self.first_odd_row_td_text = (
+            page.locator("tr.odd-row").first.locator("td").first
+        )
+        self.first_row = page.locator("tr.even-row.clickable-row")
+        self.comment_field = page.locator(
+            "textarea.stick.ui-autocomplete-input[name='COMMENT']"
+        )
+        self.table = page.locator("table.hit-table.live tbody tr")
+
+        # Action buttons
+        self.stp_release = page.locator("input[value='STP_Release']")
+        self.confirm = page.locator("input#Confirm\\ Button")
+        self.release = page.locator("input[value='Release']")
+        self.reject = page.locator("input[value='Reject']")
+        self.block = page.locator("input[value='Block']")
+        self.logout = page.locator("#logout-button")
+        self.escalate = page.locator("input[value='Esc_Sanctions']")
+
+
+class FircoPage:
+    """
+    Wrapper class for Firco application page that handles page interactions and transaction
+    processing.
+
+    This class provides methods to interact with the Firco UI elements, search for transactions,
+    and perform various actions on them such as release, block, or reject.
+    """
+
+    def __init__(self, page: Page):
+        """
+        Initialize the FircoPage with a Playwright page object.
+
+        Args:
+            page: The Playwright Page object to use for interactions
+        """
+        self.page = page
+        self.sel = Selectors(page)  # Group all selectors in a separate object
 
     def clear_filtered_column(self):
-        if self.filteredColumnIcon.is_visible(timeout=60000):
-            self.filteredColumnIcon.click()
+        """
+        Clear any filters that may be applied to the transaction column.
+
+        Checks if a filter icon is visible and clicks it if present.
+        """
+        if self.sel.filtered_column_icon.is_visible(timeout=60000):
+            self.sel.filtered_column_icon.click()
         else:
             logging.info("No filter in transaction column.")
 
-
     def search_transaction(self, transaction: str):
-        self.menuOpenerSelector.click()
-        self.inputFileSelector.fill(transaction)
-        self.searchTransactionBtn.click()
+        """
+        Search for a specific transaction by ID.
+
+        Args:
+            transaction: The transaction ID to search for
+        """
+        self.sel.menu_opener.click()
+        self.sel.input_field.fill(transaction)
+        self.sel.search_btn.click()
         try:
             self.page.wait_for_selector(".loading-indicator", state="visible")
-            self.page.wait_for_selector(".loading-indicator", state="hidden", timeout=5000)
-        except:
-            logging.error("didn't catch the loading indicator")
-
+            self.page.wait_for_selector(
+                ".loading-indicator", state="hidden", timeout=5000
+            )
+        except PlaywrightTimeoutError as e:
+            logging.error("Timeout waiting for loading indicator: %s", e)
+        except (ValueError, RuntimeError) as e:
+            logging.error("Error while waiting for loading indicator: %s", e)
 
     def go_to_transaction_details(self, transaction: str, comment: str):
-        self.menuItemSelector.click()
-        expect(self.liveMessagesSelector).to_contain_text("Live Messages")
+        """
+        Navigate to a specific transaction's details page.
+
+        Args:
+            transaction: The transaction ID to navigate to
+            comment: Comment to add to the transaction
+        """
+        self.sel.menu_item.click()
+        expect(self.sel.live_messages).to_contain_text("Live Messages")
 
         try:
-            expect(self.liveMessagesTab).to_be_visible()
-            expect(self.liveMessagesTab).to_have_class(r"tab-center tab-center-selected")
-        except:
-            logging.info("Live Messages tab not active.")
+            expect(self.sel.live_messages_tab).to_be_visible()
+            expect(self.sel.live_messages_tab).to_have_class(
+                r"tab-center tab-center-selected"
+            )
+        except (AssertionError, PlaywrightTimeoutError) as e:
+            logging.info("Live Messages tab not active: %s", e)
             logging.info("Clicking on Live Messages tab.")
-            self.liveMessagesTab.click()
-            expect(self.liveMessagesTab).to_have_class(r"tab-center tab-center-selected")
+            self.sel.live_messages_tab.click()
+            expect(self.sel.live_messages_tab).to_have_class(
+                r"tab-center tab-center-selected"
+            )
 
         self.clear_filtered_column()
         self.search_transaction(transaction)
         self.verify_search_results(transaction)
         self.fill_comment_field(comment)
-        self.click_all_hits(transaction, True)
+        self.click_all_hits(True)
 
+    def click_all_hits(self, screenshots: bool):
+        """
+        Click on all available transaction hit rows and optionally take screenshots.
 
-    def click_all_hits(self, transaction: str, screenshots: bool):
+        Args:
+            screenshots: If True, take screenshots after each click
+        """
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
 
-        rows = self.tableSelector.all()
+        rows = self.sel.table.all()
 
         for i in range(3, len(rows)):
             row = rows[i]
@@ -84,39 +148,45 @@ class FircoPage:
                 row.click()
                 if screenshots:
                     self.page.screenshot(path=f"hit{i-2}.png", full_page=True)
-            except:
-                logging.error("couldn't click row, proceeding")
-
+            except PlaywrightTimeoutError as e:
+                logging.error("Timeout when clicking row %d: %s", i, e)
+            except (ValueError, TypeError) as e:
+                logging.error("Invalid parameter when clicking row %d: %s", i, e)
+            except RuntimeError as e:
+                logging.error("Runtime error when clicking row %d: %s", i, e)
 
     def verify_search_results(self, transaction: str):
         """
         Verify search results for a transaction and provide detailed error information.
-        
+
         Args:
             transaction: Transaction ID to verify
-            
+
         Raises:
             TransactionError: If transaction cannot be found or has issues
         """
         # Check if no transactions found
-        if self.noDataNotice.is_visible():
+        if self.sel.no_data_notice.is_visible():
             screenshot_path = "noTransactions.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
+            # Not using 'from' clause here since this is not re-raising an exception
+            # but rather creating a new one based on a condition
             raise TransactionError(
                 f"No transaction found for ID: {transaction}",
                 error_code=404,
-                screenshot_path=screenshot_path
+                screenshot_path=screenshot_path,
             )
 
         # Check if more than one transaction found
-        odd_row_text = (self.firstOddRow_tdText.text_content() or "").strip()
-        if odd_row_text:
+        if (self.sel.first_odd_row_td_text.text_content() or "").strip():
             screenshot_path = "moreTransactions.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
+            # Not using 'from' clause here since this is not re-raising an exception
+            # but rather creating a new one based on a condition
             raise TransactionError(
                 f"Multiple transactions found for ID: {transaction}. Please provide a more specific ID.",
                 error_code=409,
-                screenshot_path=screenshot_path
+                screenshot_path=screenshot_path,
             )
 
         # Take screenshot of the found transaction
@@ -125,50 +195,75 @@ class FircoPage:
 
         # Try to click on the transaction row
         try:
-            self.firstRowSelector.click()
+            self.sel.first_row.click()
         except Exception as e:
             screenshot_path = "transaction_notActive.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
             raise TransactionError(
                 f"Transaction {transaction} found but cannot be selected: {str(e)}",
                 error_code=422,
-                screenshot_path=screenshot_path
-            )
+                screenshot_path=screenshot_path,
+            ) from e
 
     def fill_comment_field(self, text: str):
-        expect(self.commentField).to_be_visible()
-        self.commentField.fill(text)
+        """
+        Fill the transaction comment field with the provided text.
+
+        Args:
+            text: The comment text to enter
+        """
+        expect(self.sel.comment_field).to_be_visible()
+        self.sel.comment_field.fill(text)
 
     def logout(self):
+        """
+        Log out from the Firco system.
+
+        Waits for a brief timeout to ensure all actions are complete,
+        then clicks the logout button and logs the action.
+        """
         self.page.wait_for_timeout(2000)
-        self.logoutBtn.click()
+        self.sel.logout.click()
         logging.info("logged out!")
 
     def perform_action(self, action: str):
+        """
+        Perform a specified action on the current transaction.
+
+        Takes screenshots before and after each step of the action,
+        clicks the appropriate button for the action, and confirms it.
+
+        Args:
+            action: The action to perform (STP-Release, Release, Block, or Reject)
+        """
         action_button_map = {
-            "STP-Release": self.stpReleaseBtn,
-            "Release": self.releaseBtn,
-            "Block": self.blockBtn,
-            "Reject": self.rejectBtn
+            "STP-Release": self.sel.stp_release,
+            "Release": self.sel.release,
+            "Block": self.sel.block,
+            "Reject": self.sel.reject,
         }
-        
+
         if action in action_button_map:
             # Convert action name to lowercase for screenshot naming
-            action_name = action.lower().replace('-', '_')
-            
+            action_name = action.lower().replace("-", "_")
+
             # Take screenshot before action
             self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
-            
+
             # Click the action button
             action_button_map[action].click()
-            
+
             # Take screenshot after action button click
             self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
-            
+
             # Click confirm button
-            self.confirmBtn.click()
-            
+            self.sel.confirm.click()
+
             # Take screenshot after confirmation
             self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
         else:
-            logging.info("YOU SHOULD NEVER GET HERE!")
+            logging.warning(
+                "Action '%s' not recognized. Available actions: %s",
+                action,
+                ", ".join(action_button_map.keys()),
+            )

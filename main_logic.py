@@ -7,20 +7,22 @@ import sys
 from datetime import datetime
 from playwright.sync_api import Page, expect, sync_playwright
 from FircoPage import FircoPage, TransactionError
+from dotenv import load_dotenv
 
 # Import helper functions from utils.py
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils import parse_txt_file, create_output_structure, move_screenshots_to_folder, get_txt_files
 
 # --- Config ---
-INCOMING_DIR = "input"
-OUTPUT_DIR = "output"
-LOG_FILE = "transactions.log"
-TEST_URL = "https://example.com"
-USERNAME = "user"
-PASSWORD = "pass"
-MANAGER_USERNAME = "manager"
-MANAGER_PASSWORD = "pass"
+load_dotenv()
+INCOMING_DIR = os.getenv("INCOMING_DIR", "input")
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
+LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
+TEST_URL = os.getenv("TEST_URL", "https://example.com")
+USERNAME = os.getenv("USERNAME", "user")
+PASSWORD = os.getenv("PASSWORD", "pass")
+MANAGER_USERNAME = os.getenv("MANAGER_USERNAME", "manager")
+MANAGER_PASSWORD = os.getenv("MANAGER_PASSWORD", "pass")
 
 # --- Logging Setup ---
 def setup_logging():

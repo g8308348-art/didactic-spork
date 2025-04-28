@@ -1,6 +1,7 @@
 import logging
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from enum import Enum, auto
 
 
 class TransactionError(Exception):
@@ -48,6 +49,12 @@ class Selectors:
         self.block = page.locator("input[value='Block']")
         self.logout = page.locator("#logout-button")
         self.escalate = page.locator("input[value='Esc_Sanctions']")
+
+
+class SearchStatus(Enum):
+    NONE = auto()
+    MULTIPLE = auto()
+    FOUND = auto()
 
 
 class FircoPage:
@@ -103,14 +110,9 @@ class FircoPage:
     def go_to_transaction_details(self, transaction: str, comment: str):
         """
         Navigate to a specific transaction's details page.
-
-        Args:
-            transaction: The transaction ID to navigate to
-            comment: Comment to add to the transaction
         """
         self.sel.menu_item.click()
         expect(self.sel.live_messages).to_contain_text("Live Messages")
-
         try:
             expect(self.sel.live_messages_tab).to_be_visible()
             expect(self.sel.live_messages_tab).to_have_class(
@@ -124,9 +126,28 @@ class FircoPage:
                 r"tab-center tab-center-selected"
             )
 
+        # 1) search in Live Messages tab
         self.clear_filtered_column()
         self.search_transaction(transaction)
-        self.verify_search_results(transaction)
+        status = self.verify_search_results(transaction)
+
+        if status == SearchStatus.NONE:
+            # History tab
+            self.sel.history_item.click()
+            self.page.wait_for_load_state("networkidle")
+            self.clear_filtered_column()
+            self.search_transaction(transaction)
+            status = self.verify_search_results(transaction)
+
+        if status == SearchStatus.NONE:
+            # BPM placeholder
+            status = self.verify_on_bpm(transaction)
+
+        if status == SearchStatus.NONE:
+            raise TransactionError(f"{transaction} not found in any tab", 404)
+        if status == SearchStatus.MULTIPLE:
+            raise TransactionError(f"Multiple transactions found for ID: {transaction}", 409)
+
         self.fill_comment_field(comment)
         self.click_all_hits(True)
 
@@ -155,45 +176,19 @@ class FircoPage:
             except RuntimeError as e:
                 logging.error("Runtime error when clicking row %d: %s", i, e)
 
-    def verify_search_results(self, transaction: str):
+    def verify_search_results(self, transaction: str) -> SearchStatus:
         """
-        Verify search results for a transaction and provide detailed error information.
-
-        Args:
-            transaction: Transaction ID to verify
-
-        Raises:
-            TransactionError: If transaction cannot be found or has issues
+        Verify search results for a transaction and return status.
         """
-        # Check if no transactions found
         if self.sel.no_data_notice.is_visible():
-            screenshot_path = "noTransactions.png"
-            self.page.screenshot(path=screenshot_path, full_page=True)
-            # Not using 'from' clause here since this is not re-raising an exception
-            # but rather creating a new one based on a condition
-            raise TransactionError(
-                f"No transaction found for ID: {transaction}",
-                error_code=404,
-                screenshot_path=screenshot_path,
-            )
+            self.page.screenshot(path="noTransactions.png", full_page=True)
+            return SearchStatus.NONE
 
-        # Check if more than one transaction found
         if (self.sel.first_odd_row_td_text.text_content() or "").strip():
-            screenshot_path = "moreTransactions.png"
-            self.page.screenshot(path=screenshot_path, full_page=True)
-            # Not using 'from' clause here since this is not re-raising an exception
-            # but rather creating a new one based on a condition
-            raise TransactionError(
-                f"Multiple transactions found for ID: {transaction}. Please provide a more specific ID.",
-                error_code=409,
-                screenshot_path=screenshot_path,
-            )
+            self.page.screenshot(path="moreTransactions.png", full_page=True)
+            return SearchStatus.MULTIPLE
 
-        # Take screenshot of the found transaction
-        screenshot_path = "transaction_one.png"
-        self.page.screenshot(path=screenshot_path, full_page=True)
-
-        # Try to click on the transaction row
+        self.page.screenshot(path="transaction_one.png", full_page=True)
         try:
             self.sel.first_row.click()
         except Exception as e:
@@ -204,6 +199,15 @@ class FircoPage:
                 error_code=422,
                 screenshot_path=screenshot_path,
             ) from e
+
+        return SearchStatus.FOUND
+
+    def verify_on_bpm(self, transaction: str) -> SearchStatus:
+        """
+        Placeholder for BPM page search.
+        """
+        # TODO: implement BPM search logic
+        return SearchStatus.NONE
 
     def fill_comment_field(self, text: str):
         """

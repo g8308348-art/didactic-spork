@@ -149,7 +149,10 @@ transactionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // Get form values
-    const transactionsValue = transactionsInput.value;
+    let transactionsValue = transactionsInput.value;
+    // Remove tabs and non-visible whitespace except spaces
+    transactionsValue = transactionsValue.replace(/[\s\u200B-\u200D\uFEFF\t\n\r\f\v]+/g, ' ');
+    transactionsValue = transactionsValue.replace(/ +/g, ' ').trim();
     const commentValue = commentInput.value;
     const actionValue = actionSelect.value;
     

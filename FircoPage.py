@@ -146,7 +146,9 @@ class FircoPage:
         if status == SearchStatus.NONE:
             raise TransactionError(f"{transaction} not found in any tab", 404)
         if status == SearchStatus.MULTIPLE:
-            raise TransactionError(f"Multiple transactions found for ID: {transaction}", 409)
+            raise TransactionError(
+                f"Multiple transactions found for ID: {transaction}", 409
+            )
 
         self.fill_comment_field(comment)
         self.click_all_hits(True)

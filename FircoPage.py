@@ -137,9 +137,16 @@ class FircoPage:
             self.sel.history_item.click()
             # self.page.wait_for_load_state("networkidle")
             # self.clear_filtered_column()
+            self.page.wait_for_timeout(2000)
             self.search_transaction(transaction)
-            status = self.verify_search_results(transaction)
-            print(status)
+            history_tab_status = self.verify_search_results(transaction) 
+            print(f"History search status: {history_tab_status}")
+
+            if history_tab_status == SearchStatus.FOUND:
+                # Found in History, return success as requested
+                return {"status": "success", "message": f"Transaction {transaction} found in History."}
+            
+            status = history_tab_status # Update main status if not found in history, to flow to BPM/error checks
 
         if status == SearchStatus.NONE:
             # BPM placeholder
@@ -155,6 +162,7 @@ class FircoPage:
         if initial_status == SearchStatus.FOUND:
             self.fill_comment_field(comment)
             self.click_all_hits(True)
+            return {"status": "success", "message": f"Transaction {transaction} processed from Live Messages."}
 
     def click_all_hits(self, screenshots: bool):
         """

@@ -153,7 +153,10 @@ transactionForm.addEventListener('submit', async (e) => {
     // Remove tabs and non-visible whitespace except spaces
     transactionsValue = transactionsValue.replace(/[\s\u200B-\u200D\uFEFF\t\n\r\f\v]+/g, ' ');
     transactionsValue = transactionsValue.replace(/ +/g, ' ').trim();
-    const commentValue = commentInput.value;
+    let commentValue = commentInput.value.trim();
+    if (!commentValue) {
+        commentValue = 'RTPS';
+    }
     const actionValue = actionSelect.value;
     
     // Validate all fields

@@ -130,14 +130,16 @@ class FircoPage:
         self.clear_filtered_column()
         self.search_transaction(transaction)
         status = self.verify_search_results(transaction)
+        initial_status = status
 
         if status == SearchStatus.NONE:
             # History tab
             self.sel.history_item.click()
-            self.page.wait_for_load_state("networkidle")
-            self.clear_filtered_column()
+            # self.page.wait_for_load_state("networkidle")
+            # self.clear_filtered_column()
             self.search_transaction(transaction)
             status = self.verify_search_results(transaction)
+            print(status)
 
         if status == SearchStatus.NONE:
             # BPM placeholder
@@ -150,8 +152,9 @@ class FircoPage:
                 f"Multiple transactions found for ID: {transaction}", 409
             )
 
-        self.fill_comment_field(comment)
-        self.click_all_hits(True)
+        if initial_status == SearchStatus.FOUND:
+            self.fill_comment_field(comment)
+            self.click_all_hits(True)
 
     def click_all_hits(self, screenshots: bool):
         """

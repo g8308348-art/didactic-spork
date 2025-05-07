@@ -25,6 +25,9 @@ class Selectors:
         self.live_messages_tab = page.locator("a.tab-center").filter(
             has_text="Live Messages"
         )
+        self.sanctions_bypass_view_tab = page.locator("a.tab-center").filter(
+            has_text="Sanctions Bypass View"
+        )
         self.filtered_column_icon = page.locator("a.column-filtered-icon")
 
         # Search selectors
@@ -110,7 +113,7 @@ class FircoPage:
     def go_to_transaction_details(self, transaction: str, comment: str):
         """
         Navigate to a specific transaction's details page and determine its status.
-        Prioritizes Live Messages for processing, then checks History, then BPM.
+        Prioritizes Live Messages for processing, then checks History, then Sanctions Bypass View, then BPM.
         Returns a dictionary indicating the outcome.
         """
         self.sel.menu_item.click()
@@ -129,73 +132,124 @@ class FircoPage:
             )
 
         # 1. Search in Live Messages tab
-        self.clear_filtered_column() # Assuming this is for Live Messages context
+        self.clear_filtered_column()  # Assuming this is for Live Messages context
         self.search_transaction(transaction)
         live_status = self.verify_search_results(transaction)
 
         if live_status == SearchStatus.FOUND:
-            logging.info(f"Transaction {transaction} found in Live Messages. Processing.")
+            logging.info(
+                f"Transaction {transaction} found in Live Messages. Processing."
+            )
             self.fill_comment_field(comment)
-            self.click_all_hits(True) # Assuming this is desired for Live Messages
+            self.click_all_hits(True)  # Assuming this is desired for Live Messages
             return {
                 "status": "processed",
-                "message": f"Transaction {transaction} processed successfully from Live Messages."
+                "message": f"Transaction {transaction} processed successfully from Live Messages.",
             }
         elif live_status == SearchStatus.MULTIPLE:
-            logging.error(f"Multiple transactions found for ID: {transaction} in Live Messages.")
+            logging.error(
+                f"Multiple transactions found for ID: {transaction} in Live Messages."
+            )
             raise TransactionError(
-                f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.", 
-                409
+                f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
+                409,
             )
         # If SearchStatus.NONE, proceed to History tab
 
         # 2. Search in History tab (if not uniquely found in Live Messages)
-        logging.info(f"Transaction {transaction} not uniquely found in Live Messages. Checking History tab.")
+        logging.info(
+            f"Transaction {transaction} not uniquely found in Live Messages. Checking History tab."
+        )
         self.sel.history_item.click()
-        self.page.wait_for_timeout(2000) # User-added timeout, consider explicit wait if possible
+        self.page.wait_for_timeout(
+            2000
+        )  # User-added timeout, consider explicit wait if possible
         # Assuming search_transaction and verify_search_results adapt to the current tab (History)
         # If history tab has different search/verify methods, they should be called here.
-        self.search_transaction(transaction) 
+        self.search_transaction(transaction)
         history_status = self.verify_search_results(transaction)
         # logging.info(f"History search status: {history_status}") # Replaced by specific outcome logging
 
         if history_status == SearchStatus.FOUND:
-            logging.info(f"Transaction {transaction} found in History. Already handled.")
+            logging.info(
+                f"Transaction {transaction} found in History. Already handled."
+            )
             return {
                 "status": "already_handled",
-                "message": f"Transaction {transaction} found in History. No further action taken by this process."
+                "message": f"Transaction {transaction} found in History. No further action taken by this process.",
             }
         elif history_status == SearchStatus.MULTIPLE:
-            logging.error(f"Multiple transactions found for ID: {transaction} in History.")
+            logging.error(
+                f"Multiple transactions found for ID: {transaction} in History."
+            )
             raise TransactionError(
-                f"Multiple transactions found for ID: {transaction} in History. Ambiguous state.", 
-                409
+                f"Multiple transactions found for ID: {transaction} in History. Ambiguous state.",
+                409,
+            )
+        # If SearchStatus.NONE, proceed to Sanctions Bypass View tab
+
+        # 3. Search in Sanctions Bypass View tab (if not uniquely found in Live or History)
+        logging.info(
+            f"Transaction {transaction} not uniquely found in Live or History. Checking Sanctions Bypass View tab."
+        )
+        # Assuming self.sel.sanctions_bypass_view_tab is defined in Selectors
+        self.sel.sanctions_bypass_view_tab.click() 
+        # Add appropriate wait/expectation for tab to be active if needed, e.g.:
+        # expect(self.sel.sanctions_bypass_view_tab).to_have_class(r"tab-center tab-center-selected")
+        self.page.wait_for_timeout(1000) # Placeholder for tab switch, replace with explicit wait
+        self.clear_filtered_column() # Assuming this works for Sanctions Bypass View tab as well
+        self.search_transaction(transaction)
+        sanctions_bypass_status = self.verify_search_results(transaction)
+
+        if sanctions_bypass_status == SearchStatus.FOUND:
+            logging.info(
+                f"Transaction {transaction} found in Sanctions Bypass View. Considered handled for this flow."
+            )
+            return {
+                "status": "found_in_sanctions_bypass",
+                "message": f"Transaction {transaction} found in Sanctions Bypass View. No further action taken by this process.",
+            }
+        elif sanctions_bypass_status == SearchStatus.MULTIPLE:
+            logging.error(
+                f"Multiple transactions found for ID: {transaction} in Sanctions Bypass View."
+            )
+            raise TransactionError(
+                f"Multiple transactions found for ID: {transaction} in Sanctions Bypass View. Ambiguous state.",
+                409,
             )
         # If SearchStatus.NONE, proceed to BPM
 
-        # 3. Search in BPM tab (if not uniquely found in Live or History)
-        logging.info(f"Transaction {transaction} not uniquely found in Live or History. Checking BPM.")
-        # Assuming verify_on_bpm correctly navigates to and searches BPM if necessary.
-        # If BPM has its own tab, ensure navigation: e.g., self.sel.bpm_tab.click()
-        bpm_status = self.verify_on_bpm(transaction) # This currently returns SearchStatus.NONE
+        # 4. Search in BPM tab (if not uniquely found in Live, History, or Sanctions Bypass View)
+        logging.info(
+            f"Transaction {transaction} not uniquely found in Live, History, or Sanctions Bypass View. Checking BPM."
+        )
+        bpm_status = self.verify_on_bpm(
+            transaction
+        ) 
 
-        if bpm_status == SearchStatus.FOUND: # If verify_on_bpm is updated to find transactions
+        if (
+            bpm_status == SearchStatus.FOUND
+        ):  
             logging.info(f"Transaction {transaction} found in BPM.")
             return {
                 "status": "found_in_bpm",
-                "message": f"Transaction {transaction} found in BPM. Further action may be required via BPM system."
+                "message": f"Transaction {transaction} found in BPM. Further action may be required via BPM system.",
             }
         elif bpm_status == SearchStatus.MULTIPLE:
-            # This assumes verify_on_bpm can return MULTIPLE. If not, this case might not be hit.
             logging.error(f"Multiple instances found for ID: {transaction} in BPM.")
             raise TransactionError(
-                f"Multiple instances found for ID: {transaction} in BPM. Ambiguous state.", 
-                409
+                f"Multiple instances found for ID: {transaction} in BPM. Ambiguous state.",
+                409,
             )
 
-        # 4. If not found in any tab after all checks
-        logging.error(f"Transaction {transaction} not found in Live Messages, History, or BPM.")
-        raise TransactionError(f"Transaction {transaction} not found in any relevant system (Live, History, BPM).", 404)
+        # 5. If not found in any tab after all checks
+        logging.error(
+            f"Transaction {transaction} not found in Live Messages, History, Sanctions Bypass View, or BPM."
+        )
+        raise TransactionError(
+            f"Transaction {transaction} not found in any relevant system (Live, History, Sanctions Bypass View, BPM).",
+            404,
+        )
 
     def click_all_hits(self, screenshots: bool):
         """

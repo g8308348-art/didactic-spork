@@ -260,7 +260,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
             final_firco_result = firco_result_user1
 
         # Populate the main result dictionary based on the final_firco_result
-        if final_firco_result.get("status") in ["processed", "already_handled", "found_in_bpm", "action_performed", "escalated"]:
+        if final_firco_result.get("status") in ["processed", "already_handled", "found_in_bpm", "action_performed", "escalated", "found_in_sanctions_bypass"]:
             # 'escalated' is a success for the first step, awaiting manager.
             # If 'escalated' is the *final* status here, it means manager step was skipped or is the final report.
             # For the API, we report overall success if the defined workflow step completed.

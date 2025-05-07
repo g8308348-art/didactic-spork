@@ -122,7 +122,7 @@ function validateComment(value) {
 }
 
 function validateAction(value) {
-    const validActions = ['STP-Release', 'Release', 'Block', 'Reject'];
+    const validActions = ['Release', 'Block', 'Reject'];
     
     if (!value || !validActions.includes(value)) {
         showError(actionError, 'Please select a valid action');
@@ -157,7 +157,11 @@ transactionForm.addEventListener('submit', async (e) => {
     if (!commentValue) {
         commentValue = 'RTPS';
     }
-    const actionValue = actionSelect.value;
+    let actionValue = actionSelect.value;
+    // Map Release default to STP-Release logic
+    if (actionValue === 'Release') {
+        actionValue = 'STP-Release';
+    }
     
     // Validate all fields
     const isTransactionsValid = validateTransactions(transactionsValue);

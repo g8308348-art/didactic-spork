@@ -122,7 +122,7 @@ function validateComment(value) {
 }
 
 function validateAction(value) {
-    const validActions = ['Release', 'Block', 'Reject'];
+    const validActions = ['STP-Release', 'Release', 'Block', 'Reject'];
     
     if (!value || !validActions.includes(value)) {
         showError(actionError, 'Please select a valid action');
@@ -157,19 +157,17 @@ transactionForm.addEventListener('submit', async (e) => {
     if (!commentValue) {
         commentValue = 'RTPS';
     }
-    let actionValue = actionSelect.value;
-    // Map Release default to STP-Release logic
-    if (actionValue === 'Release') {
-        actionValue = 'STP-Release';
-    }
-    
+    const rawActionValue = actionSelect.value;
+
     // Validate all fields
     const isTransactionsValid = validateTransactions(transactionsValue);
     const isCommentValid = validateComment(commentValue);
-    const isActionValid = validateAction(actionValue);
-    
+    const isActionValid = validateAction(rawActionValue);
+
     // If all validations pass
     if (isTransactionsValid && isCommentValid && isActionValid) {
+        // After validation, map Release to STP-Release for processing
+        const actionValue = rawActionValue === 'Release' ? 'STP-Release' : rawActionValue;
         try {
             // Disable submit button and show loading state
             const submitButton = transactionForm.querySelector('button[type="submit"]');

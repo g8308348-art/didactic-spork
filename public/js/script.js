@@ -208,6 +208,7 @@ transactionForm.addEventListener('submit', async (e) => {
                         action: actionValue,
                         timestamp: data.timestamp,
                         status: 'success',
+                        statusMessage: response.message,
                         transactionId: response.transactionId
                     });
                     successCount++;
@@ -425,7 +426,11 @@ function loadTransactions() {
         // Determine status display
         let statusHtml = '';
         if (transaction.status === 'success') {
-            statusHtml = `<span class="status-badge success">Success</span>`;
+            let tooltip = '';
+            if (transaction.statusMessage) {
+                tooltip = escapeHtml(transaction.statusMessage);
+            }
+            statusHtml = `<span class="status-badge success"${tooltip ? ` title="${tooltip}"` : ''}>Success</span>`;
         } else if (transaction.status === 'failed') {
             // Compose tooltip message for failed status
             let tooltip = '';

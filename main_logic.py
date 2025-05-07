@@ -74,35 +74,46 @@ def process_firco_transaction(
     action: str,
     user_comment: str,
     needs_escalation: bool = False,
-) -> bool:
+) -> dict:
     """
     Process a Firco transaction with the specified action.
-
-    Args:
-        page: The Playwright page object
-        transaction: Transaction ID to process
-        action: Action to perform (e.g., "STP-Release")
-        user_comment: Comment to add to the transaction
-        needs_escalation: If True, will escalate and then logout
-
-    Returns:
-        True if escalation was performed and manager processing is needed
+    Returns a dictionary with processing status.
     """
     firco_page = FircoPage(page)
-    firco_page.go_to_transaction_details(transaction, user_comment)
+    
+    # This call now returns a dictionary like: {"status": "...", "message": "..."}
+    details_result = firco_page.go_to_transaction_details(transaction, user_comment)
+    logging.info(f"Transaction details result: {details_result}")
 
-    # Handle escalation separately as it has different behavior
+    # If go_to_transaction_details determined the final state, return that result.
+    # 'processed' means go_to_transaction_details handled it (e.g., found in Live and action taken).
+    # 'already_handled' means found in History.
+    # 'found_in_bpm' means found in BPM.
+    if details_result.get("status") in ["processed", "already_handled", "found_in_bpm"]:
+        firco_page.logout() # Ensure logout even if no further action by this function
+        return details_result
+
+    # If details_result["status"] was, for example, SearchStatus.NONE (or an error not caught by go_to_transaction_details)
+    # then legacy logic might apply. However, go_to_transaction_details aims to be exhaustive.
+    # This part needs careful review based on what statuses go_to_transaction_details can return
+    # if it doesn't fall into the 'processed', 'already_handled', or 'found_in_bpm' states.
+    # For now, assuming that if we reach here, an action by the current user is still expected.
+
     if needs_escalation:
-        # First user escalates
+        logging.info(f"Escalating transaction {transaction} for action {action}.")
         firco_page.sel.escalate.click()
-        time.sleep(2)  # Wait for escalation to complete
+        time.sleep(2)  # Consider replacing with an explicit wait for a UI change
         firco_page.logout()
-        return True
+        # Need to return a result compatible with the new dict structure
+        return {"status": "escalated", "message": f"Transaction {transaction} escalated for action {action}."}
 
-    # For both STP-Release and manager actions after escalation
-    firco_page.perform_action(action)
+    # This block would be for non-escalation actions if go_to_transaction_details didn't handle it.
+    # Example: an action that must be performed AFTER checking Live/History/BPM and it's still in a pending state.
+    logging.info(f"Performing action '{action}' for transaction {transaction} by current user.")
+    firco_page.perform_action(action) 
     firco_page.logout()
-    return False
+    # Need to return a result compatible with the new dict structure
+    return {"status": "action_performed", "message": f"Action '{action}' performed on transaction {transaction}."}
 
 
 # --- Error Handling Functions ---
@@ -219,62 +230,86 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         # First user login and process
         login_to_firco(page, url=TEST_URL, username=USERNAME, password=PASSWORD)
 
-        needs_manager = False
+        firco_result_user1 = None
+
         if action != "STP-Release":
-            # For non-STP actions, we need escalation and manager processing
-            needs_manager = process_firco_transaction(
+            # For non-STP actions, we expect escalation
+            firco_result_user1 = process_firco_transaction(
                 page, transaction, action, user_comment, needs_escalation=True
             )
         else:
-            # For STP-Release, just process directly
-            process_firco_transaction(page, transaction, action, user_comment)
+            # For STP-Release, process directly without escalation flag initially
+            firco_result_user1 = process_firco_transaction(page, transaction, action, user_comment)
 
-        # If escalation was performed, do manager processing
+        # Determine if manager processing is needed based on the result from the first user's session
+        needs_manager = firco_result_user1.get("status") == "escalated"
+
+        # If escalation was performed (or if status indicates manager is needed), do manager processing
         if needs_manager:
+            logging.info(f"Manager processing required for transaction {transaction} due to status: {firco_result_user1.get('status')}")
             login_to_firco(
                 page, url=TEST_URL, username=MANAGER_USERNAME, password=MANAGER_PASSWORD
             )
-            process_firco_transaction(page, transaction, action, user_comment)
+            # The action for the manager might be different or implicit post-escalation
+            # Assuming the 'action' here is what the manager should perform
+            firco_result_manager = process_firco_transaction(page, transaction, action, user_comment)
+            # The final result for the API will be based on the manager's action outcome
+            final_firco_result = firco_result_manager
+        else:
+            # If no manager action was needed, the result from the first user is the final one
+            final_firco_result = firco_result_user1
 
-        try:
-            move_screenshots_to_folder(date_folder)
-        except FileNotFoundError:
-            logging.error("Screenshot folder not found: %s", date_folder)
-        except PermissionError:
-            logging.error(
-                "Permission denied when moving screenshots to %s", date_folder
-            )
-        except OSError as e:
-            logging.error("OS error when moving screenshots: %s", e)
+        # Populate the main result dictionary based on the final_firco_result
+        if final_firco_result.get("status") in ["processed", "already_handled", "found_in_bpm", "action_performed", "escalated"]:
+            # 'escalated' is a success for the first step, awaiting manager.
+            # If 'escalated' is the *final* status here, it means manager step was skipped or is the final report.
+            # For the API, we report overall success if the defined workflow step completed.
+            result["success"] = True 
+            result["message"] = final_firco_result.get("message", f"Transaction {transaction} status: {final_firco_result.get('status')}")
+        else:
+            # Handle cases where final_firco_result indicates a failure or an unexpected status
+            result["success"] = False
+            result["message"] = final_firco_result.get("message", f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}")
+            result["error_code"] = final_firco_result.get("error_code", 500) # Default error code
+            result["screenshot_path"] = final_firco_result.get("screenshot_path")
 
-        try:
-            os.rename(
-                txt_path, os.path.join(transaction_folder, os.path.basename(txt_path))
-            )
-        except FileNotFoundError:
-            logging.error("Transaction file not found: %s", txt_path)
-        except PermissionError:
-            logging.error(
-                "Permission denied when moving transaction file to %s",
-                transaction_folder,
-            )
-        except FileExistsError:
-            logging.error(
-                "A file with the same name already exists in %s", transaction_folder
-            )
-        except OSError as e:
-            logging.error("OS error when moving transaction file: %s", e)
+        # File operations and logging remain largely the same, assuming success means the workflow step completed
+        if result["success"]:
+            try:
+                move_screenshots_to_folder(date_folder)
+            except FileNotFoundError:
+                logging.error("Screenshot folder not found: %s", date_folder)
+            except PermissionError:
+                logging.error(
+                    "Permission denied when moving screenshots to %s", date_folder
+                )
+            except OSError as e:
+                logging.error("OS error when moving screenshots: %s", e)
 
-        log_msg = f"Processed transaction: {transaction}, action: {action}, user: {user_comment}"
-        with open(
-            os.path.join(OUTPUT_DIR, "daily_log.txt"), "a", encoding="utf-8"
-        ) as log:
-            log.write(log_msg + "\n")
-        logging.info("%s", log_msg)
+            try:
+                os.rename(
+                    txt_path, os.path.join(transaction_folder, os.path.basename(txt_path))
+                )
+            except FileNotFoundError:
+                logging.error("Transaction file not found: %s", txt_path)
+            except PermissionError:
+                logging.error(
+                    "Permission denied when moving transaction file to %s",
+                    transaction_folder,
+                )
+            except FileExistsError:
+                logging.error(
+                    "A file with the same name already exists in %s", transaction_folder
+                )
+            except OSError as e:
+                logging.error("OS error when moving transaction file: %s", e)
 
-        # Set success result
-        result["success"] = True
-        result["message"] = f"Successfully processed transaction: {transaction}"
+            log_msg = f"Transaction {transaction} processing attempt. Final status: {final_firco_result.get('status')}, Action: {action}, User: {user_comment}"
+            with open(
+                os.path.join(OUTPUT_DIR, "daily_log.txt"), "a", encoding="utf-8"
+            ) as log:
+                log.write(log_msg + "\n")
+            logging.info("%s", log_msg)
 
     except TransactionError as te:
         handle_transaction_error(transaction, action, te, result)

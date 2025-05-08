@@ -207,8 +207,8 @@ transactionForm.addEventListener('submit', async (e) => {
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
-                        status: 'success',
-                        statusMessage: response.message,
+                        status: response.status_detail || 'success', // Store detailed status, fallback to 'success'
+                        statusMessage: response.message, 
                         transactionId: response.transactionId
                     });
                     successCount++;
@@ -219,7 +219,7 @@ transactionForm.addEventListener('submit', async (e) => {
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
-                        status: 'failed',
+                        status: 'failed', // Keep 'failed' as is
                         statusMessage: response.message || 'Transaction processing failed',
                         errorCode: response.errorCode
                     });
@@ -322,9 +322,11 @@ async function sendTransactionToServer(data) {
         
         const responseData = await response.json();
         return {
-            success: responseData.success,
-            message: responseData.message,
-            transactionId: responseData.transactionId
+            success: responseData.success, // Overall success boolean
+            message: responseData.message, // Detailed message for tooltip
+            status_detail: responseData.status_detail, // Specific status string from backend
+            transactionId: responseData.transactionId,
+            errorCode: responseData.errorCode // Ensure errorCode is passed through
         };
         
         // Use mock function for testing if server is unavailable
@@ -333,7 +335,8 @@ async function sendTransactionToServer(data) {
         console.error('Error sending transaction:', error);
         return {
             success: false,
-            message: `Failed to process transaction: ${error.message}`
+            message: `Failed to process transaction: ${error.message}`,
+            status_detail: 'network_error' // Or some other indicator for client-side failure
         };
     }
 }
@@ -419,32 +422,58 @@ function loadTransactions() {
     transactions.forEach(transaction => {
         const row = document.createElement('tr');
         
-        // Format timestamp
         const date = new Date(transaction.timestamp);
         const formattedDate = date.toLocaleString();
         
-        // Determine status display
         let statusHtml = '';
-        if (transaction.status === 'success') {
-            let tooltip = '';
-            if (transaction.statusMessage) {
-                tooltip = escapeHtml(transaction.statusMessage);
-            }
-            statusHtml = `<span class="status-badge success"${tooltip ? ` title="${tooltip}"` : ''}>Success</span>`;
-        } else if (transaction.status === 'failed') {
-            // Compose tooltip message for failed status
-            let tooltip = '';
-            if (transaction.statusMessage) {
-                tooltip += escapeHtml(transaction.statusMessage);
-            }
-            if (transaction.errorCode) {
-                tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;
-            }
-            statusHtml = `<span class="status-badge error"${tooltip ? ` title="${tooltip}"` : ''}>Failed</span>`;
-        } else {
-            // For older transactions that don't have status
-            statusHtml = `<span class="status-badge">Unknown</span>`;
+        let statusText = 'Unknown'; // Default text
+        let statusClass = 'status-badge'; // Base class
+
+        // Determine status display based on detailed status
+        switch (transaction.status) {
+            case 'action_performed_on_live':
+                statusText = 'Success';
+                statusClass += ' success-live'; // Happy path green
+                break;
+            case 'escalated':
+                statusText = 'Escalated';
+                statusClass += ' success-escalated'; // Distinct success color for escalated
+                break;
+            case 'already_handled': // History
+                statusText = 'Success';
+                statusClass += ' success-history'; // Gradient green + color for history
+                break;
+            case 'found_in_bpm':
+                statusText = 'Success';
+                statusClass += ' success-bpm'; // Gradient green + color for BPM
+                break;
+            case 'found_in_sanctions_bypass':
+                statusText = 'Success';
+                statusClass += ' success-sanctions'; // Gradient green + color for sanctions bypass
+                break;
+            case 'transaction_not_found_in_any_tab':
+                statusText = 'Not Found'; // Or 'Checked'
+                statusClass += ' success-not-found'; // Neutral/distinct color for not found
+                break;
+            case 'failed':
+                statusText = 'Failed';
+                statusClass += ' error'; // Existing error class
+                break;
+            default: // Fallback for older data or unexpected statuses
+                statusText = 'Success'; // Or 'Info'
+                statusClass += ' success'; // Default success color
+                break;
         }
+
+        let tooltip = '';
+        if (transaction.statusMessage) {
+            tooltip = escapeHtml(transaction.statusMessage);
+        }
+        if (transaction.status === 'failed' && transaction.errorCode) {
+            tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;
+        }
+        
+        statusHtml = `<span class="${statusClass}"${tooltip ? ` title="${tooltip}"` : ''}>${escapeHtml(statusText)}</span>`;
         
         row.innerHTML = `
             <td>${formattedDate}</td>

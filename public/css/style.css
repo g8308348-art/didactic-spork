@@ -318,9 +318,35 @@ tbody tr:hover {
   color: var(--text-color);
 }
 
-.status-badge.success {
-  background-color: var(--secondary-color);
+.status-badge.success-live,
+.status-badge.success { /* Fallback for existing 'success' if any */
+  background-color: var(--secondary-color); /* Standard green for happy path */
   color: white;
+}
+
+.status-badge.success-escalated {
+  background-image: linear-gradient(to right, var(--secondary-color), #f1c40f); /* Green to Yellow */
+  color: white;
+}
+
+.status-badge.success-history {
+  background-image: linear-gradient(to right, var(--secondary-color), #3498db); /* Green to Blue */
+  color: white;
+}
+
+.status-badge.success-bpm {
+  background-image: linear-gradient(to right, var(--secondary-color), #9b59b6); /* Green to Purple */
+  color: white;
+}
+
+.status-badge.success-sanctions {
+  background-image: linear-gradient(to right, var(--secondary-color), #e67e22); /* Green to Orange */
+  color: white;
+}
+
+.status-badge.success-not-found {
+  background-color: #bdc3c7; /* Light grey/silver */
+  color: #2c3e50; /* Darker grey text */
 }
 
 .status-badge.error {

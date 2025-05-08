@@ -225,6 +225,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
                 "message": "Failed to create output folders",
                 "error_code": 500,
                 "screenshot_path": None,
+                "status_detail": "unknown"
             }
         )
 
@@ -236,6 +237,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         "message": "",
         "error_code": None,
         "screenshot_path": None,
+        "status_detail": "unknown" # Initialize with a default
     }
 
     try:
@@ -286,12 +288,14 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         if final_firco_result.get("status") in SUCCESSFUL_AUTOMATION_STEP_STATUSES:
             result["success"] = True 
             result["message"] = final_firco_result.get("message", f"Transaction {transaction} status: {final_firco_result.get('status')}")
+            result["status_detail"] = final_firco_result.get("status") # Pass the detailed status
         else:
             # Handle cases where final_firco_result indicates a processing failure or an unexpected status
             result["success"] = False
             result["message"] = final_firco_result.get("message", f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}")
             result["error_code"] = final_firco_result.get("error_code", 500) # Default error code
             result["screenshot_path"] = final_firco_result.get("screenshot_path")
+            result["status_detail"] = final_firco_result.get("status", "processing_error") # Pass detailed error status
 
         # File operations and logging remain largely the same, assuming success means the workflow step completed
         if result["success"]:

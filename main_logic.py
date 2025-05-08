@@ -29,6 +29,8 @@ PASSWORD = "pass"
 MANAGER_USERNAME = "manager"
 MANAGER_PASSWORD = "pass"
 
+# Define module-level constants for status strings
+TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"
 
 # --- Logging Setup ---
 def setup_logging() -> None:
@@ -81,39 +83,49 @@ def process_firco_transaction(
     """
     firco_page = FircoPage(page)
     
-    # This call now returns a dictionary like: {"status": "...", "message": "..."}
     details_result = firco_page.go_to_transaction_details(transaction, user_comment)
-    logging.info(f"Transaction details result: {details_result}")
+    logging.info(f"Transaction details result from go_to_transaction_details: {details_result}")
 
-    # If go_to_transaction_details determined the final state, return that result.
-    # 'processed' means go_to_transaction_details handled it (e.g., found in Live and action taken).
-    # 'already_handled' means found in History.
-    # 'found_in_bpm' means found in BPM.
-    if details_result.get("status") in ["processed", "already_handled", "found_in_bpm"]:
-        firco_page.logout() # Ensure logout even if no further action by this function
-        return details_result
+    current_status = details_result.get("status")
 
-    # If details_result["status"] was, for example, SearchStatus.NONE (or an error not caught by go_to_transaction_details)
-    # then legacy logic might apply. However, go_to_transaction_details aims to be exhaustive.
-    # This part needs careful review based on what statuses go_to_transaction_details can return
-    # if it doesn't fall into the 'processed', 'already_handled', or 'found_in_bpm' states.
-    # For now, assuming that if we reach here, an action by the current user is still expected.
+    # Define statuses where no further action (escalate/perform_action) is needed from this function
+    TERMINAL_READ_ONLY_STATUSES = [
+        "already_handled",  # Found in History
+        "found_in_sanctions_bypass", # Found in Sanctions Bypass View
+        "found_in_bpm",  # Found in BPM
+        TRANSACTION_NOT_FOUND_STATUS, # Not found in any tab
+    ]
 
-    if needs_escalation:
-        logging.info(f"Escalating transaction {transaction} for action {action}.")
-        firco_page.sel.escalate.click()
-        time.sleep(2)  # Consider replacing with an explicit wait for a UI change
+    if current_status in TERMINAL_READ_ONLY_STATUSES:
+        logging.info(f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out.")
         firco_page.logout()
-        # Need to return a result compatible with the new dict structure
-        return {"status": "escalated", "message": f"Transaction {transaction} escalated for action {action}."}
-
-    # This block would be for non-escalation actions if go_to_transaction_details didn't handle it.
-    # Example: an action that must be performed AFTER checking Live/History/BPM and it's still in a pending state.
-    logging.info(f"Performing action '{action}' for transaction {transaction} by current user.")
-    firco_page.perform_action(action) 
-    firco_page.logout()
-    # Need to return a result compatible with the new dict structure
-    return {"status": "action_performed", "message": f"Action '{action}' performed on transaction {transaction}."}
+        return details_result
+    
+    elif current_status == "found_in_live":
+        if needs_escalation:
+            logging.info(f"Transaction {transaction} found in Live Messages. Escalating for action '{action}'.")
+            firco_page.sel.escalate.click()
+            time.sleep(2)  # Consider replacing with an explicit wait
+            firco_page.logout()
+            return {
+                "status": "escalated", 
+                "message": f"Transaction {transaction} found in Live Messages and escalated for action '{action}'."
+            }
+        else:  # Not needs_escalation, perform direct action
+            logging.info(f"Transaction {transaction} found in Live Messages. Performing action '{action}'.")
+            firco_page.perform_action(action)
+            firco_page.logout()
+            return {
+                "status": "action_performed_on_live", 
+                "message": f"Action '{action}' performed on transaction {transaction} found in Live Messages."
+            }
+    else:
+        # This case should ideally not be reached if go_to_transaction_details is exhaustive
+        # or raises specific exceptions for error conditions (e.g., multiple found).
+        logging.error(f"Unhandled status '{current_status}' for transaction {transaction} from go_to_transaction_details. Logging out.")
+        firco_page.logout()
+        # Pass through the original result, might be an error or unexpected state
+        return details_result
 
 
 # --- Error Handling Functions ---
@@ -260,14 +272,22 @@ def process_transaction(playwright: object, txt_path: str) -> str:
             final_firco_result = firco_result_user1
 
         # Populate the main result dictionary based on the final_firco_result
-        if final_firco_result.get("status") in ["processed", "already_handled", "found_in_bpm", "action_performed", "escalated", "found_in_sanctions_bypass"]:
-            # 'escalated' is a success for the first step, awaiting manager.
-            # If 'escalated' is the *final* status here, it means manager step was skipped or is the final report.
-            # For the API, we report overall success if the defined workflow step completed.
+        # Define statuses that indicate the automation step completed successfully,
+        # even if no direct action was taken on the transaction (e.g., already handled or not found).
+        SUCCESSFUL_AUTOMATION_STEP_STATUSES = [
+            "action_performed_on_live", # Action taken on a live item
+            "escalated",                # User1 successfully escalated
+            "already_handled",          # Found in History, no action needed
+            "found_in_bpm",             # Found in BPM, no action needed
+            "found_in_sanctions_bypass",# Found in Sanctions Bypass, no action needed
+            TRANSACTION_NOT_FOUND_STATUS # Successfully determined not found in any relevant tab
+        ]
+
+        if final_firco_result.get("status") in SUCCESSFUL_AUTOMATION_STEP_STATUSES:
             result["success"] = True 
             result["message"] = final_firco_result.get("message", f"Transaction {transaction} status: {final_firco_result.get('status')}")
         else:
-            # Handle cases where final_firco_result indicates a failure or an unexpected status
+            # Handle cases where final_firco_result indicates a processing failure or an unexpected status
             result["success"] = False
             result["message"] = final_firco_result.get("message", f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}")
             result["error_code"] = final_firco_result.get("error_code", 500) # Default error code

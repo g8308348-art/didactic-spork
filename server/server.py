@@ -136,7 +136,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 from playwright.sync_api import sync_playwright, Page
 
                 with sync_playwright() as playwright:
-                    browser = playwright.chromium.launch(headless=True)
+                    browser = playwright.chromium.connect_over_cdp("http://localhost:9222")
                     page = browser.new_page()
                     try:
                         result = process_firco_transaction(

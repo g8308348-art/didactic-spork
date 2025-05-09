@@ -306,6 +306,10 @@ tbody tr:hover {
   margin-bottom: 0;
 }
 
+.inline-checkbox {
+  width: auto !important;
+}
+
 /* Status badges for transaction history */
 .status-badge {
   display: inline-block;

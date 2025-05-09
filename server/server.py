@@ -130,9 +130,32 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 # Process the transaction using our main logic
                 from playwright.sync_api import sync_playwright
 
+                perform_on_latest = bool(data.get('performOnLatest', False))
+                from main_logic import process_firco_transaction
+                from FircoPage import TransactionError
+                from playwright.sync_api import sync_playwright, Page
+
                 with sync_playwright() as playwright:
-                    result_json = process_transaction(playwright, temp_file_path)
-                    result = json.loads(result_json)
+                    browser = playwright.chromium.launch(headless=True)
+                    page = browser.new_page()
+                    try:
+                        result = process_firco_transaction(
+                            page,
+                            data['transaction'],
+                            data['action'],
+                            data['comment'],
+                            False,  # needs_escalation
+                            perform_on_latest
+                        )
+                    except TransactionError as te:
+                        result = {
+                            'success': False,
+                            'message': te.message,
+                            'error_code': te.error_code,
+                            'screenshot_path': te.screenshot_path,
+                        }
+                    finally:
+                        browser.close()
 
                 # Check if processing was successful
                 if result["success"]:

@@ -28,10 +28,10 @@
     <main>
         <section id="transaction-form" class="section">
             <div class="container">
-                <h2>Transaction Processing</h2>
+                <h2>Transaction processing</h2>
                 <form id="transaction-form-element">
                     <div class="form-group">
-                        <label for="transactions">Transaction Details</label>
+                        <label for="transactions">Transaction details:</label>
                         <input 
                             type="text" 
                             id="transactions" 
@@ -43,7 +43,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="comment">Comment (Optional)</label>
+                        <input type="checkbox" id="perform-on-latest" name="perform-on-latest" class="inline-checkbox" checked style="margin-right: 8px;">
+                        <label for="perform-on-latest" style="display: inline-block;">Perform action on the latest transaction</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comment">Comment (optional):</label>
                         <textarea 
                             id="comment" 
                             name="comment" 
@@ -55,7 +60,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="action">Action</label>
+                        <label for="action">Action:</label>
                         <select id="action" name="action" required>
                             <option value="Release" selected>Release</option>
                             <option value="Block">Block</option>
@@ -65,8 +70,8 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Process Transaction</button>
-                        <button type="reset" class="btn btn-secondary">Clear Form</button>
+                        <button type="submit" class="btn btn-primary">Process transaction</button>
+                        <button type="reset" class="btn btn-secondary">Clear form</button>
                     </div>
                 </form>
                 <div id="submission-status" class="submission-status"></div>

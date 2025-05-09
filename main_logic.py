@@ -76,6 +76,7 @@ def process_firco_transaction(
     action: str,
     user_comment: str,
     needs_escalation: bool = False,
+    perform_on_latest: bool = False,
 ) -> dict:
     """
     Process a Firco transaction with the specified action.
@@ -83,7 +84,7 @@ def process_firco_transaction(
     """
     firco_page = FircoPage(page)
     
-    details_result = firco_page.go_to_transaction_details(transaction, user_comment)
+    details_result = firco_page.go_to_transaction_details(transaction, user_comment, perform_on_latest)
     logging.info(f"Transaction details result from go_to_transaction_details: {details_result}")
 
     current_status = details_result.get("status")

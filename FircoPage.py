@@ -28,6 +28,15 @@ class Selectors:
         self.sanctions_bypass_view_tab = page.locator("a.tab-center").filter(
             has_text="Sanctions Bypass View"
         )
+        # Filtering descending date
+        self.filtered_date_menu_opener = page.locator(
+            "#fmf-table-column-filtered-date-col-menu-opener"
+        )
+        self.descending_date = page.locator(".sort-desc-menu-item")
+        self.reset_filter = page.locator(".remove-sort-menu-item")
+
+        # Table selectors
+        self.table = page.locator("table")
         self.bpm_tab = page.locator("a.tab-center").filter(has_text="BPM")
         self.filtered_column_icon = page.locator("a.column-filtered-icon")
         self.menu_opener = page.locator("#fmf-table-column-message-id-col-menu-opener")
@@ -109,7 +118,7 @@ class FircoPage:
         except (ValueError, RuntimeError) as e:
             logging.error("Error while waiting for loading indicator: %s", e)
 
-    def go_to_transaction_details(self, transaction: str, comment: str):
+    def go_to_transaction_details(self, transaction: str, comment: str, perform_on_latest: bool = False):
         """
         Navigate to a specific transaction's details page and determine its status.
         Prioritizes Live Messages for processing, then checks History, then Sanctions Bypass View, then BPM.
@@ -146,13 +155,27 @@ class FircoPage:
                 "message": f"Transaction {transaction} found in Live Messages and is ready for action.",
             }
         elif live_status == SearchStatus.MULTIPLE:
-            logging.error(
-                f"Multiple transactions found for ID: {transaction} in Live Messages."
-            )
-            raise TransactionError(
-                f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
-                409,
-            )
+            if perform_on_latest:
+                logging.info(f"Multiple transactions found for ID: {transaction} in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction.")
+                # Click filter menu, descending sort, then first row
+                self.sel.filtered_date_menu_opener.click()
+                self.sel.descending_date.click()
+                # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
+                self.sel.table.first.click()
+                self.fill_comment_field(comment)
+                self.click_all_hits(True)
+                return {
+                    "status": "action_performed_on_live",
+                    "message": f"Action performed on the latest transaction for ID: {transaction} in Live Messages.",
+                }
+            else:
+                logging.error(
+                    f"Multiple transactions found for ID: {transaction} in Live Messages."
+                )
+                raise TransactionError(
+                    f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
+                    409,
+                )
         # If SearchStatus.NONE, proceed to History tab
 
         # 2. Search in Sanctions Bypass View tab (if not uniquely found in Live or History)
@@ -230,34 +253,13 @@ class FircoPage:
             )
             # Fall through to not found, or raise an error if BPM check is critical
         else:
-            self.sel.bpm_tab.click()
-            # Add appropriate wait/expectation for tab to be active if needed, e.g.:
-            # expect(self.sel.bpm_tab).to_have_class(r"tab-center tab-center-selected")
-            self.page.wait_for_timeout(
-                1000
-            )  # Placeholder for tab switch, replace with explicit wait
-            self.clear_filtered_column()  # Assuming this works for BPM tab as well
-            self.search_transaction(transaction)
-            bpm_status = self.verify_search_results(transaction)
+            # BPM search is currently bypassed
+            logging.info(
+                f"BPM search for transaction {transaction} is currently bypassed and will effectively return 'not found' for this step."
+            )
+            # No action taken for BPM search, so it proceeds as if the transaction was not found in BPM.
 
-            if bpm_status == SearchStatus.FOUND:
-                logging.info(
-                    f"Transaction {transaction} found in BPM. Considered handled for this flow."
-                )
-                return {
-                    "status": "found_in_bpm",
-                    "message": f"Transaction {transaction} found in BPM. No further action taken by this process.",
-                }
-            elif bpm_status == SearchStatus.MULTIPLE:
-                logging.error(
-                    f"Multiple transactions found for ID: {transaction} in BPM."
-                )
-                raise TransactionError(
-                    f"Multiple transactions found for ID: {transaction} in BPM. Ambiguous state.",
-                    409,
-                )
-
-        # If SearchStatus.NONE after all checks, or if BPM tab selector was missing
+        # Final return if not found in any relevant tab
         logging.info(
             f"Transaction {transaction} not found in Live Messages, History, Sanctions Bypass, or BPM."
         )

@@ -198,7 +198,8 @@ transactionForm.addEventListener('submit', async (e) => {
                     transaction: txn,
                     comment: commentValue,
                     action: actionValue,
-                    timestamp: new Date().toISOString()
+                    timestamp: Date.now(),
+                    performOnLatest: document.getElementById('perform-on-latest').checked
                 };
                 const response = await sendTransactionToServer(data);
                 if (response.success) {

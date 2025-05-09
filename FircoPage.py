@@ -118,7 +118,9 @@ class FircoPage:
         except (ValueError, RuntimeError) as e:
             logging.error("Error while waiting for loading indicator: %s", e)
 
-    def go_to_transaction_details(self, transaction: str, comment: str, perform_on_latest: bool = False):
+    def go_to_transaction_details(
+        self, transaction: str, comment: str, perform_on_latest: bool = False
+    ):
         """
         Navigate to a specific transaction's details page and determine its status.
         Prioritizes Live Messages for processing, then checks History, then Sanctions Bypass View, then BPM.
@@ -156,7 +158,9 @@ class FircoPage:
             }
         elif live_status == SearchStatus.MULTIPLE:
             if perform_on_latest:
-                logging.info(f"Multiple transactions found for ID: {transaction} in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction.")
+                logging.info(
+                    f"Multiple transactions found for ID: {transaction} in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction."
+                )
                 # Click filter menu, descending sort, then first row
                 self.sel.filtered_date_menu_opener.click()
                 self.sel.descending_date.click()
@@ -178,7 +182,7 @@ class FircoPage:
                 )
         # If SearchStatus.NONE, proceed to History tab
 
-        # 2. Search in Sanctions Bypass View tab (if not uniquely found in Live or History)
+        """        # 2. Search in Sanctions Bypass View tab (if not uniquely found in Live or History)
         logging.info(
             f"Transaction {transaction} not uniquely found in Live or History. Checking Sanctions Bypass View tab."
         )
@@ -209,7 +213,7 @@ class FircoPage:
                 f"Multiple transactions found for ID: {transaction} in Sanctions Bypass View. Ambiguous state.",
                 409,
             )
-        # If SearchStatus.NONE, proceed to History tab
+        # If SearchStatus.NONE, proceed to History tab"""
 
         # 3. Search in History tab (if not uniquely found in Live Messages)
         logging.info(

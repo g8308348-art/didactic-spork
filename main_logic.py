@@ -76,6 +76,7 @@ def process_firco_transaction(
     transaction: str,
     action: str,
     user_comment: str,
+    transaction_type: str = "",
     needs_escalation: bool = False,
     perform_on_latest: bool = False,
 ) -> dict:
@@ -86,7 +87,7 @@ def process_firco_transaction(
     firco_page = FircoPage(page)
 
     details_result = firco_page.go_to_transaction_details(
-        transaction, user_comment, perform_on_latest
+        transaction, user_comment, transaction_type, perform_on_latest
     )
     logging.info(
         f"Transaction details result from go_to_transaction_details: {details_result}"
@@ -214,7 +215,7 @@ def handle_transaction_error(
 
 
 # --- Transaction Processor ---
-def process_transaction(playwright: object, txt_path: str) -> str:
+def process_transaction(playwright: object, txt_path: str, transaction_type: str = "") -> str:
     """
     Process a transaction from a text file and return the result as JSON.
 
@@ -226,6 +227,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         JSON string with the processing result
     """
     transaction, action, user_comment = parse_txt_file(txt_path)
+    # transaction_type is now received from server.py and passed in
     transaction_folder, date_folder = create_output_structure(transaction, OUTPUT_DIR)
 
     # Check if folder creation was successful
@@ -257,7 +259,6 @@ def process_transaction(playwright: object, txt_path: str) -> str:
     try:
         # I would like to log all the transaction info
         logging.info(f"Processing transaction: {transaction}")
-        # transaction type
         logging.info(f"Transaction type: {transaction_type}")
         logging.info(f"Action: {action}")
         logging.info(f"User comment: {user_comment}")
@@ -270,12 +271,12 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         if action != "STP-Release":
             # For non-STP actions, we expect escalation
             firco_result_user1 = process_firco_transaction(
-                page, transaction, action, user_comment, needs_escalation=True
+                page, transaction, action, user_comment, transaction_type=transaction_type, needs_escalation=True
             )
         else:
             # For STP-Release, process directly without escalation flag initially
             firco_result_user1 = process_firco_transaction(
-                page, transaction, action, user_comment
+                page, transaction, action, user_comment, transaction_type=transaction_type
             )
 
         # Determine if manager processing is needed based on the result from the first user's session
@@ -292,7 +293,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
             # The action for the manager might be different or implicit post-escalation
             # Assuming the 'action' here is what the manager should perform
             firco_result_manager = process_firco_transaction(
-                page, transaction, action, user_comment
+                page, transaction, action, user_comment, transaction_type=transaction_type
             )
             # The final result for the API will be based on the manager's action outcome
             final_firco_result = firco_result_manager

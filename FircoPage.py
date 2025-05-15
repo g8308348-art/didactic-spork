@@ -126,7 +126,11 @@ class FircoPage:
             logging.error("Error while waiting for loading indicator: %s", e)
 
     def go_to_transaction_details(
-        self, transaction: str, comment: str, transaction_type: str = "", perform_on_latest: bool = False
+        self,
+        transaction: str,
+        comment: str,
+        transaction_type: str = "",
+        perform_on_latest: bool = False,
     ):
         """
         Navigate to a specific transaction's details page and determine its status.
@@ -270,8 +274,8 @@ class FircoPage:
         # there is bpm.py that shows main happy path logic and POM Bpm_Page.py
 
         # steps to perform for BPM search:
+        print("logging out from Firco")
         self.sel.logout.click()  # logout from Firco
-        self.page.wait_for_timeout(2000)
 
         try:
             page = self.page
@@ -296,7 +300,10 @@ class FircoPage:
                     logging.info(
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
-                    if fourth_column_value == "PostedTxtnToFirco" or last_column_value == "WARNING":
+                    if (
+                        fourth_column_value == "PostedTxtnToFirco"
+                        or last_column_value == "WARNING"
+                    ):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",

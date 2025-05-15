@@ -60,7 +60,6 @@ def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for
     )
     logging.info(f"4th Column Value: {fourth_column_value}")
     logging.info(f"Last Column Value: {last_column_value}")
-    page.wait_for_timeout(2000)
 
 
 # --- Main Script ---
@@ -71,13 +70,14 @@ def map_transaction_type_to_option(transaction_type_str):
         logging.warning(f"Unknown transaction type: {transaction_type_str}")
         return []
 
+
 def main(transaction_type_str=None):
     setup_logging()
     if not transaction_type_str:
         logging.info("Transaction type is 'Not defined'; skipping BPM search.")
         return {
             "status": "transaction_type_not_defined",
-            "message": "Transaction type was not defined, BPM search was skipped."
+            "message": "Transaction type was not defined, BPM search was skipped.",
         }
     number_to_look_for = "202505140000031"
     options_to_check = map_transaction_type_to_option(transaction_type_str)

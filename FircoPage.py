@@ -245,12 +245,23 @@ class FircoPage:
                 f"Multiple transactions found for ID: {transaction} in History. Ambiguous state.",
                 409,
             )
-        # If SearchStatus.NONE, proceed to BPM tab
+        # If SearchStatus.NONE, proceed to BPM
 
-        # 4. Search in BPM tab (if not uniquely found in Live, History, or Sanctions Bypass)
+        # 4. Search in BPM page (if not uniquely found in Live, History)
         logging.info(
-            f"Transaction {transaction} not uniquely found in Live, History, or Sanctions Bypass. Checking BPM tab."
+            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM tab."
         )
+        # Skip BPM search if transaction_type is not set (Not defined)
+        if not transaction_type:
+            logging.info("Transaction type is 'Not defined'; skipping BPM search.")
+            return {
+                "status": "transaction_type_not_defined",
+                "message": "Transaction type was not defined, BPM search was skipped."
+            }
+        # TODO: we have verify_on_bpm method, but it's not implemented
+        # we should use it here, I think, we should log out from Firco and then proceed with BPM
+        # there is bpm.py that shows main happy path logic and POM Bpm_Page.py
+
         if not hasattr(self.sel, "bpm_tab"):
             logging.error(
                 "BPM tab selector (self.sel.bpm_tab) not defined in Selectors class."
@@ -265,12 +276,19 @@ class FircoPage:
 
         # Final return if not found in any relevant tab
         logging.info(
-            f"Transaction {transaction} not found in Live Messages, History, Sanctions Bypass, or BPM."
+            f"Transaction {transaction} not found in Live Messages, History, or BPM."
         )
         return {
             "status": "transaction_not_found_in_any_tab",
             "message": f"Transaction {transaction} not found in any relevant tab after checking Live, History, Sanctions Bypass, and BPM.",
         }
+
+    def verify_on_bpm(self, transaction: str) -> SearchStatus:
+        """
+        Placeholder for BPM page search.
+        """
+        # TODO: implement BPM search logic
+        return SearchStatus.NONE
 
     def click_all_hits(self, screenshots: bool):
         """
@@ -322,13 +340,6 @@ class FircoPage:
             ) from e
 
         return SearchStatus.FOUND
-
-    def verify_on_bpm(self, transaction: str) -> SearchStatus:
-        """
-        Placeholder for BPM page search.
-        """
-        # TODO: implement BPM search logic
-        return SearchStatus.NONE
 
     def fill_comment_field(self, text: str):
         """

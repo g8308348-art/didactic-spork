@@ -2,6 +2,13 @@ import logging
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from enum import Enum, auto
+from bpm import (
+    map_transaction_type_to_option,
+    perform_login_and_setup,
+    select_options_and_submit,
+    handle_dropdown_and_search,
+)
+from Bpm_Page import BPMPage
 
 
 class TransactionError(Exception):
@@ -249,30 +256,70 @@ class FircoPage:
 
         # 4. Search in BPM page (if not uniquely found in Live, History)
         logging.info(
-            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM tab."
+            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM page."
         )
         # Skip BPM search if transaction_type is not set (Not defined)
         if not transaction_type:
             logging.info("Transaction type is 'Not defined'; skipping BPM search.")
             return {
                 "status": "transaction_type_not_defined",
-                "message": "Transaction type was not defined, BPM search was skipped."
+                "message": "Transaction type was not defined, BPM search was skipped.",
             }
         # TODO: we have verify_on_bpm method, but it's not implemented
         # we should use it here, I think, we should log out from Firco and then proceed with BPM
         # there is bpm.py that shows main happy path logic and POM Bpm_Page.py
 
-        if not hasattr(self.sel, "bpm_tab"):
-            logging.error(
-                "BPM tab selector (self.sel.bpm_tab) not defined in Selectors class."
-            )
-            # Fall through to not found, or raise an error if BPM check is critical
-        else:
-            # BPM search is currently bypassed
-            logging.info(
-                f"BPM search for transaction {transaction} is currently bypassed and will effectively return 'not found' for this step."
-            )
-            # No action taken for BPM search, so it proceeds as if the transaction was not found in BPM.
+        # steps to perform for BPM search:
+        self.sel.logout.click()  # logout from Firco
+        self.page.wait_for_timeout(2000)
+
+        try:
+            page = self.page
+            bpm_page = BPMPage(page)
+
+            # Map the transaction type string (from frontend) to Options enum
+            options_to_check = map_transaction_type_to_option(transaction_type)
+            if not options_to_check:
+                logging.warning(
+                    f"Unknown or missing BPM option for transaction type: {transaction_type}"
+                )
+
+                # Login & setup
+                perform_login_and_setup(bpm_page)
+                select_options_and_submit(bpm_page, page, options_to_check)
+
+                # Now search for the transaction number in BPM
+                try:
+                    fourth_column_value, last_column_value = handle_dropdown_and_search(
+                        bpm_page, page, transaction
+                    )
+                    logging.info(
+                        f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
+                    )
+                    if fourth_column_value == "PostedTxtnToFirco" or last_column_value == "WARNING":
+                        return {
+                            "status": "failed_in_bpm",
+                            "message": f"Transaction {transaction} failed in BPM.",
+                            "details": {
+                                "fourth_column": fourth_column_value,
+                                "last_column": last_column_value,
+                            },
+                        }
+                    return {
+                        "status": "found_in_bpm",
+                        "message": f"Transaction {transaction} found in BPM.",
+                        "details": {
+                            "fourth_column": fourth_column_value,
+                            "last_column": last_column_value,
+                        },
+                    }
+                except Exception as search_exc:
+                    logging.info(
+                        f"Transaction {transaction} not found in BPM: {search_exc}"
+                    )
+
+        except Exception as e:
+            logging.error(f"Error during BPM search for {transaction}: {e}")
 
         # Final return if not found in any relevant tab
         logging.info(

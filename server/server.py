@@ -152,9 +152,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     # Include detailed error information
                     response = {
                         "success": False,
-                        "message": result["message"],
-                        "errorCode": result["error_code"],
-                        "screenshotPath": result["screenshot_path"],
+                        "message": response["message"],
+                        "errorCode": response["error_code"],
+                        "screenshotPath": response["screenshot_path"],
                     }
 
                     # If temp file was created but processing failed, we should clean it up

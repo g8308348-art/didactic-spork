@@ -215,7 +215,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     transaction: txn,
                     comment: commentValue,
                     action: actionValue,
-                    transactionType: transactionTypeValue,
+                    transaction_type: transactionTypeValue,
                     timestamp: Date.now(),
                     performOnLatest: document.getElementById('perform-on-latest').checked
                 };

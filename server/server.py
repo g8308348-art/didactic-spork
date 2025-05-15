@@ -102,7 +102,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # Accept transactionType if present
             required_fields = ["transaction", "action", "comment"]
-            transaction_type = data.get("transactionType", "")
+            transaction_type = data.get("transaction_type", "")
             if not all(key in data for key in required_fields):
                 self.send_response(400)
                 self._set_cors_headers()
@@ -137,14 +137,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 from playwright.sync_api import sync_playwright
 
                 with sync_playwright() as playwright:
-                    result_json = process_transaction(playwright, temp_file_path)
-                    result = json.loads(result_json)
+                    response = process_transaction(
+                        playwright, temp_file_path, transaction_type=transaction_type
+                    )
 
                 # Check if processing was successful
-                if result["success"]:
+                if response["success"]:
                     response = {
                         "success": True,
-                        "message": result["message"],
+                        "message": response["message"],
                         "transactionId": os.path.basename(temp_file_path).split(".")[0],
                     }
                 else:

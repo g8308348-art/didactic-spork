@@ -125,6 +125,73 @@ class FircoPage:
         except (ValueError, RuntimeError) as e:
             logging.error("Error while waiting for loading indicator: %s", e)
 
+    def check_bpm_page(self, transaction: str, transaction_type: str = ""):
+        """
+        Perform BPM search for the transaction and return a result dict.
+        """
+        logging.info(
+            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM page."
+        )
+        # Skip BPM search if transaction_type is not set (Not defined)
+        if not transaction_type:
+            logging.info("Transaction type is 'Not defined'; skipping BPM search.")
+            return {
+                "status": "transaction_type_not_defined",
+                "message": "Transaction type was not defined, BPM search was skipped.",
+            }
+        print("logging out from Firco")
+        self.sel.logout.click()  # logout from Firco
+        try:
+            page = self.page
+            bpm_page = BPMPage(page)
+            options_to_check = map_transaction_type_to_option(transaction_type)
+            if not options_to_check:
+                logging.warning(
+                    f"Unknown or missing BPM option for transaction type: {transaction_type}"
+                )
+            perform_login_and_setup(bpm_page)
+            select_options_and_submit(bpm_page, page, options_to_check)
+            try:
+                fourth_column_value, last_column_value = handle_dropdown_and_search(
+                    bpm_page, page, transaction
+                )
+                logging.info(
+                    f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
+                )
+                if (
+                    fourth_column_value == "PostedTxtnToFirco"
+                    or last_column_value == "WARNING"
+                ):
+                    return {
+                        "status": "failed_in_bpm",
+                        "message": f"Transaction {transaction} failed in BPM.",
+                        "details": {
+                            "fourth_column": fourth_column_value,
+                            "last_column": last_column_value,
+                        },
+                    }
+                return {
+                    "status": "found_in_bpm",
+                    "message": f"Transaction {transaction} found in BPM.",
+                    "details": {
+                        "fourth_column": fourth_column_value,
+                        "last_column": last_column_value,
+                    },
+                }
+            except Exception as search_exc:
+                logging.info(
+                    f"Transaction {transaction} not found in BPM: {search_exc}"
+                )
+        except Exception as e:
+            logging.error(f"Error during BPM search for {transaction}: {e}")
+        logging.info(
+            f"Transaction {transaction} not found in Live Messages, History, or BPM."
+        )
+        return {
+            "status": "transaction_not_found_in_any_tab",
+            "message": f"Transaction {transaction} not found in any relevant tab after checking Live, History, Sanctions Bypass, and BPM.",
+        }
+
     def go_to_transaction_details(
         self,
         transaction: str,
@@ -259,83 +326,8 @@ class FircoPage:
         # If SearchStatus.NONE, proceed to BPM
 
         # 4. Search in BPM page (if not uniquely found in Live, History)
-        logging.info(
-            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM page."
-        )
-        # Skip BPM search if transaction_type is not set (Not defined)
-        if not transaction_type:
-            logging.info("Transaction type is 'Not defined'; skipping BPM search.")
-            return {
-                "status": "transaction_type_not_defined",
-                "message": "Transaction type was not defined, BPM search was skipped.",
-            }
-        # TODO: we have verify_on_bpm method, but it's not implemented
-        # we should use it here, I think, we should log out from Firco and then proceed with BPM
-        # there is bpm.py that shows main happy path logic and POM Bpm_Page.py
+        return self.check_bpm_page(transaction, transaction_type)
 
-        # steps to perform for BPM search:
-        print("logging out from Firco")
-        self.sel.logout.click()  # logout from Firco
-
-        try:
-            page = self.page
-            bpm_page = BPMPage(page)
-
-            # Map the transaction type string (from frontend) to Options enum
-            options_to_check = map_transaction_type_to_option(transaction_type)
-            if not options_to_check:
-                logging.warning(
-                    f"Unknown or missing BPM option for transaction type: {transaction_type}"
-                )
-
-                # Login & setup
-                perform_login_and_setup(bpm_page)
-                select_options_and_submit(bpm_page, page, options_to_check)
-
-                # Now search for the transaction number in BPM
-                try:
-                    fourth_column_value, last_column_value = handle_dropdown_and_search(
-                        bpm_page, page, transaction
-                    )
-                    logging.info(
-                        f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
-                    )
-                    if (
-                        fourth_column_value == "PostedTxtnToFirco"
-                        or last_column_value == "WARNING"
-                    ):
-                        return {
-                            "status": "failed_in_bpm",
-                            "message": f"Transaction {transaction} failed in BPM.",
-                            "details": {
-                                "fourth_column": fourth_column_value,
-                                "last_column": last_column_value,
-                            },
-                        }
-                    return {
-                        "status": "found_in_bpm",
-                        "message": f"Transaction {transaction} found in BPM.",
-                        "details": {
-                            "fourth_column": fourth_column_value,
-                            "last_column": last_column_value,
-                        },
-                    }
-                except Exception as search_exc:
-                    logging.info(
-                        f"Transaction {transaction} not found in BPM: {search_exc}"
-                    )
-
-        except Exception as e:
-            logging.error(f"Error during BPM search for {transaction}: {e}")
-
-        # Final return if not found in any relevant tab
-        logging.info(
-            f"Transaction {transaction} not found in Live Messages, History, or BPM."
-        )
-        return {
-            "status": "transaction_not_found_in_any_tab",
-            "message": f"Transaction {transaction} not found in any relevant tab after checking Live, History, Sanctions Bypass, and BPM.",
-        }
 
     def verify_on_bpm(self, transaction: str) -> SearchStatus:
         """

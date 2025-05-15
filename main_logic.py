@@ -133,14 +133,11 @@ def process_firco_transaction(
                 "message": f"Action '{action}' performed on transaction {transaction} found in Live Messages.",
             }
     else:
-        # This case should ideally not be reached if go_to_transaction_details is exhaustive
-        # or raises specific exceptions for error conditions (e.g., multiple found).
-        logging.error(
-            f"Unhandled status '{current_status}' for transaction {transaction} from go_to_transaction_details. Logging out."
+        logging.warning(
+            f"Transaction {transaction} not found in Live or History. Attempting BPM search."
         )
-        firco_page.logout()
-        # Pass through the original result, might be an error or unexpected state
-        return details_result
+        bpm_result = firco_page.check_bpm_page(transaction, transaction_type)
+        return bpm_result
 
 
 # --- Error Handling Functions ---
@@ -215,7 +212,9 @@ def handle_transaction_error(
 
 
 # --- Transaction Processor ---
-def process_transaction(playwright: object, txt_path: str, transaction_type: str = "") -> str:
+def process_transaction(
+    playwright: object, txt_path: str, transaction_type: str = ""
+) -> str:
     """
     Process a transaction from a text file and return the result as JSON.
 
@@ -271,12 +270,21 @@ def process_transaction(playwright: object, txt_path: str, transaction_type: str
         if action != "STP-Release":
             # For non-STP actions, we expect escalation
             firco_result_user1 = process_firco_transaction(
-                page, transaction, action, user_comment, transaction_type=transaction_type, needs_escalation=True
+                page,
+                transaction,
+                action,
+                user_comment,
+                transaction_type=transaction_type,
+                needs_escalation=True,
             )
         else:
             # For STP-Release, process directly without escalation flag initially
             firco_result_user1 = process_firco_transaction(
-                page, transaction, action, user_comment, transaction_type=transaction_type
+                page,
+                transaction,
+                action,
+                user_comment,
+                transaction_type=transaction_type,
             )
 
         # Determine if manager processing is needed based on the result from the first user's session
@@ -293,7 +301,11 @@ def process_transaction(playwright: object, txt_path: str, transaction_type: str
             # The action for the manager might be different or implicit post-escalation
             # Assuming the 'action' here is what the manager should perform
             firco_result_manager = process_firco_transaction(
-                page, transaction, action, user_comment, transaction_type=transaction_type
+                page,
+                transaction,
+                action,
+                user_comment,
+                transaction_type=transaction_type,
             )
             # The final result for the API will be based on the manager's action outcome
             final_firco_result = firco_result_manager

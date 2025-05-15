@@ -151,6 +151,10 @@ function validateTransactionType(value) {
         showError(transactionTypeError, 'Please select a transaction type');
         return false;
     }
+    if (value === '' || value === 'Not defined') {
+        showError(transactionTypeError, 'Please select a valid transaction type');
+        return false;
+    }
     hideError(transactionTypeError);
     return true;
 }

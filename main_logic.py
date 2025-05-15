@@ -32,6 +32,7 @@ MANAGER_PASSWORD = "pass"
 # Define module-level constants for status strings
 TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"
 
+
 # --- Logging Setup ---
 def setup_logging() -> None:
     """Set up logging configuration with file and console handlers."""
@@ -83,47 +84,59 @@ def process_firco_transaction(
     Returns a dictionary with processing status.
     """
     firco_page = FircoPage(page)
-    
-    details_result = firco_page.go_to_transaction_details(transaction, user_comment, perform_on_latest)
-    logging.info(f"Transaction details result from go_to_transaction_details: {details_result}")
+
+    details_result = firco_page.go_to_transaction_details(
+        transaction, user_comment, perform_on_latest
+    )
+    logging.info(
+        f"Transaction details result from go_to_transaction_details: {details_result}"
+    )
 
     current_status = details_result.get("status")
 
     # Define statuses where no further action (escalate/perform_action) is needed from this function
     TERMINAL_READ_ONLY_STATUSES = [
         "already_handled",  # Found in History
-        "found_in_sanctions_bypass", # Found in Sanctions Bypass View
+        "found_in_sanctions_bypass",  # Found in Sanctions Bypass View
         "found_in_bpm",  # Found in BPM
-        TRANSACTION_NOT_FOUND_STATUS, # Not found in any tab
+        TRANSACTION_NOT_FOUND_STATUS,  # Not found in any tab
     ]
 
     if current_status in TERMINAL_READ_ONLY_STATUSES:
-        logging.info(f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out.")
+        logging.info(
+            f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out."
+        )
         firco_page.logout()
         return details_result
-    
+
     elif current_status == "found_in_live":
         if needs_escalation:
-            logging.info(f"Transaction {transaction} found in Live Messages. Escalating for action '{action}'.")
+            logging.info(
+                f"Transaction {transaction} found in Live Messages. Escalating for action '{action}'."
+            )
             firco_page.sel.escalate.click()
             time.sleep(2)  # Consider replacing with an explicit wait
             firco_page.logout()
             return {
-                "status": "escalated", 
-                "message": f"Transaction {transaction} found in Live Messages and escalated for action '{action}'."
+                "status": "escalated",
+                "message": f"Transaction {transaction} found in Live Messages and escalated for action '{action}'.",
             }
         else:  # Not needs_escalation, perform direct action
-            logging.info(f"Transaction {transaction} found in Live Messages. Performing action '{action}'.")
+            logging.info(
+                f"Transaction {transaction} found in Live Messages. Performing action '{action}'."
+            )
             firco_page.perform_action(action)
             firco_page.logout()
             return {
-                "status": "action_performed_on_live", 
-                "message": f"Action '{action}' performed on transaction {transaction} found in Live Messages."
+                "status": "action_performed_on_live",
+                "message": f"Action '{action}' performed on transaction {transaction} found in Live Messages.",
             }
     else:
         # This case should ideally not be reached if go_to_transaction_details is exhaustive
         # or raises specific exceptions for error conditions (e.g., multiple found).
-        logging.error(f"Unhandled status '{current_status}' for transaction {transaction} from go_to_transaction_details. Logging out.")
+        logging.error(
+            f"Unhandled status '{current_status}' for transaction {transaction} from go_to_transaction_details. Logging out."
+        )
         firco_page.logout()
         # Pass through the original result, might be an error or unexpected state
         return details_result
@@ -226,7 +239,7 @@ def process_transaction(playwright: object, txt_path: str) -> str:
                 "message": "Failed to create output folders",
                 "error_code": 500,
                 "screenshot_path": None,
-                "status_detail": "unknown"
+                "status_detail": "unknown",
             }
         )
 
@@ -238,10 +251,17 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         "message": "",
         "error_code": None,
         "screenshot_path": None,
-        "status_detail": "unknown" # Initialize with a default
+        "status_detail": "unknown",  # Initialize with a default
     }
 
     try:
+        # I would like to log all the transaction info
+        logging.info(f"Processing transaction: {transaction}")
+        # transaction type
+        logging.info(f"Transaction type: {transaction_type}")
+        logging.info(f"Action: {action}")
+        logging.info(f"User comment: {user_comment}")
+
         # First user login and process
         login_to_firco(page, url=TEST_URL, username=USERNAME, password=PASSWORD)
 
@@ -254,20 +274,26 @@ def process_transaction(playwright: object, txt_path: str) -> str:
             )
         else:
             # For STP-Release, process directly without escalation flag initially
-            firco_result_user1 = process_firco_transaction(page, transaction, action, user_comment)
+            firco_result_user1 = process_firco_transaction(
+                page, transaction, action, user_comment
+            )
 
         # Determine if manager processing is needed based on the result from the first user's session
         needs_manager = firco_result_user1.get("status") == "escalated"
 
         # If escalation was performed (or if status indicates manager is needed), do manager processing
         if needs_manager:
-            logging.info(f"Manager processing required for transaction {transaction} due to status: {firco_result_user1.get('status')}")
+            logging.info(
+                f"Manager processing required for transaction {transaction} due to status: {firco_result_user1.get('status')}"
+            )
             login_to_firco(
                 page, url=TEST_URL, username=MANAGER_USERNAME, password=MANAGER_PASSWORD
             )
             # The action for the manager might be different or implicit post-escalation
             # Assuming the 'action' here is what the manager should perform
-            firco_result_manager = process_firco_transaction(page, transaction, action, user_comment)
+            firco_result_manager = process_firco_transaction(
+                page, transaction, action, user_comment
+            )
             # The final result for the API will be based on the manager's action outcome
             final_firco_result = firco_result_manager
         else:
@@ -278,25 +304,37 @@ def process_transaction(playwright: object, txt_path: str) -> str:
         # Define statuses that indicate the automation step completed successfully,
         # even if no direct action was taken on the transaction (e.g., already handled or not found).
         SUCCESSFUL_AUTOMATION_STEP_STATUSES = [
-            "action_performed_on_live", # Action taken on a live item
-            "escalated",                # User1 successfully escalated
-            "already_handled",          # Found in History, no action needed
-            "found_in_bpm",             # Found in BPM, no action needed
-            "found_in_sanctions_bypass",# Found in Sanctions Bypass, no action needed
-            TRANSACTION_NOT_FOUND_STATUS # Successfully determined not found in any relevant tab
+            "action_performed_on_live",  # Action taken on a live item
+            "escalated",  # User1 successfully escalated
+            "already_handled",  # Found in History, no action needed
+            "found_in_bpm",  # Found in BPM, no action needed
+            "found_in_sanctions_bypass",  # Found in Sanctions Bypass, no action needed
+            TRANSACTION_NOT_FOUND_STATUS,  # Successfully determined not found in any relevant tab
         ]
 
         if final_firco_result.get("status") in SUCCESSFUL_AUTOMATION_STEP_STATUSES:
-            result["success"] = True 
-            result["message"] = final_firco_result.get("message", f"Transaction {transaction} status: {final_firco_result.get('status')}")
-            result["status_detail"] = final_firco_result.get("status") # Pass the detailed status
+            result["success"] = True
+            result["message"] = final_firco_result.get(
+                "message",
+                f"Transaction {transaction} status: {final_firco_result.get('status')}",
+            )
+            result["status_detail"] = final_firco_result.get(
+                "status"
+            )  # Pass the detailed status
         else:
             # Handle cases where final_firco_result indicates a processing failure or an unexpected status
             result["success"] = False
-            result["message"] = final_firco_result.get("message", f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}")
-            result["error_code"] = final_firco_result.get("error_code", 500) # Default error code
+            result["message"] = final_firco_result.get(
+                "message",
+                f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}",
+            )
+            result["error_code"] = final_firco_result.get(
+                "error_code", 500
+            )  # Default error code
             result["screenshot_path"] = final_firco_result.get("screenshot_path")
-            result["status_detail"] = final_firco_result.get("status", "processing_error") # Pass detailed error status
+            result["status_detail"] = final_firco_result.get(
+                "status", "processing_error"
+            )  # Pass detailed error status
 
         # File operations and logging remain largely the same, assuming success means the workflow step completed
         if result["success"]:
@@ -313,7 +351,8 @@ def process_transaction(playwright: object, txt_path: str) -> str:
 
             try:
                 os.rename(
-                    txt_path, os.path.join(transaction_folder, os.path.basename(txt_path))
+                    txt_path,
+                    os.path.join(transaction_folder, os.path.basename(txt_path)),
                 )
             except FileNotFoundError:
                 logging.error("Transaction file not found: %s", txt_path)

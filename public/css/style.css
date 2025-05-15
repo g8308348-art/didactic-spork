@@ -375,6 +375,40 @@ footer {
   border-top: 1px solid var(--border-color);
 }
 
+.transaction-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.transaction-input-col {
+  flex: 8 1 0%;
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-type-col {
+  flex: 2 1 0%;
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-details-label,
+.transaction-type-label {
+  font-size: 0.95em;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.transaction-type-col select#transaction-type {
+  width: 100%;
+  min-width: 90px;
+}
+
+
+
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .navbar {

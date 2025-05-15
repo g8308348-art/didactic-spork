@@ -8,6 +8,8 @@ const transactionForm = document.getElementById('transaction-form-element');
 const transactionsInput = document.getElementById('transactions');
 const commentInput = document.getElementById('comment');
 const actionSelect = document.getElementById('action');
+const transactionTypeSelect = document.getElementById('transaction-type');
+const transactionTypeError = document.getElementById('transaction-type-error'); // Add <small id="transaction-type-error"> in HTML if not present
 const themeToggleBtn = document.getElementById('theme-toggle-btn');
 const commentCharCount = document.getElementById('comment-char-count');
 const submissionStatus = document.getElementById('submission-status');
@@ -144,6 +146,15 @@ function hideError(element) {
     element.classList.remove('visible');
 }
 
+function validateTransactionType(value) {
+    if (!value) {
+        showError(transactionTypeError, 'Please select a transaction type');
+        return false;
+    }
+    hideError(transactionTypeError);
+    return true;
+}
+
 // Form submission
 transactionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -158,14 +169,16 @@ transactionForm.addEventListener('submit', async (e) => {
         commentValue = 'RTPS';
     }
     const rawActionValue = actionSelect.value;
+    const transactionTypeValue = transactionTypeSelect.value;
 
     // Validate all fields
     const isTransactionsValid = validateTransactions(transactionsValue);
     const isCommentValid = validateComment(commentValue);
     const isActionValid = validateAction(rawActionValue);
+    const isTransactionTypeValid = validateTransactionType(transactionTypeValue);
 
     // If all validations pass
-    if (isTransactionsValid && isCommentValid && isActionValid) {
+    if (isTransactionsValid && isCommentValid && isActionValid && isTransactionTypeValid) {
         // After validation, map Release to STP-Release for processing
         const actionValue = rawActionValue === 'Release' ? 'STP-Release' : rawActionValue;
         try {
@@ -198,6 +211,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     transaction: txn,
                     comment: commentValue,
                     action: actionValue,
+                    transactionType: transactionTypeValue,
                     timestamp: Date.now(),
                     performOnLatest: document.getElementById('perform-on-latest').checked
                 };

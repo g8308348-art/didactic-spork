@@ -31,14 +31,41 @@
                 <h2>Transaction processing</h2>
                 <form id="transaction-form-element">
                     <div class="form-group">
-                        <label for="transactions">Transaction details:</label>
-                        <input 
-                            type="text" 
-                            id="transactions" 
-                            name="transactions" 
-                            placeholder="Enter comma-separated alphanumeric values" 
-                            required
-                        >
+                        <div class="transaction-row">
+    <div class="transaction-input-col">
+        <label for="transactions" class="transaction-details-label">Transaction details:</label>
+        <input 
+            type="text" 
+            id="transactions" 
+            name="transactions" 
+            placeholder="Enter comma-separated alphanumeric values" 
+            required
+        >
+    </div>
+    <div class="transaction-type-col">
+        <label for="transaction-type" class="transaction-type-label">Transaction type</label>
+        <select id="transaction-type" name="transaction-type">
+    <option value="" selected>Not defined</option>
+    <option value="UNCLASSIFIED">Unclassified</option>
+    <option value="APS_MT">APS-MT</option>
+    <option value="BESS_MT">BESS-MT</option>
+    <option value="CBPR_MX">CBPR-MX</option>
+    <option value="CHAPS_MX">CHAPS-MX</option>
+    <option value="CHATS_MX">CHATS-MX</option>
+    <option value="CHIPS_MX">CHIPS-MX</option>
+    <option value="ENTERPRISE_ISO">EnterpriseISO</option>
+    <option value="FEDWIRE">FEDWIRE</option>
+    <option value="LYNX_MX">LYNX-MX</option>
+    <option value="PEPPLUS_IAT">PEPPLUS-IAT</option>
+    <option value="RITS_MX">RITS-MX</option>
+    <option value="SEPA_CLASSIC">SEPA-Classic</option>
+    <option value="SEPA_INSTANT">SEPA-Instant</option>
+    <option value="TAIWAN_MX">Taiwan-MX</option>
+    <option value="T2S_MX">T2S-MX</option>
+    <option value="TSF_TRIGGER">TSF-TRIGGER</option>
+
+                            </select>
+                        </div>
                         <small class="error-message" id="transactions-error"></small>
                     </div>
 

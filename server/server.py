@@ -100,8 +100,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b"Invalid JSON")
                 return
 
-            # Ensure required fields are present
+            # Accept transactionType if present
             required_fields = ["transaction", "action", "comment"]
+            transaction_type = data.get("transactionType", "")
             if not all(key in data for key in required_fields):
                 self.send_response(400)
                 self._set_cors_headers()
@@ -113,6 +114,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 )
                 return
 
+            logging.info(f"Received transactionType: {transaction_type}")
             # Create a temporary file with the transaction data
             try:
                 # Create a temporary file
@@ -122,8 +124,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     temp_file_path = temp_file.name
                     # Format the data as expected by parse_txt_file
                     temp_file.write(
-                        f"{data['transaction']}\n{data['action']}\n{data['comment']}"
-                    )
+                            f"{data['transaction']}\n{data['action']}\n{data['comment']}\n{transaction_type}"
+                        )
 
                 logging.info(f"Created temporary file: {temp_file_path}")
 

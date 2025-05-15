@@ -126,7 +126,7 @@ class FircoPage:
             logging.error("Error while waiting for loading indicator: %s", e)
 
     def go_to_transaction_details(
-        self, transaction: str, comment: str, perform_on_latest: bool = False
+        self, transaction: str, comment: str, transaction_type: str = "", perform_on_latest: bool = False
     ):
         """
         Navigate to a specific transaction's details page and determine its status.

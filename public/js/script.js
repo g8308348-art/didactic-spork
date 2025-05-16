@@ -220,7 +220,24 @@ transactionForm.addEventListener('submit', async (e) => {
                     performOnLatest: document.getElementById('perform-on-latest').checked
                 };
                 const response = await sendTransactionToServer(data);
-                if (response.success) {
+                
+                // Check specifically for not-found status regardless of success flag
+                if (response.status_detail === 'transaction_not_found_in_any_tab') {
+                    // Even though backend considers this "successful automation", treat as failure in UI
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: data.timestamp,
+                        status: 'failed',
+                        status_detail: response.status_detail, // Store the actual status detail too
+                        statusMessage: response.message || 'Transaction not found in any tab',
+                        errorCode: response.errorCode
+                    });
+                    failCount++;
+                    failedTransactions.push({txn, error: 'Transaction not found in any tab'});
+                }
+                else if (response.success) {
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,
@@ -258,8 +275,19 @@ transactionForm.addEventListener('submit', async (e) => {
             if (failCount > 0) {
                 summary += '<br>Failed: ' + failedTransactions.map(f => `${escapeHtml(f.txn)} (${escapeHtml(f.error)})`).join(', ');
             }
+            // Check if any transaction has 'transaction_not_found_in_any_tab' status
+            const hasNotFoundTransactions = transactionsArray.some(txn => {
+                const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
+                    .find(t => t.transaction === txn);
+                return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
+            });
+            
             submissionStatus.innerHTML = summary;
-            submissionStatus.className = failCount === 0 ? 'submission-status success' : 'submission-status error';
+            
+            // Show error styling if any transactions failed OR if any had 'not found' status
+            submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions) 
+                ? 'submission-status success' 
+                : 'submission-status error';
             
             // Reset form
             transactionForm.reset();

@@ -233,12 +233,14 @@ transactionForm.addEventListener('submit', async (e) => {
                     successCount++;
                     succeededTransactions.push(txn);
                 } else {
+                    // If backend status is 'transaction_not_found_in_any_tab', force status to 'failed'
+                    const failedStatus = response.status === 'transaction_not_found_in_any_tab' ? 'failed' : (response.status_detail || 'failed');
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
-                        status: 'failed', // Keep 'failed' as is
+                        status: failedStatus,
                         statusMessage: response.message || 'Transaction processing failed',
                         errorCode: response.errorCode
                     });

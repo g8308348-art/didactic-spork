@@ -6,14 +6,13 @@ import sys
 import logging
 import tempfile
 from datetime import datetime
-from utils import parse_txt_file, create_output_structure, move_screenshots_to_folder
 
 
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import from main_logic.py
-from main_logic import process_transaction, setup_logging, INCOMING_DIR, OUTPUT_DIR
+from main_logic import setup_logging, INCOMING_DIR, OUTPUT_DIR
 
 
 # Helper functions that are missing in main_logic.py
@@ -124,15 +123,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     temp_file_path = temp_file.name
                     # Format the data as expected by parse_txt_file
                     temp_file.write(
-                            f"{data['transaction']}\n{data['action']}\n{data['comment']}\n{transaction_type}"
-                        )
+                        f"{data['transaction']}\n{data['action']}\n{data['comment']}\n{transaction_type}"
+                    )
 
                 logging.info(f"Created temporary file: {temp_file_path}")
 
                 # Process the transaction using our main logic
                 from playwright.sync_api import sync_playwright
 
-                perform_on_latest = bool(data.get('performOnLatest', False))
+                perform_on_latest = bool(data.get("performOnLatest", False))
                 from main_logic import process_transaction
                 from playwright.sync_api import sync_playwright
 
@@ -140,6 +139,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     response = process_transaction(
                         playwright, temp_file_path, transaction_type=transaction_type
                     )
+                    # Ensure response is a dict, not a JSON string
+                    if isinstance(response, str):
+                        response = json.loads(response)
 
                 # Check if processing was successful
                 if response["success"]:

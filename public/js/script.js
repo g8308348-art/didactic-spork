@@ -473,8 +473,8 @@ function loadTransactions() {
                 statusClass += ' success-sanctions'; // Gradient green + color for sanctions bypass
                 break;
             case 'transaction_not_found_in_any_tab':
-                statusText = 'Not Found'; // Or 'Checked'
-                statusClass += ' success-not-found'; // Neutral/distinct color for not found
+                statusText = 'Failed';
+                statusClass += ' error';
                 break;
             case 'failed':
                 statusText = 'Failed';

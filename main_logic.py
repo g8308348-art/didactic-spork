@@ -213,7 +213,7 @@ def handle_transaction_error(
 
 # --- Transaction Processor ---
 def process_transaction(
-    playwright: object, txt_path: str, transaction_type: str = ""
+    playwright: object, txt_path: str, transaction_type: str = "", perform_on_latest: bool = False
 ) -> str:
     """
     Process a transaction from a text file and return the result as JSON.
@@ -276,6 +276,7 @@ def process_transaction(
                 user_comment,
                 transaction_type=transaction_type,
                 needs_escalation=True,
+                perform_on_latest=perform_on_latest
             )
         else:
             # For STP-Release, process directly without escalation flag initially
@@ -285,6 +286,7 @@ def process_transaction(
                 action,
                 user_comment,
                 transaction_type=transaction_type,
+                perform_on_latest=perform_on_latest
             )
 
         # Determine if manager processing is needed based on the result from the first user's session

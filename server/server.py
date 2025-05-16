@@ -152,7 +152,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
                 with sync_playwright() as playwright:
                     response = process_transaction(
-                        playwright, temp_file_path, transaction_type=transaction_type
+                        playwright, 
+                        temp_file_path, 
+                        transaction_type=transaction_type,
+                        perform_on_latest=perform_on_latest
                     )
                     # Ensure response is a dict, not a JSON string
                     if isinstance(response, str):

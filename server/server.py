@@ -142,6 +142,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     response = {
                         "success": True,
                         "message": response["message"],
+                        "status_detail": response.get("status_detail", response.get("status")), # Include status_detail for frontend
                         "transactionId": os.path.basename(temp_file_path).split(".")[0],
                     }
                 else:
@@ -151,6 +152,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         "message": response["message"],
                         "errorCode": response["error_code"],
                         "screenshotPath": response["screenshot_path"],
+                        "status_detail": response.get("status_detail", response.get("status")) # Include status_detail for frontend
                     }
 
                     # If temp file was created but processing failed, we should clean it up

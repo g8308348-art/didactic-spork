@@ -6,13 +6,12 @@ import sys
 import logging
 import tempfile
 from datetime import datetime
-
+from main_logic import process_transaction
+from main_logic import setup_logging, INCOMING_DIR, OUTPUT_DIR
+from playwright.sync_api import sync_playwright
 
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import from main_logic.py
-from main_logic import setup_logging, INCOMING_DIR, OUTPUT_DIR
 
 
 # Helper functions that are missing in main_logic.py
@@ -128,12 +127,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
                 logging.info(f"Created temporary file: {temp_file_path}")
 
-                # Process the transaction using our main logic
-                from playwright.sync_api import sync_playwright
-
                 perform_on_latest = bool(data.get("performOnLatest", False))
-                from main_logic import process_transaction
-                from playwright.sync_api import sync_playwright
 
                 with sync_playwright() as playwright:
                     response = process_transaction(

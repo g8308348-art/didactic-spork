@@ -40,13 +40,34 @@ def create_output_structure(transaction):
 
 
 def move_screenshots_to_folder(target_folder):
-    """Move screenshots from current directory to target folder."""
+    """Move screenshots from current directory to target folder.
+    If destination file already exists, it will be overwritten.
+    The original screenshots are removed from the main folder.
+    """
+    import shutil
+    
     for file in os.listdir("."):
-        if file.endswith(".png") and "screenshot" in file:
+        if file.endswith(".png") and ("screenshot" in file or "hld" in file or "release" in file or "transaction" in file):
+            src_path = os.path.join(".", file)
+            dest_path = os.path.join(target_folder, file)
+            
             try:
-                os.rename(file, os.path.join(target_folder, file))
+                # If destination exists, remove it first to avoid errors
+                if os.path.exists(dest_path):
+                    os.remove(dest_path)
+                    logging.info(f"Removed existing file at destination: {dest_path}")
+                
+                # Copy the file to destination
+                shutil.copy2(src_path, dest_path)
+                logging.info(f"Copied screenshot to: {dest_path}")
+                
+                # Remove the original file
+                os.remove(src_path)
+                logging.info(f"Removed original screenshot: {src_path}")
+                
             except Exception as e:
-                logging.error("Failed to move screenshot %s: %s", file, e)
+                logging.error(f"Failed to handle screenshot {file}: {e}")
+                # Continue with next file even if this one failed
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):

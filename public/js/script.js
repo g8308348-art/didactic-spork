@@ -211,6 +211,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     failedTransactions.push({txn, error: 'Invalid transaction format'});
                     continue;
                 }
+                
                 const data = {
                     transaction: txn,
                     comment: commentValue,
@@ -219,54 +220,62 @@ transactionForm.addEventListener('submit', async (e) => {
                     timestamp: Date.now(),
                     performOnLatest: document.getElementById('perform-on-latest').checked
                 };
-                const response = await sendTransactionToServer(data);
                 
-                // Check specifically for not-found status regardless of success flag
-                if (response.status_detail === 'transaction_not_found_in_any_tab') {
-                    // Even though backend considers this "successful automation", treat as failure in UI
+                try {
+                    const response = await sendTransactionToServer(data);
+                    
+                    // Handle network errors or server errors
+                    if (response.status_detail === 'network_error' || !response.success) {
+                        throw new Error(response.message || 'Transaction processing failed');
+                    }
+                    
+                    // Check specifically for not-found status regardless of success flag
+                    if (response.status_detail === 'transaction_not_found_in_any_tab') {
+                        // Even though backend considers this "successful automation", treat as failure in UI
+                        saveTransaction({
+                            transaction: txn,
+                            comment: commentValue,
+                            action: actionValue,
+                            timestamp: data.timestamp,
+                            status: 'failed',
+                            status_detail: response.status_detail,
+                            statusMessage: response.message || 'Transaction not found in any tab',
+                            errorCode: response.errorCode
+                        });
+                        failCount++;
+                        failedTransactions.push({txn, error: 'Transaction not found in any tab'});
+                        continue;
+                    }
+                    
+                    // If we get here, the transaction was successful
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: data.timestamp,
+                        status: response.status_detail || 'success',
+                        statusMessage: response.message,
+                        transactionId: response.transactionId
+                    });
+                    successCount++;
+                    succeededTransactions.push(txn);
+                    
+                } catch (error) {
+                    // Handle network errors or other exceptions
+                    console.error('Error processing transaction:', txn, error);
+                    const errorMessage = error.message || 'Failed to process transaction';
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
                         status: 'failed',
-                        status_detail: response.status_detail, // Store the actual status detail too
-                        statusMessage: response.message || 'Transaction not found in any tab',
-                        errorCode: response.errorCode
+                        status_detail: 'network_error',
+                        statusMessage: errorMessage,
+                        errorCode: 'NETWORK_ERROR'
                     });
                     failCount++;
-                    failedTransactions.push({txn, error: 'Transaction not found in any tab'});
-                }
-                else if (response.success) {
-                    saveTransaction({
-                        transaction: txn,
-                        comment: commentValue,
-                        action: actionValue,
-                        timestamp: data.timestamp,
-                        status: response.status_detail || 'success', // Store detailed status, fallback to 'success'
-                        statusMessage: response.message, 
-                        transactionId: response.transactionId
-                    });
-                    successCount++;
-                    succeededTransactions.push(txn);
-                } else {
-                    // If backend status_detail is 'transaction_not_found_in_any_tab', force status to 'failed'
-                    const failedStatus = response.status_detail === 'transaction_not_found_in_any_tab' ? 'failed' : (response.status_detail || 'failed');
-                    
-                    // Debug output to see what values we're getting from the backend
-                    console.log('Transaction not successful:', txn, 'Status detail:', response.status_detail);
-                    
-                    saveTransaction({
-                        transaction: txn,
-                        comment: commentValue,
-                        action: actionValue,
-                        timestamp: data.timestamp,
-                        status: failedStatus,
-                        statusMessage: response.message || 'Transaction processing failed',
-                        errorCode: response.errorCode
-                    });
-                    failCount++;
-                    failedTransactions.push({txn, error: response.message || 'Transaction processing failed'});
+                    failedTransactions.push({txn, error: errorMessage});
                 }
             }
             // Show summary message

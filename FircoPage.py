@@ -301,11 +301,11 @@ class FircoPage:
         self.page.wait_for_timeout(
             2000
         )  # User-added timeout, consider explicit wait if possible
-        # Assuming search_transaction and verify_search_results adapt to the current tab (History)
-        # If history tab has different search/verify methods, they should be called here.
+        
+        # Clear any existing filters and search for the transaction
+        self.clear_filtered_column()
         self.search_transaction(transaction)
         history_status = self.verify_search_results(transaction)
-        # logging.info(f"History search status: {history_status}") # Replaced by specific outcome logging
 
         if history_status == SearchStatus.FOUND:
             logging.info(
@@ -316,13 +316,29 @@ class FircoPage:
                 "message": f"Transaction {transaction} found in History. No further action taken by this process.",
             }
         elif history_status == SearchStatus.MULTIPLE:
-            logging.error(
-                f"Multiple transactions found for ID: {transaction} in History."
-            )
-            raise TransactionError(
-                f"Multiple transactions found for ID: {transaction} in History. Ambiguous state.",
-                409,
-            )
+            if perform_on_latest:
+                logging.info(
+                    f"Multiple transactions found for ID: {transaction} in History, but 'perform_on_latest' is set. Selecting the latest transaction."
+                )
+                # Click filter menu, descending sort, then first row
+                self.sel.filtered_date_menu_opener.click()
+                self.sel.descending_date.click()
+                # Click the first transaction row
+                self.sel.table.first.click()
+                self.fill_comment_field(comment)
+                self.click_all_hits(True)
+                return {
+                    "status": "action_performed_on_latest_in_history",
+                    "message": f"Action performed on the latest transaction for ID: {transaction} in History.",
+                }
+            else:
+                logging.error(
+                    f"Multiple transactions found for ID: {transaction} in History."
+                )
+                raise TransactionError(
+                    f"Multiple transactions found for ID: {transaction} in History. Ambiguous state.",
+                    409,
+                )
         # If SearchStatus.NONE, proceed to BPM
 
         # 4. Search in BPM page (if not uniquely found in Live, History)

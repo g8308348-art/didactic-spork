@@ -233,8 +233,12 @@ transactionForm.addEventListener('submit', async (e) => {
                     successCount++;
                     succeededTransactions.push(txn);
                 } else {
-                    // If backend status is 'transaction_not_found_in_any_tab', force status to 'failed'
-                    const failedStatus = response.status === 'transaction_not_found_in_any_tab' ? 'failed' : (response.status_detail || 'failed');
+                    // If backend status_detail is 'transaction_not_found_in_any_tab', force status to 'failed'
+                    const failedStatus = response.status_detail === 'transaction_not_found_in_any_tab' ? 'failed' : (response.status_detail || 'failed');
+                    
+                    // Debug output to see what values we're getting from the backend
+                    console.log('Transaction not successful:', txn, 'Status detail:', response.status_detail);
+                    
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,

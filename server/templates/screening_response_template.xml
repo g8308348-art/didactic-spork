@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+    <UPI>{upi_timestamp}</UPI>
+    <Status>Pending</Status>
+    <Timestamp>{timestamp}</Timestamp>
+    <Details>
+        <Name>Test Transaction</Name>
+        <Amount>1000.00</Amount>
+        <Currency>USD</Currency>
+    </Details>
+</root>

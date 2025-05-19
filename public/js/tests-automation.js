@@ -1,0 +1,182 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const testOptions = document.querySelectorAll('input[name="test"]');
+    const generateBtn = document.getElementById('generate-btn');
+    const uploadBtn = document.getElementById('upload-btn');
+    const statusDiv = document.getElementById('status');
+    const generatedFilesDiv = document.getElementById('generated-files');
+    const customFieldsDiv = document.getElementById('custom-fields');
+    
+    // State
+    let currentTest = null;
+    let generatedFiles = [];
+    let currentOutputDir = '';
+    
+    // Event Listeners
+    testOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            currentTest = this.value;
+            updateCustomFields();
+            clearStatus();
+            generatedFilesDiv.innerHTML = '';
+            uploadBtn.disabled = true;
+        });
+    });
+    
+    generateBtn.addEventListener('click', generateTestFiles);
+    uploadBtn.addEventListener('click', uploadToMtex);
+    
+    // Initialize
+    updateCustomFields();
+    
+    // Main Functions
+    async function generateTestFiles() {
+        if (!currentTest) {
+            showStatus('Please select a test first', 'error');
+            return;
+        }
+        
+        try {
+            console.log('Starting file generation...');
+            showStatus('Generating test files...', 'info');
+            generateBtn.disabled = true;
+            
+            const requestBody = {
+                testName: currentTest,
+                placeholders: {}
+            };
+            
+            console.log('Sending request:', {
+                url: 'http://localhost:8080/api/generate-test-files',
+                method: 'POST',
+                body: requestBody
+            });
+            
+            const response = await fetch('http://localhost:8080/api/generate-test-files', {
+                method: 'POST',
+                mode: 'cors',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                let errorMsg = `HTTP error! Status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    errorMsg = errorData.error || errorMsg;
+                } catch (e) {
+                    const text = await response.text();
+                    console.error('Failed to parse error response:', e, 'Response text:', text);
+                    errorMsg = `${errorMsg} - ${text || 'No details provided'}`;
+                }
+                throw new Error(errorMsg);
+            }
+            
+            const result = await response.json().catch(e => {
+                console.error('Failed to parse JSON response:', e);
+                throw new Error('Invalid response from server');
+            });
+            
+            console.log('Response data:', result);
+            
+            if (result && result.success) {
+                generatedFiles = Array.isArray(result.files) ? result.files : [];
+                currentOutputDir = result.outputDir || '';
+                showGeneratedFiles(generatedFiles);
+                showStatus('Test files generated successfully!', 'success');
+                uploadBtn.disabled = false;
+            } else {
+                throw new Error(result.error || 'Failed to generate test files');
+            }
+        } catch (error) {
+            const errorMsg = error.message || 'An unknown error occurred';
+            console.error('Error generating test files:', errorMsg, error);
+            showStatus(`Error: ${errorMsg}`, 'error');
+        } finally {
+            generateBtn.disabled = false;
+        }
+    }
+    
+    async function uploadToMtex() {
+        if (generatedFiles.length === 0) {
+            showStatus('No files to upload', 'error');
+            return;
+        }
+        
+        try {
+            showStatus('Uploading files to MTex...', 'info');
+            uploadBtn.disabled = true;
+            
+            // Simulate upload process
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            showStatus('Files uploaded to MTex successfully!', 'success');
+        } catch (error) {
+            console.error('Upload error:', error);
+            showStatus(`Upload failed: ${error.message}`, 'error');
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    }
+    
+    // Helper Functions
+    function updateCustomFields() {
+        customFieldsDiv.innerHTML = '';
+        
+        if (!currentTest) return;
+        
+        const templateInfo = document.createElement('div');
+        templateInfo.className = 'info';
+        templateInfo.textContent = `Selected test: ${currentTest}`;
+        customFieldsDiv.appendChild(templateInfo);
+    }
+    
+    function showGeneratedFiles(files) {
+        generatedFilesDiv.innerHTML = '<h3>Generated Files:</h3>';
+        
+        if (!files || files.length === 0) {
+            generatedFilesDiv.innerHTML += '<p>No files were generated.</p>';
+            return;
+        }
+        
+        const container = document.createElement('div');
+        container.className = 'file-list';
+        
+        files.forEach(file => {
+            if (!file) return;
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const fileName = file.split('/').pop();
+            const fileUrl = `http://localhost:8080/${file}`;
+            
+            const link = document.createElement('a');
+            link.href = fileUrl;
+            link.textContent = fileName;
+            link.target = '_blank';
+            
+            fileItem.appendChild(link);
+            container.appendChild(fileItem);
+        });
+        
+        generatedFilesDiv.appendChild(container);
+    }
+    
+    function showStatus(message, type = 'info') {
+        statusDiv.textContent = message;
+        statusDiv.className = type;
+    }
+    
+    function clearStatus() {
+        statusDiv.textContent = '';
+        statusDiv.className = '';
+    }
+});

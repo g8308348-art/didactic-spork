@@ -1,7 +1,10 @@
 import logging
+import os
+import time
+from collections import namedtuple
+from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from enum import Enum, auto
 from bpm import (
     map_transaction_type_to_option,
     perform_login_and_setup,
@@ -141,49 +144,94 @@ class FircoPage:
             }
         print("logging out from Firco")
         self.sel.logout.click()  # logout from Firco
-        try:
-            page = self.page
-            bpm_page = BPMPage(page)
-            options_to_check = map_transaction_type_to_option(transaction_type)
-            if not options_to_check:
-                logging.warning(
-                    f"Unknown or missing BPM option for transaction type: {transaction_type}"
-                )
-            perform_login_and_setup(bpm_page)
-            select_options_and_submit(bpm_page, page, options_to_check)
+
+        # Add retry mechanism for BPM page loading issues
+        max_retries = 2
+        retry_count = 0
+
+        while retry_count <= max_retries:
             try:
-                fourth_column_value, last_column_value = handle_dropdown_and_search(
-                    bpm_page, page, transaction
-                )
-                logging.info(
-                    f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
-                )
-                if (
-                    fourth_column_value == "PostedTxtnToFirco"
-                    or last_column_value == "WARNING"
-                ):
+                page = self.page
+                bpm_page = BPMPage(page)
+                options_to_check = map_transaction_type_to_option(transaction_type)
+                if not options_to_check:
+                    logging.warning(
+                        f"Unknown or missing BPM option for transaction type: {transaction_type}"
+                    )
+
+                # Attempt to perform BPM operations
+                perform_login_and_setup(bpm_page)
+                select_options_and_submit(bpm_page, page, options_to_check)
+
+                try:
+                    fourth_column_value, last_column_value = handle_dropdown_and_search(
+                        bpm_page, page, transaction
+                    )
+                    logging.info(
+                        f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
+                    )
+                    if (
+                        fourth_column_value == "PostedTxtnToFirco"
+                        or last_column_value == "WARNING"
+                    ):
+                        return {
+                            "status": "failed_in_bpm",
+                            "message": f"Transaction {transaction} failed in BPM.",
+                            "details": {
+                                "fourth_column": fourth_column_value,
+                                "last_column": last_column_value,
+                            },
+                        }
                     return {
-                        "status": "failed_in_bpm",
-                        "message": f"Transaction {transaction} failed in BPM.",
+                        "status": "found_in_bpm",
+                        "message": f"Transaction {transaction} found in BPM.",
                         "details": {
                             "fourth_column": fourth_column_value,
                             "last_column": last_column_value,
                         },
                     }
-                return {
-                    "status": "found_in_bpm",
-                    "message": f"Transaction {transaction} found in BPM.",
-                    "details": {
-                        "fourth_column": fourth_column_value,
-                        "last_column": last_column_value,
-                    },
-                }
-            except Exception as search_exc:
-                logging.info(
-                    f"Transaction {transaction} not found in BPM: {search_exc}"
-                )
-        except Exception as e:
-            logging.error(f"Error during BPM search for {transaction}: {e}")
+                except Exception as search_exc:
+                    logging.info(
+                        f"Transaction {transaction} not found in BPM: {search_exc}"
+                    )
+                    # Exit retry loop if this is a normal "not found" scenario
+                    if "not visible" in str(search_exc).lower():
+                        break
+                    raise  # Re-raise to be caught by outer try/except for retry logic
+
+            except Exception as e:
+                error_message = str(e).lower()
+                logging.error(f"Error during BPM search for {transaction}: {e}")
+
+                # Check if error is related to page reload/timeout issues
+                if "timeout" in error_message or "reload" in error_message or retry_count < max_retries:
+                    retry_count += 1
+                    logging.warning(f"BPM page appears to be in a reload loop or timed out. Retry attempt {retry_count}/{max_retries}")
+
+                    # Close and recreate browser context before retrying
+                    try:
+                        # Close any existing contexts
+                        context = page.context
+                        browser = context.browser
+                        context.close()
+
+                        # Create a new context and page
+                        context = browser.new_context()
+                        self.page = context.new_page()
+                        logging.info("Successfully reset browser context for retry")
+                    except Exception as browser_error:
+                        logging.error(f"Error resetting browser: {browser_error}")
+
+                    # Wait before retrying
+                    time.sleep(3)
+                    continue
+                else:
+                    # Not a timeout/reload issue, break the retry loop
+                    break
+
+            # If we got here without errors, break the retry loop
+            break
+
         logging.info(
             f"Transaction {transaction} not found in Live Messages, History, or BPM."
         )

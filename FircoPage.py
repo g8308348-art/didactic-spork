@@ -173,6 +173,7 @@ class FircoPage:
                     if (
                         fourth_column_value == "PostedTxtnToFirco"
                         or last_column_value == "WARNING"
+                        or last_column_value == "FAILURE"
                     ):
                         return {
                             "status": "failed_in_bpm",

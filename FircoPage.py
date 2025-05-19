@@ -142,6 +142,25 @@ class FircoPage:
                 "status": "transaction_type_not_defined",
                 "message": "Transaction type was not defined, BPM search was skipped.",
             }
+        
+        # First check if the current transaction has FAILURE status without logging out
+        try:
+            # Check if there's a status element with FAILURE text visible on the page
+            failure_element = self.page.locator("text=FAILURE").first
+            if failure_element.is_visible():
+                logging.info(f"Transaction {transaction} has FAILURE status in Firco UI")
+                return {
+                    "status": "failed_in_bpm",
+                    "message": f"Transaction {transaction} failed with FAILURE status.",
+                    "details": {
+                        "fourth_column": "Unknown",
+                        "last_column": "FAILURE",
+                    },
+                }
+        except Exception as e:
+            logging.info(f"No FAILURE status found on page: {e}")
+        
+        # If we reach here, we need to proceed with BPM check, so logout from Firco
         print("logging out from Firco")
         self.sel.logout.click()  # logout from Firco
 

@@ -51,15 +51,23 @@ def select_options_and_submit(bpm_page: BPMPage, page: Page, options_to_check):
 
 
 def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for: str):
-    bpm_page.select_all_from_dropdown()
-    page.wait_for_timeout(2000)
-    bpm_page.wait_for_page_to_load()
+    try:
+        bpm_page.select_all_from_dropdown()
+        page.wait_for_timeout(2000)
+        bpm_page.wait_for_page_to_load()
 
-    fourth_column_value, last_column_value = bpm_page.look_for_number(
-        number_to_look_for
-    )
-    logging.info(f"4th Column Value: {fourth_column_value}")
-    logging.info(f"Last Column Value: {last_column_value}")
+        fourth_column_value, last_column_value = bpm_page.look_for_number(
+            number_to_look_for
+        )
+        logging.info(f"4th Column Value: {fourth_column_value}")
+        logging.info(f"Last Column Value: {last_column_value}")
+        
+        # Return the values so they can be unpacked by the calling function
+        return fourth_column_value, last_column_value
+    except Exception as e:
+        logging.error(f"Error in handle_dropdown_and_search: {e}")
+        # Return default values when the number is not found
+        return "NotFound", "NotFound"
 
 
 # --- Main Script ---

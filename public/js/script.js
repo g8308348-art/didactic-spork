@@ -531,6 +531,10 @@ function loadTransactions() {
 
         // Determine status display based on detailed status
         switch (transaction.status) {
+            case 'No action':
+                statusText = 'No action';
+                statusClass += ' no-action'; // Light blue for no action
+                break;
             case 'action_performed_on_live':
                 statusText = 'Success';
                 statusClass += ' success-live'; // Happy path green

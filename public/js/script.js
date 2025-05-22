@@ -207,13 +207,34 @@ transactionForm.addEventListener('submit', async (e) => {
             // Parse transactions (comma-separated values)
             const transactionsArray = transactionsValue.split(',').map(t => t.trim()).filter(t => t);
             
+            // Cache stored transactions for lookup
+            const storedTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+            const noActionLocal = [];
+            
             let successCount = 0;
             let failCount = 0;
             let failedTransactions = [];
             let succeededTransactions = [];
-            let transactionIds = [];
             
             for (const txn of transactionsArray) {
+                // Skip if previously processed (history or BPM), no reprocessing
+                const saved = storedTxns.find(t =>
+                    t.transaction === txn || t.transactionId === txn
+                );
+                if (saved) {
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: Date.now(),
+                        status: 'No action',
+                        status_detail: 'already_handled',
+                        statusMessage: 'Already handled'
+                    });
+                    noActionLocal.push(txn);
+                    continue;
+                }
+                
                 // Validate each transaction again for safety
                 if (!validateTransactions(txn)) {
                     failCount++;
@@ -269,7 +290,6 @@ transactionForm.addEventListener('submit', async (e) => {
                     });
                     successCount++;
                     succeededTransactions.push(txn);
-                    transactionIds.push(response.transactionId);
                     
                 } catch (error) {
                     // Handle network errors or other exceptions
@@ -295,27 +315,21 @@ transactionForm.addEventListener('submit', async (e) => {
             if (failCount > 0) {
                 summary += '<br>Failed: ' + failedTransactions.map(f => `${escapeHtml(f.txn)} (${escapeHtml(f.error)})`).join(', ');
             }
-            // Check if any transaction has 'transaction_not_found_in_any_tab' status
+            // Determine if any 'not found' for styling
             const hasNotFoundTransactions = transactionsArray.some(txn => {
-                const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
-                    .find(t => t.transaction === txn || t.transactionId === txn);
+                const normalizedTxn2 = txn.trim().toLowerCase();
+                const savedTxn = storedTxns.find(t => {
+                    const tTxn2 = t.transaction ? t.transaction.trim().toLowerCase() : '';
+                    const tid2 = t.transactionId ? t.transactionId.trim().toLowerCase() : '';
+                    return tTxn2 === normalizedTxn2 || tid2 === normalizedTxn2;
+                });
                 return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
             });
-            
-            // Determine which transactions had no action (history or BPM)
-            const noActionTxns = transactionsArray.filter(txn => {
-                const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
-                    .find(t => t.transaction === txn || t.transactionId === txn);
-                return savedTxn && (savedTxn.status_detail === 'already_handled' || savedTxn.status_detail === 'found_in_bpm' || savedTxn.status === 'already_handled' || savedTxn.status === 'found_in_bpm');
-            });
-
-            if (noActionTxns.length > 0 && failCount === 0) {
-                submissionStatus.innerHTML = `No action taken for transaction${noActionTxns.length > 1 ? 's' : ''} ${noActionTxns.join(', ')}`;
+            // If all transactions were skipped (no success/fail), show no-action only
+            if (noActionLocal.length === transactionsArray.length && successCount === 0 && failCount === 0) {
+                submissionStatus.innerHTML = `No action taken for transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}`;
                 submissionStatus.className = 'submission-status no-action';
             } else {
-                if (transactionIds.length > 0) {
-                    summary += `<br>Transaction ID(s): ${transactionIds.join(', ')}`;
-                }
                 submissionStatus.innerHTML = summary;
                 submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
                     ? 'submission-status success'

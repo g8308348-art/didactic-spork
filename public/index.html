@@ -15,7 +15,7 @@
             </div>
             <div class="nav-links">
                 <a href="#transaction-form" class="nav-link active">Transaction Form</a>
-                <a href="#transaction-history" class="nav-link">Transaction History</a>
+                <a href="#transaction-history" class="nav-link">Transactions History</a>
             </div>
             <div class="theme-toggle">
                 <button id="theme-toggle-btn" aria-label="Toggle dark mode">
@@ -33,7 +33,7 @@
                     <div class="form-group">
                         <div class="transaction-row">
     <div class="transaction-input-col">
-        <label for="transactions" class="transaction-details-label">Transaction details:</label>
+        <label for="transactions" class="transaction-details-label">Transaction number:</label>
         <input 
             type="text" 
             id="transactions" 
@@ -43,10 +43,9 @@
         >
     </div>
     <div class="transaction-type-col">
-        <label for="transaction-type" class="transaction-type-label">Transaction type</label>
+        <label for="transaction-type" class="transaction-type-label">Market:</label>
         <select id="transaction-type" name="transaction-type" required>
-    <option value="" disabled selected>Select transaction type</option>
-    <option value="UNCLASSIFIED">Unclassified</option>
+    <option value="" disabled selected>Select</option>
     <option value="APS_MT">APS-MT</option>
     <option value="BESS_MT">BESS-MT</option>
     <option value="CBPR_MX">CBPR-MX</option>
@@ -62,7 +61,6 @@
     <option value="SEPA_INSTANT">SEPA-Instant</option>
     <option value="TAIWAN_MX">Taiwan-MX</option>
     <option value="T2S_MX">T2S-MX</option>
-    <option value="TSF_TRIGGER">TSF-TRIGGER</option>
 </select>
 <small class="error-message" id="transaction-type-error"></small>
 
@@ -70,10 +68,7 @@
                         <small class="error-message" id="transactions-error"></small>
                     </div>
 
-                    <div class="form-group">
-                        <input type="checkbox" id="perform-on-latest" name="perform-on-latest" class="inline-checkbox" checked style="margin-right: 8px;">
-                        <label for="perform-on-latest" style="display: inline-block;">Perform action on the latest transaction</label>
-                    </div>
+                    <!-- Removed perform-on-latest checkbox block as always applied -->
 
                     <div class="form-group">
                         <label for="comment">Comment (optional):</label>

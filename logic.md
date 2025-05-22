@@ -1,74 +1,121 @@
-# Transaction Processing Flow (as of 2025-04-15)
+## MURDOCK Transaction Processing Tool - Logic Documentation
 
-## Key Files
-- `main_logic.py`: Orchestrates the transaction processing workflow.
-- `FircoPage.py`: Page Object for Firco UI automation, including search and row interaction logic.
+### Overview
+The MURDOCK Transaction Processing Tool is a web-based application that automates the processing of financial transactions. It provides a user interface for submitting transactions, processes them through a server endpoint, and maintains a history of processed transactions in the browser's local storage.
+
+### Key Components
+
+#### 1. Frontend (JavaScript)
+- **script.js**: Main application logic
+- **index.html**: User interface
+- **style.css**: Styling
+
+#### 2. Backend (Server-Side)
+- API endpoint at `http://localhost:8080/api` for transaction processing
+
+### Transaction Processing Flow
+
+#### 1. Form Submission
+1. User enters transaction details in the form:
+   - Transaction numbers (comma-separated)
+   - Comment (optional, defaults to 'RTPS')
+   - Action (Release, STP-Release, Block, Reject)
+   - Transaction Type (various market types)
+
+2. Form Validation:
+   - **Transactions**: Must be alphanumeric with commas/spaces
+   - **Comment**: Max 250 chars, no SQL injection patterns
+   - **Action**: Must be one of the valid actions
+   - **Transaction Type**: Must be selected
+
+#### 2. Transaction Processing
+1. **Initial Checks**:
+   - Split input into individual transactions
+   - Check each transaction against local storage for previous processing
+   - Skip if already processed successfully (unless previously failed)
+
+2. **Server Communication**:
+   - Send transaction to `/api` endpoint via POST request
+   - Handle response with success/failure status
+   - Process response and update UI accordingly
+
+3. **Status Handling**:
+   - **Success**: Transaction processed successfully
+   - **No Action**: Transaction already processed
+   - **Failed**: Transaction processing failed
+   - **Not Found**: Transaction not found in any tab
+
+#### 3. Status Types and Handling
+
+| Status | Description | UI Display |
+|--------|-------------|------------|
+| `action_performed_on_live` | Successfully processed in live tab | Success (Green) |
+| `escalated` | Transaction required escalation | Success (Escalated) |
+| `already_handled` | Found in history/BPM | No Action (Blue) |
+| `found_in_bpm` | Found in BPM | No Action (Blue) |
+| `found_in_sanctions_bypass` | Processed via sanctions bypass | Success (Sanctions) |
+| `transaction_not_found_in_any_tab` | Transaction not found | Failed (Red) |
+| `failed` | General failure | Failed (Red) |
+
+#### 4. Local Storage
+- Stores transaction history with:
+  - Transaction ID/number
+  - Action taken
+  - Timestamp
+  - Status and status details
+  - Error messages (if any)
+
+### Error Handling
+
+#### Client-Side Errors
+- **Validation Errors**: Displayed inline with form fields
+- **Network Errors**: Shown in submission status area
+- **Processing Errors**: Individual transaction failures shown in results
+
+#### Server-Side Errors
+- Returned as JSON with status codes
+- Displayed in the submission status area
+
+### Security Considerations
+
+1. **Input Sanitization**:
+   - All user inputs are validated
+   - HTML escaping to prevent XSS
+   - SQL injection patterns blocked in comments
+
+2. **Data Storage**:
+   - Transactions stored in browser's localStorage
+   - No sensitive data should be stored in comments
+
+### Performance Considerations
+
+1. **Batch Processing**:
+   - Multiple transactions processed sequentially
+   - UI updates after each transaction
+
+2. **Local Storage**:
+   - All transactions stored in localStorage
+   - Filtering and searching done client-side
+
+### Testing and Debugging
+
+#### Test Cases
+1. **Happy Path**:
+   - Single valid transaction
+   - Multiple valid transactions
+   - Transactions with comments
+
+2. **Error Cases**:
+   - Invalid transaction format
+   - Server errors
+   - Network failures
+   - Duplicate transactions
+
+#### Debugging
+- Console logs for key operations
+- Detailed error messages in UI
+- Network tab for API request/response inspection
 
 ---
 
-## Current Flow
-
-### 1. Parse and Prepare
-- Parse transaction details from the input txt file.
-- Prepare output folder structure.
-- Connect to browser and open a new page.
-
-### 2. Login as User
-- Login to Firco as the initial user.
-
-### 3. Transaction Search & Verification
-- Create a `FircoPage` object.
-- Call `verify_search_results(transaction)`:
-    - Checks for the transaction in the main tab.
-    - If not found, switches to the history tab and searches again.
-    - Returns:
-        - `'main'` if found in the main tab.
-        - `'history'` if found only in the history tab.
-        - Raises `TransactionError` if not found at all.
-- **If found in main tab:**
-    - Call `click_transaction_row_if_single()`:
-        - Clicks the row only if exactly one result is present in the main tab.
-- **If found in history tab:**
-    - Return early with a message: "Transaction already processed (found in history tab)."
-    - We should not process this transaction further.
-    - We should get out from process_firco_transaction with success
-- **If not found:**
-    - Return early with error details from `TransactionError`.
-
-### 4. Transaction Processing (if found in main tab)
-- If action is not `STP-Release`:
-    - Call `process_firco_transaction(..., needs_escalation=True)` (handles escalation flow).
-- Else:
-    - Call `process_firco_transaction(...)` directly.
-- If escalation was performed:
-    - Login as manager and process the transaction again.
-
-### 5. Post-Processing
-- Move screenshots to the appropriate folder.
-- Handle any exceptions in screenshot moving.
-
----
-
-## Key Logic in `FircoPage.py`
-- `verify_search_results(transaction)`:
-    - Only checks for presence/location; does not click rows or perform actions.
-- `click_transaction_row_if_single()`:
-    - Clicks the transaction row only if exactly one row is present in the main tab.
-- No row clicking or comment filling occurs on the history tab.
-
----
-
-## Error Handling
-- If transaction is only found in history tab, no further processing occurs.
-- If transaction is not found at all, an error is returned immediately.
-- All UI actions are guarded by presence/location checks to avoid timeouts and UI errors.
-
----
-
-## Outstanding Issues/Notes
-- If further processing is attempted on the history tab, a logic error exists and must be fixed so that the early return is respected.
-- Any changes to page structure or tab logic should be reflected in both `main_logic.py` and `FircoPage.py`.
-
----
-
-_Last updated: 2025-04-15 by Cascade AI assistant._
+_Last updated: 2025-05-22 by Cascade AI assistant._

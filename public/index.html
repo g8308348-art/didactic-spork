@@ -72,13 +72,15 @@
                     <br />
                     <div class="form-group">
                         <label for="comment">Comment (optional):</label>
-                        <textarea 
+                        <input 
+                            type="text"
                             id="comment" 
                             name="comment" 
-                            placeholder="Add a comment (max 250 characters)" 
+                            placeholder="You can add a comment (max 250 characters). Default is MURDOCK." 
                             maxlength="250"
-                        ></textarea>
-                        <small class="char-count"><span id="comment-char-count">0</span>/250</small>
+                            class="comment-input"
+                        >
+                        <small class="char-count"><span id="comment-char-count">7</span>/250</small>
                         <small class="error-message" id="comment-error"></small>
                     </div>
 

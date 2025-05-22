@@ -178,7 +178,7 @@ transactionForm.addEventListener('submit', async (e) => {
     transactionsValue = transactionsValue.replace(/ +/g, ' ').trim();
     let commentValue = commentInput.value.trim();
     if (!commentValue) {
-        commentValue = 'RTPS';
+        commentValue = 'MURDOCK';
     }
     const rawActionValue = actionSelect.value;
     const transactionTypeValue = transactionTypeSelect.value;
@@ -329,7 +329,7 @@ transactionForm.addEventListener('submit', async (e) => {
             });
             // If all transactions were skipped (no success/fail), show no-action only
             if (noActionLocal.length === transactionsArray.length && successCount === 0 && failCount === 0) {
-                submissionStatus.innerHTML = `No action taken for transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}`;
+                submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}. Found in history tab.`;
                 submissionStatus.className = 'submission-status no-action';
             } else {
                 submissionStatus.innerHTML = summary;

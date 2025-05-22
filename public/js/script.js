@@ -54,18 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
             section.style.display = 'none';
         }
     });
-    
-    // Check history for no-action entries and show status on form
-    const stored = JSON.parse(localStorage.getItem('transactions') || '[]');
-    const hasInitialNoAction = stored.some(t =>
-        t.status_detail === 'already_handled' || t.status_detail === 'found_in_bpm' ||
-        t.status === 'already_handled' || t.status === 'found_in_bpm'
-    );
-    if (hasInitialNoAction) {
-        submissionStatus.innerHTML = 'No action';
-        submissionStatus.className = 'submission-status no-action';
-        submissionStatus.style.display = 'block';
-    }
 });
 
 // Navigation links
@@ -223,6 +211,7 @@ transactionForm.addEventListener('submit', async (e) => {
             let failCount = 0;
             let failedTransactions = [];
             let succeededTransactions = [];
+            let transactionIds = [];
             
             for (const txn of transactionsArray) {
                 // Validate each transaction again for safety
@@ -280,6 +269,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     });
                     successCount++;
                     succeededTransactions.push(txn);
+                    transactionIds.push(response.transactionId);
                     
                 } catch (error) {
                     // Handle network errors or other exceptions
@@ -312,17 +302,20 @@ transactionForm.addEventListener('submit', async (e) => {
                 return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
             });
             
-            // Determine if any 'No action' transactions (history or BPM)
-            const hasNoActionTransactions = transactionsArray.some(txn => {
+            // Determine which transactions had no action (history or BPM)
+            const noActionTxns = transactionsArray.filter(txn => {
                 const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
                     .find(t => t.transaction === txn);
-                return savedTxn && (savedTxn.status_detail === 'already_handled' || savedTxn.status_detail === 'found_in_bpm');
+                return savedTxn && (savedTxn.status_detail === 'already_handled' || savedTxn.status_detail === 'found_in_bpm' || savedTxn.status === 'already_handled' || savedTxn.status === 'found_in_bpm');
             });
 
-            if (hasNoActionTransactions && failCount === 0) {
-                submissionStatus.innerHTML = 'No action';
+            if (noActionTxns.length > 0 && failCount === 0) {
+                submissionStatus.innerHTML = `No action taken for transaction${noActionTxns.length > 1 ? 's' : ''} ${noActionTxns.join(', ')}`;
                 submissionStatus.className = 'submission-status no-action';
             } else {
+                if (transactionIds.length > 0) {
+                    summary += `<br>Transaction ID(s): ${transactionIds.join(', ')}`;
+                }
                 submissionStatus.innerHTML = summary;
                 submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
                     ? 'submission-status success'

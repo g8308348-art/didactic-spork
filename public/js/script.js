@@ -298,14 +298,14 @@ transactionForm.addEventListener('submit', async (e) => {
             // Check if any transaction has 'transaction_not_found_in_any_tab' status
             const hasNotFoundTransactions = transactionsArray.some(txn => {
                 const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
-                    .find(t => t.transaction === txn);
+                    .find(t => t.transaction === txn || t.transactionId === txn);
                 return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
             });
             
             // Determine which transactions had no action (history or BPM)
             const noActionTxns = transactionsArray.filter(txn => {
                 const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
-                    .find(t => t.transaction === txn);
+                    .find(t => t.transaction === txn || t.transactionId === txn);
                 return savedTxn && (savedTxn.status_detail === 'already_handled' || savedTxn.status_detail === 'found_in_bpm' || savedTxn.status === 'already_handled' || savedTxn.status === 'found_in_bpm');
             });
 

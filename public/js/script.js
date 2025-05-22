@@ -535,7 +535,7 @@ function loadTransactions() {
             tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;
         }
         
-        statusHtml = `<span class="${statusClass}"${tooltip ? ` title="${tooltip}"` : ''}>${escapeHtml(statusText)}</span>`;
+        statusHtml = `<span class='${statusClass}'${tooltip ? ` data-tooltip='${tooltip}'` : ''}>${escapeHtml(statusText)}</span>`;
         
         row.innerHTML = `
             <td>${formattedDate}</td>

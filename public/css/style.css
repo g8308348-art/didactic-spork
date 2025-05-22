@@ -329,6 +329,48 @@ tbody tr:hover {
   color: var(--text-color);
 }
 
+.status-badge[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+.status-badge[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.status-badge[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: 115%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.status-badge[data-tooltip]:hover::after,
+.status-badge[data-tooltip]:hover::before {
+  opacity: 1;
+}
+
 .status-badge.success-live,
 .status-badge.success { /* Fallback for existing 'success' if any */
   background-color: var(--secondary-color); /* Standard green for happy path */
@@ -417,9 +459,6 @@ footer {
   width: 100%;
   min-width: 90px;
 }
-
-
-
 
 /* Responsive Styles */
 @media (max-width: 768px) {

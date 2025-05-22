@@ -46,6 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load any existing transactions
     loadTransactions();
+    
+    // Hide all sections except the first one
+    const sections = document.querySelectorAll('.section');
+    sections.forEach((section, index) => {
+        if (index !== 0) {
+            section.style.display = 'none';
+        }
+    });
+    
+    // Check history for no-action entries and show status on form
+    const stored = JSON.parse(localStorage.getItem('transactions') || '[]');
+    const hasInitialNoAction = stored.some(t => t.status_detail === 'already_handled' || t.status_detail === 'found_in_bpm');
+    if (hasInitialNoAction) {
+        submissionStatus.innerHTML = 'No action';
+        submissionStatus.className = 'submission-status no-action';
+        submissionStatus.style.display = 'block';
+    }
 });
 
 // Navigation links
@@ -254,6 +271,7 @@ transactionForm.addEventListener('submit', async (e) => {
                         action: actionValue,
                         timestamp: data.timestamp,
                         status: response.status_detail || 'success',
+                        status_detail: response.status_detail || 'success',
                         statusMessage: response.message,
                         transactionId: response.transactionId
                     });
@@ -575,14 +593,3 @@ function escapeHtml(unsafe) {
 // Filter and search functionality
 filterAction.addEventListener('change', loadTransactions);
 searchTransactions.addEventListener('input', loadTransactions);
-
-// Initialize - show only the transaction form section initially
-document.addEventListener('DOMContentLoaded', () => {
-    // Hide all sections except the first one
-    const sections = document.querySelectorAll('.section');
-    sections.forEach((section, index) => {
-        if (index !== 0) {
-            section.style.display = 'none';
-        }
-    });
-});

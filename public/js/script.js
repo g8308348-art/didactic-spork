@@ -572,6 +572,10 @@ function loadTransactions() {
         let tooltip = '';
         if (transaction.statusMessage) {
             tooltip = escapeHtml(transaction.statusMessage);
+        } else if (transaction.status === 'No action' || 
+                  transaction.status === 'already_handled' || 
+                  transaction.status === 'found_in_bpm') {
+            tooltip = 'Transaction was found in history or BPM';
         }
         if (transaction.status === 'failed' && transaction.errorCode) {
             tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;

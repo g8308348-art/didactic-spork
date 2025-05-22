@@ -613,3 +613,68 @@ function escapeHtml(unsafe) {
 // Filter and search functionality
 filterAction.addEventListener('change', loadTransactions);
 searchTransactions.addEventListener('input', loadTransactions);
+
+// Setup custom tooltip functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Create tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.id = 'custom-tooltip';
+    tooltip.style.position = 'fixed';
+    tooltip.style.display = 'none';
+    tooltip.style.backgroundColor = 'white';
+    tooltip.style.color = 'black';
+    tooltip.style.padding = '8px 12px';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+    tooltip.style.border = '1px solid #ddd';
+    tooltip.style.zIndex = '9999';
+    tooltip.style.maxWidth = '300px';
+    tooltip.style.textAlign = 'center';
+    
+    // Create tooltip arrow
+    const arrow = document.createElement('div');
+    arrow.id = 'tooltip-arrow';
+    arrow.style.position = 'fixed';
+    arrow.style.display = 'none';
+    arrow.style.width = '0';
+    arrow.style.height = '0';
+    arrow.style.borderLeft = '8px solid transparent';
+    arrow.style.borderRight = '8px solid transparent';
+    arrow.style.borderTop = '8px solid white';
+    arrow.style.zIndex = '9999';
+    document.body.appendChild(tooltip);
+    document.body.appendChild(arrow);
+    
+    // Show tooltip on mouseover
+    document.body.addEventListener('mouseover', function(e) {
+        const target = e.target.closest('.status-badge[data-tooltip]');
+        if (!target) return;
+        
+        const tooltipText = target.getAttribute('data-tooltip');
+        if (!tooltipText) return;
+        
+        tooltip.textContent = tooltipText;
+        tooltip.style.display = 'block';
+        arrow.style.display = 'block';
+        
+        // Position the tooltip above the badge
+        const rect = target.getBoundingClientRect();
+        const tooltipLeft = rect.left + rect.width/2 - tooltip.offsetWidth/2;
+        const tooltipTop = rect.top - tooltip.offsetHeight - 10;
+        
+        tooltip.style.left = tooltipLeft + 'px';
+        tooltip.style.top = tooltipTop + 'px';
+        
+        // Position arrow below tooltip
+        arrow.style.left = (rect.left + rect.width/2 - 8) + 'px';
+        arrow.style.top = (tooltipTop + tooltip.offsetHeight) + 'px';
+    });
+    
+    // Hide tooltip on mouseout
+    document.body.addEventListener('mouseout', function(e) {
+        const target = e.target.closest('.status-badge[data-tooltip]');
+        if (!target) return;
+        tooltip.style.display = 'none';
+        arrow.style.display = 'none';
+    });
+});

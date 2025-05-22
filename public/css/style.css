@@ -335,53 +335,17 @@ tbody tr:hover {
   display: inline-block;
 }
 
-.status-badge[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: white;
-  color: black;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  z-index: 9999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease-in-out;
-  min-width: 150px;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  border: 1px solid #ddd;
-  max-width: 300px;
-  word-wrap: break-word;
-  white-space: normal;
+/* Container to properly handle tooltips */
+.table-container {
+  position: relative;
+  overflow-x: auto;
 }
 
-.status-badge[data-tooltip]::before {
-  content: '';
-  position: absolute;
-  bottom: 115%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 8px 8px 0 8px;
-  border-style: solid;
-  border-color: white transparent transparent transparent;
-  z-index: 9999;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-}
+/* Tooltips now handled by JavaScript */
 
-.status-badge[data-tooltip]:hover::after,
-.status-badge[data-tooltip]:hover::before,
-.status-badge[data-tooltip]:focus::after,
-.status-badge[data-tooltip]:focus::before {
-  opacity: 1;
-  visibility: visible;
-}
+/* Tooltip arrow now handled by JavaScript */
+
+/* Tooltip hover effects now handled by JavaScript */
 
 .status-badge.success-live,
 .status-badge.success { /* Fallback for existing 'success' if any */

@@ -291,12 +291,22 @@ transactionForm.addEventListener('submit', async (e) => {
                 return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
             });
             
-            submissionStatus.innerHTML = summary;
-            
-            // Show error styling if any transactions failed OR if any had 'not found' status
-            submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions) 
-                ? 'submission-status success' 
-                : 'submission-status error';
+            // Determine if any 'No action' transactions (history or BPM)
+            const hasNoActionTransactions = transactionsArray.some(txn => {
+                const savedTxn = JSON.parse(localStorage.getItem('transactions') || '[]')
+                    .find(t => t.transaction === txn);
+                return savedTxn && (savedTxn.status_detail === 'already_handled' || savedTxn.status_detail === 'found_in_bpm');
+            });
+
+            if (hasNoActionTransactions && failCount === 0) {
+                submissionStatus.innerHTML = 'No action';
+                submissionStatus.className = 'submission-status no-action';
+            } else {
+                submissionStatus.innerHTML = summary;
+                submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
+                    ? 'submission-status success'
+                    : 'submission-status error';
+            }
             
             // Reset form
             transactionForm.reset();

@@ -57,7 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Check history for no-action entries and show status on form
     const stored = JSON.parse(localStorage.getItem('transactions') || '[]');
-    const hasInitialNoAction = stored.some(t => t.status_detail === 'already_handled' || t.status_detail === 'found_in_bpm');
+    const hasInitialNoAction = stored.some(t =>
+        t.status_detail === 'already_handled' || t.status_detail === 'found_in_bpm' ||
+        t.status === 'already_handled' || t.status === 'found_in_bpm'
+    );
     if (hasInitialNoAction) {
         submissionStatus.innerHTML = 'No action';
         submissionStatus.className = 'submission-status no-action';

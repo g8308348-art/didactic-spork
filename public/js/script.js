@@ -217,11 +217,13 @@ transactionForm.addEventListener('submit', async (e) => {
             let succeededTransactions = [];
             
             for (const txn of transactionsArray) {
-                // Skip if previously processed (history or BPM), no reprocessing
+                // Check if this transaction was previously processed
                 const saved = storedTxns.find(t =>
                     t.transaction === txn || t.transactionId === txn
                 );
-                if (saved) {
+                
+                // Always process if transaction failed previously, otherwise skip if found in history/BPM
+                if (saved && saved.status !== 'failed' && saved.status !== 'Failed') {
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,

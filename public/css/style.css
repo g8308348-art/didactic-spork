@@ -257,6 +257,13 @@ textarea {
   color: var(--error-color);
 }
 
+.submission-status.no-action {
+  display: block;
+  background-color: rgba(173, 216, 230, 0.1);
+  border: 1px solid #ADD8E6;
+  color: #ADD8E6;
+}
+
 /* Table Styles */
 .table-container {
   overflow-x: auto;
@@ -356,6 +363,11 @@ tbody tr:hover {
 .status-badge.error {
   background-color: var(--error-color);
   color: white;
+}
+
+.status-badge.no-action {
+  background-color: #ADD8E6; /* light blue */
+  color: #1A1A1A;
 }
 
 /* Add some spacing for transaction IDs under status badges */

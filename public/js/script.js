@@ -502,12 +502,12 @@ function loadTransactions() {
                 statusClass += ' success-escalated'; // Distinct success color for escalated
                 break;
             case 'already_handled': // History
-                statusText = 'Success';
-                statusClass += ' success-history'; // Gradient green + color for history
+                statusText = 'No action';
+                statusClass += ' no-action'; // Light blue for no action
                 break;
             case 'found_in_bpm':
-                statusText = 'Success';
-                statusClass += ' success-bpm'; // Gradient green + color for BPM
+                statusText = 'No action';
+                statusClass += ' no-action'; // Light blue for no action
                 break;
             case 'found_in_sanctions_bypass':
                 statusText = 'Success';

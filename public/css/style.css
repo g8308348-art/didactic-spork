@@ -267,31 +267,36 @@ textarea {
 
 /* Submission Status */
 .submission-status {
-  margin-top: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
-  display: none;
+  min-height: 20px; /* Ensure space is always reserved */
+  visibility: hidden; /* Hide but keep space */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.submission-status:not(:empty) {
+  visibility: visible;
+  opacity: 1;
 }
 
 .submission-status.success {
-  display: block;
   background-color: rgba(46, 204, 113, 0.1);
   border: 1px solid var(--secondary-color);
   color: var(--secondary-color);
 }
 
 .submission-status.error {
-  display: block;
   background-color: rgba(231, 76, 60, 0.1);
   border: 1px solid var(--error-color);
   color: var(--error-color);
 }
 
 .submission-status.no-action {
-  display: block;
-  background-color: rgba(173, 216, 230, 0.1);
-  border: 1px solid #ADD8E6;
-  color: #ADD8E6;
+  background-color: rgba(30, 144, 255, 0.1);
+  border: 1px solid #1E90FF;
+  color: #1E90FF;
 }
 
 /* Table Styles */

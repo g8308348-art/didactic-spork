@@ -149,6 +149,27 @@ a:hover {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Form row for side-by-side form groups */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group-half {
+  flex: 1 1 calc(50% - var(--spacing-md) / 2);
+  min-width: 0; /* Prevents flex items from overflowing */
+  margin-bottom: 0;
+}
+
+/* Ensure form controls take full width of their container */
+.form-group-half input[type="text"],
+.form-group-half select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 label {
   display: block;
   margin-bottom: var(--spacing-sm);
@@ -459,6 +480,17 @@ footer {
   
   .filter-controls .form-group {
     width: 100%;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  /* Stack form groups vertically on mobile */
+  .form-row {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .form-group-half {
+    flex: 1 1 100%;
     margin-bottom: var(--spacing-md);
   }
 }

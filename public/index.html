@@ -70,28 +70,30 @@
 
                     <!-- Removed perform-on-latest checkbox block as always applied -->
                     <br />
-                    <div class="form-group">
-                        <label for="comment">Comment (optional):</label>
-                        <input 
-                            type="text"
-                            id="comment" 
-                            name="comment" 
-                            placeholder="You can add a comment (max 250 characters). Default is MURDOCK." 
-                            maxlength="250"
-                            class="comment-input"
-                        >
-                        <small class="char-count"><span id="comment-char-count">0</span>/250</small>
-                        <small class="error-message" id="comment-error"></small>
-                    </div>
+                    <div class="form-row">
+                        <div class="form-group form-group-half">
+                            <label for="comment">Comment (optional):</label>
+                            <input 
+                                type="text"
+                                id="comment" 
+                                name="comment" 
+                                placeholder="Add a comment (max 250 characters)" 
+                                maxlength="250"
+                                class="comment-input"
+                            >
+                            <small class="char-count"><span id="comment-char-count">7</span>/250</small>
+                            <small class="error-message" id="comment-error"></small>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="action">Action:</label>
-                        <select id="action" name="action" required>
-                            <option value="Release" selected>Release</option>
-                            <option value="Block">Block</option>
-                            <option value="Reject">Reject</option>
-                        </select>
-                        <small class="error-message" id="action-error"></small>
+                        <div class="form-group form-group-half">
+                            <label for="action">Action:</label>
+                            <select id="action" name="action" required>
+                                <option value="Release" selected>Release</option>
+                                <option value="Block">Block</option>
+                                <option value="Reject">Reject</option>
+                            </select>
+                            <small class="error-message" id="action-error"></small>
+                        </div>
                     </div>
 
                     <div class="form-actions">

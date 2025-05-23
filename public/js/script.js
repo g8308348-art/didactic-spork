@@ -349,8 +349,8 @@ transactionForm.addEventListener('submit', async (e) => {
             submitButton.disabled = false;
             submitButton.textContent = 'Process Transaction';
             
-            // Clear status message after 5 seconds for success, 8 seconds for errors
-            const clearTimeout = failCount === 0 ? 5000 : 8000;
+            // Clear status message after 7 seconds for success, 10 seconds for errors
+            const clearTimeout = failCount === 0 ? 7000 : 10000;
             setTimeout(() => {
                 submissionStatus.style.display = 'none';
             }, clearTimeout);

@@ -114,8 +114,14 @@ function validateTransactions(value) {
 }
 
 function validateComment(value) {
+    // Check if comment is empty
+    if (!value.trim()) {
+        showError(commentError, 'Comment is required');
+        return false;
+    }
+    
     // Check for SQL injection patterns
-    const sqlPatterns = /('|"|;|--|\/\*|\*\/|exec|union|select|insert|update|delete|drop|alter)/i;
+    const sqlPatterns = /('|\"|;|--|\/\*|\*\/|exec|union|select|insert|update|delete|drop|alter)/i;
     
     if (value.length > 250) {
         showError(commentError, 'Comment must be less than 250 characters');

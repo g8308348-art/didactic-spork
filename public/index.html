@@ -72,7 +72,7 @@
                     <br />
                     <div class="form-row">
                         <div class="form-group form-group-half">
-                            <label for="comment">Comment:</label>
+                            <label for="comment">Comment <span class="required">*</span>:</label>
                             <input 
                                 type="text"
                                 id="comment" 
@@ -80,6 +80,7 @@
                                 placeholder="Add a comment (max 250 characters)" 
                                 maxlength="250"
                                 class="comment-input"
+                                required
                             >
                             <small class="char-count"><span id="comment-char-count">7</span>/250</small>
                             <small class="error-message" id="comment-error"></small>

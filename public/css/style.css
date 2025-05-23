@@ -149,6 +149,12 @@ a:hover {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Required field indicator */
+.required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
 /* Form row for side-by-side form groups */
 .form-row {
   display: flex;

@@ -136,6 +136,7 @@ def process_firco_transaction(
         logging.warning(
             f"Transaction {transaction} not found in Live or History. Attempting BPM search."
         )
+        firco_page.logout()
         bpm_result = firco_page.check_bpm_page(transaction, transaction_type)
         return bpm_result
 

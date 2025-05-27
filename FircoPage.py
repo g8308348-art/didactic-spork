@@ -189,11 +189,10 @@ class FircoPage:
                     logging.info(
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
-                    if (
-                        fourth_column_value == "PostedTxtnToFirco"
-                        or last_column_value == "WARNING"
-                        or last_column_value == "FAILURE"
-                    ):
+                    # Consolidated failure conditions
+                    if ((fourth_column_value == "NotFound" and last_column_value == "NotFound")
+                            or fourth_column_value == "PostedTxtnToFirco"
+                            or last_column_value in ("WARNING", "FAILURE")):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",

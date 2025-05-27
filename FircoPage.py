@@ -135,34 +135,6 @@ class FircoPage:
         logging.info(
             f"Transaction {transaction} not uniquely found in Live, History. Checking BPM page."
         )
-        # Skip BPM search if transaction_type is not set (Not defined)
-        if not transaction_type:
-            logging.info("Transaction type is 'Not defined'; skipping BPM search.")
-            return {
-                "status": "transaction_type_not_defined",
-                "message": "Transaction type was not defined, BPM search was skipped.",
-            }
-        
-        # First check if the current transaction has FAILURE status without logging out
-        try:
-            # Check if there's a status element with FAILURE text visible on the page
-            failure_element = self.page.locator("text=FAILURE").first
-            if failure_element.is_visible():
-                logging.info(f"Transaction {transaction} has FAILURE status in Firco UI")
-                return {
-                    "status": "failed_in_bpm",
-                    "message": f"Transaction {transaction} failed with FAILURE status.",
-                    "details": {
-                        "fourth_column": "Unknown",
-                        "last_column": "FAILURE",
-                    },
-                }
-        except Exception as e:
-            logging.info(f"No FAILURE status found on page: {e}")
-        
-        # If we reach here, we need to proceed with BPM check, so logout from Firco
-        print("logging out from Firco")
-        self.sel.logout.click()  # logout from Firco
 
         # Add retry mechanism for BPM page loading issues
         max_retries = 2
@@ -190,9 +162,14 @@ class FircoPage:
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
                     # Consolidated failure conditions
-                    if ((fourth_column_value == "NotFound" and last_column_value == "NotFound")
-                            or fourth_column_value == "PostedTxtnToFirco"
-                            or last_column_value in ("WARNING", "FAILURE")):
+                    if (
+                        (
+                            fourth_column_value == "NotFound"
+                            and last_column_value == "NotFound"
+                        )
+                        or fourth_column_value == "PostedTxtnToFirco"
+                        or last_column_value in ("WARNING", "FAILURE")
+                    ):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",
@@ -223,9 +200,15 @@ class FircoPage:
                 logging.error(f"Error during BPM search for {transaction}: {e}")
 
                 # Check if error is related to page reload/timeout issues
-                if "timeout" in error_message or "reload" in error_message or retry_count < max_retries:
+                if (
+                    "timeout" in error_message
+                    or "reload" in error_message
+                    or retry_count < max_retries
+                ):
                     retry_count += 1
-                    logging.warning(f"BPM page appears to be in a reload loop or timed out. Retry attempt {retry_count}/{max_retries}")
+                    logging.warning(
+                        f"BPM page appears to be in a reload loop or timed out. Retry attempt {retry_count}/{max_retries}"
+                    )
 
                     # Close and recreate browser context before retrying
                     try:
@@ -368,7 +351,7 @@ class FircoPage:
         self.page.wait_for_timeout(
             2000
         )  # User-added timeout, consider explicit wait if possible
-        
+
         # Clear any existing filters and search for the transaction
         self.clear_filtered_column()
         self.search_transaction(transaction)
@@ -410,7 +393,6 @@ class FircoPage:
 
         # 4. Search in BPM page (if not uniquely found in Live, History)
         return self.check_bpm_page(transaction, transaction_type)
-
 
     def verify_on_bpm(self, transaction: str) -> SearchStatus:
         """

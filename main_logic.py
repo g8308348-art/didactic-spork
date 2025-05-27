@@ -100,6 +100,7 @@ def process_firco_transaction(
         "already_handled",  # Found in History
         "found_in_sanctions_bypass",  # Found in Sanctions Bypass View
         "found_in_bpm",  # Found in BPM
+        "failed_in_bpm",  # BPM search failed
         TRANSACTION_NOT_FOUND_STATUS,  # Not found in any tab
     ]
 
@@ -107,7 +108,7 @@ def process_firco_transaction(
         logging.info(
             f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out."
         )
-        # firco_page.logout()
+        firco_page.logout()
         return details_result
 
     elif current_status == "found_in_live":
@@ -136,7 +137,6 @@ def process_firco_transaction(
         logging.warning(
             f"Transaction {transaction} not found in Live or History. Attempting BPM search."
         )
-        firco_page.logout()
         bpm_result = firco_page.check_bpm_page(transaction, transaction_type)
         return bpm_result
 

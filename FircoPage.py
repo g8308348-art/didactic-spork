@@ -162,14 +162,16 @@ class FircoPage:
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
                     # Consolidated failure conditions
-                    if (
-                        (
-                            fourth_column_value == "NotFound"
-                            and last_column_value == "NotFound"
+                    failure_conditions = [
+                        fourth_column_value == "PostedTxtnToFirco",
+                        last_column_value in ("WARNING", "FAILURE"),
+                        (fourth_column_value == "NotFound" and last_column_value == "NotFound"),
+                    ]
+                    if any(failure_conditions):
+                        # Log which failure conditions triggered at INFO level
+                        logging.info(
+                            f"Failure conditions {failure_conditions} met for transaction {transaction}, returning failed_in_bpm"
                         )
-                        or fourth_column_value == "PostedTxtnToFirco"
-                        or last_column_value in ("WARNING", "FAILURE")
-                    ):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",

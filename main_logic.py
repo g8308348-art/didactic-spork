@@ -108,7 +108,11 @@ def process_firco_transaction(
         logging.info(
             f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out."
         )
-        firco_page.logout()
+        # Safely logout without raising if page already closed
+        try:
+            firco_page.logout()
+        except Exception as e:
+            logging.warning(f"Logout failed for status '{current_status}': {e}")
         return details_result
 
     elif current_status == "found_in_live":

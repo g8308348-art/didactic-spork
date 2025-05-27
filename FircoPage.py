@@ -155,23 +155,21 @@ class FircoPage:
                 select_options_and_submit(bpm_page, page, options_to_check)
 
                 try:
+                    # Perform BPM search and capture results
                     fourth_column_value, last_column_value = handle_dropdown_and_search(
                         bpm_page, page, transaction
                     )
                     logging.info(
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
-                    # Consolidated failure conditions
-                    failure_conditions = [
-                        fourth_column_value == "PostedTxtnToFirco",
-                        last_column_value in ("WARNING", "FAILURE"),
-                        (fourth_column_value == "NotFound" and last_column_value == "NotFound"),
-                    ]
-                    if any(failure_conditions):
-                        # Log which failure conditions triggered at INFO level
-                        logging.info(
-                            f"Failure conditions {failure_conditions} met for transaction {transaction}, returning failed_in_bpm"
-                        )
+                    # If not found in BPM, return not_found status
+                    if fourth_column_value == "NotFound" and last_column_value == "NotFound":
+                        return {
+                            "status": "transaction_not_found",
+                            "message": f"Transaction {transaction} not found in BPM.",
+                        }
+                    # If BPM indicates explicit failure, return failed_in_bpm
+                    if fourth_column_value == "PostedTxtnToFirco" or last_column_value in ("WARNING", "FAILURE"):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",
@@ -180,6 +178,7 @@ class FircoPage:
                                 "last_column": last_column_value,
                             },
                         }
+                    # Otherwise, treat as successful find
                     return {
                         "status": "found_in_bpm",
                         "message": f"Transaction {transaction} found in BPM.",
@@ -200,6 +199,17 @@ class FircoPage:
             except Exception as e:
                 error_message = str(e).lower()
                 logging.error(f"Error during BPM search for {transaction}: {e}")
+
+                # If browser or page closed, treat as BPM failure
+                if "target page" in error_message and "closed" in error_message:
+                    logging.info(
+                        f"Browser closed during BPM search for {transaction}, treating as BPM failure"
+                    )
+                    return {
+                        "status": "failed_in_bpm",
+                        "message": f"Transaction {transaction} failed in BPM due to browser closure.",
+                        "details": {"error": error_message},
+                    }
 
                 # Check if error is related to page reload/timeout issues
                 if (

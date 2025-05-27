@@ -495,13 +495,19 @@ function saveTransaction(transaction) {
 
 function loadTransactions() {
     let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+    // Sanitize stored data: remove any non-object or undefined entries
+    transactions = transactions.filter(t => t && typeof t === 'object');
     
     // Apply filters if any
     const actionFilter = filterAction.value;
+    const actionFilterLower = actionFilter.toLowerCase();
     const searchFilter = searchTransactions.value.toLowerCase();
     
-    if (actionFilter) {
-        transactions = transactions.filter(t => t.action === actionFilter);
+    if (actionFilterLower) {
+        // Case-insensitive substring match on action
+        transactions = transactions.filter(
+            t => t && typeof t.action === 'string' && t.action.toLowerCase().includes(actionFilterLower)
+        );
     }
     
     if (searchFilter) {

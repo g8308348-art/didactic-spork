@@ -254,7 +254,9 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             from disposition_service import run_disposition
 
             result = run_disposition(output_dir_name, action, upi)
-            screenshots_dir = result.get("screenshot_path")
+            # Compute screenshot directory directly for PDF generation
+            date_folder = datetime.now().strftime("%Y-%m-%d")
+            screenshots_dir = os.path.join(OUTPUT_DIR, date_folder, upi)
 
             self._set_headers(200)
             self.wfile.write(

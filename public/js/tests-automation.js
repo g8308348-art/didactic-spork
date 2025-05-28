@@ -180,7 +180,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!result.success) {
                     throw new Error(`Action ${action} failed: ${result.error}`);
                 }
-                screenshotDirs.push(result.screenshotsDir);
+                // Use screenshotsDir or fallback to nested screenshot_path
+                const dir = result.screenshotsDir || result.result.screenshot_path;
+                screenshotDirs.push(dir);
             }
             stage = 'dispositioned';
             pdfBtn.disabled = false;

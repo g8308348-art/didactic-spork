@@ -1,6 +1,7 @@
 import os
 import json
 import re
+from datetime import datetime
 from playwright.sync_api import sync_playwright
 from main_logic import process_transaction, OUTPUT_DIR
 
@@ -47,7 +48,12 @@ def run_disposition(output_dir_name: str, action: str, upi: str) -> dict:
         result_str = process_transaction(p, txt_path)
 
     try:
-        return json.loads(result_str)
+        result = json.loads(result_str)
     except Exception:
         # Fallback if already a dict
-        return result_str
+        result = result_str
+    # Attach screenshot path for PDF generation
+    date_folder = datetime.now().strftime("%Y-%m-%d")
+    screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
+    result["screenshot_path"] = screenshot_folder
+    return result

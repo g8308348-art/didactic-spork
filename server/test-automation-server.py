@@ -271,33 +271,44 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
 
     def handle_generate_pdf(self):
-        """Assemble screenshots into a PDF and serve its URL"""
+        """Generate a PDF by combining provided screenshotDirs sorted by creation date"""
         try:
+            # Read screenshotDirs from request body
             length = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(length)) if length else {}
-            screenshots_dir = data.get("screenshotsDir")
-            if not screenshots_dir or not os.path.isdir(screenshots_dir):
-                raise ValueError("Invalid screenshotsDir")
-            from PIL import Image
-
-            imgs = []
-            for fname in sorted(os.listdir(screenshots_dir)):
-                if fname.lower().endswith((".png", ".jpg", ".jpeg")):
-                    path = os.path.join(screenshots_dir, fname)
-                    imgs.append(Image.open(path).convert("RGB"))
-            if not imgs:
-                raise ValueError("No images found to generate PDF")
+            dirs = data.get("screenshotDirs", [])
+            if not dirs:
+                raise ValueError("No screenshotDirs provided")
+            # Collect PNGs from each provided directory
+            pngs = []
+            for d in dirs:
+                full_d = os.path.join(PROJECT_ROOT, d)
+                if os.path.isdir(full_d):
+                    files = [os.path.join(full_d, f) for f in os.listdir(full_d) if f.lower().endswith('.png')]
+                    # sort within transaction by creation
+                    files.sort(key=lambda p: os.path.getctime(p))
+                    pngs.extend(files)
+            if not pngs:
+                raise FileNotFoundError("No screenshots found in provided dirs")
+            # Generate PDF
             pdf_dir = os.path.join(PUBLIC_DIR, "pdfs")
             os.makedirs(pdf_dir, exist_ok=True)
-            pdf_name = os.path.basename(screenshots_dir) + ".pdf"
-            pdf_path = os.path.join(pdf_dir, pdf_name)
-            imgs[0].save(pdf_path, save_all=True, append_images=imgs[1:])
-            url = f"/pdfs/{pdf_name}"
+            pdf_filename = "screenshots.pdf"
+            pdf_path = os.path.join(pdf_dir, pdf_filename)
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import A4, landscape
+            c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
+            w, h = landscape(A4)
+            for img in pngs:
+                c.drawImage(img, 0, 0, width=w, height=h)
+                c.showPage()
+            c.save()
+            pdf_url = f"/pdfs/{pdf_filename}"
             self._set_headers(200)
-            self.wfile.write(json.dumps({"success": True, "url": url}).encode())
-        except Exception as ex:
+            self.wfile.write(json.dumps({"success": True, "pdfUrl": pdf_url}).encode())
+        except Exception as e:
             self._set_headers(500)
-            self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
 
     def log_message(self, format, *args):
         # Custom logging to avoid cluttering the console

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // State
     let currentTest = null;
     let generatedFiles = [];
+    let screenshotDirs = [];
     let currentOutputDir = '';
     let stage = 'none';
     let currentUpi = null;
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showStatus('Disposing transactions...', 'info');
             dispositionBtn.disabled = true;
             const outputDir = currentOutputDir;
+            screenshotDirs = [];
             // Process each generated XML file for disposition
             for (const filePath of generatedFiles) {
                 if (!filePath.toLowerCase().endsWith('.xml')) continue;
@@ -178,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!result.success) {
                     throw new Error(`Action ${action} failed: ${result.error}`);
                 }
+                screenshotDirs.push(result.screenshotsDir);
             }
             stage = 'dispositioned';
             pdfBtn.disabled = false;
@@ -195,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE}/api/generate-pdf`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
+                body: JSON.stringify({ screenshotDirs })
             });
             const result = await response.json();
             if (!result.success) throw new Error(result.error);

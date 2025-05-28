@@ -1,0 +1,79 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+.container {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+.test-option {
+    margin: 10px 0;
+    padding: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+}
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+button:hover:not(:disabled) {
+    background-color: #45a049;
+}
+#status {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+}
+.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+.error {
+    background-color: #f2dede;
+    color: #a94442;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+.info {
+    background-color: #d9edf7;
+    color: #31708f;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+.file-list {
+    margin-top: 20px;
+}
+.file-item {
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.file-item a {
+    color: #337ab7;
+    text-decoration: none;
+}
+.file-item a:hover {
+    text-decoration: underline;
+}

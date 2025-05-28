@@ -114,8 +114,14 @@ document.addEventListener('DOMContentLoaded', function() {
             showStatus('Uploading files to MTex...', 'info');
             uploadBtn.disabled = true;
             
-            // Simulate upload process
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Call server API to trigger MTex upload
+            const response = await fetch('http://localhost:8080/api/upload-to-mtex', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: generatedFiles })
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
             
             showStatus('Files uploaded to MTex successfully!', 'success');
         } catch (error) {

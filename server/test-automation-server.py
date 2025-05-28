@@ -85,6 +85,8 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             if self.path == "/api/generate-test-files":
                 return self.handle_generate_test_files()
+            elif self.path == "/api/upload-to-mtex":
+                return self.handle_upload_to_mtex()
 
             self.send_error(404, "Not Found")
         except Exception as e:
@@ -187,6 +189,24 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         except Exception as e:
             self.send_error(500, f"Error generating test files: {str(e)}")
+
+    def handle_upload_to_mtex(self):
+        """Handle MTex upload via mtex.py script"""
+        try:
+            # Read request body (can include files list if needed)
+            length = int(self.headers.get('Content-Length', 0))
+            if length:
+                _ = self.rfile.read(length)
+            # Import and run MTex login/upload
+            from mtex import main as mtex_main
+
+            mtex_main()
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"success": True, "message": "Upload to MTex completed"}).encode())
+        except Exception as ex:
+            self._set_headers(500)
+            err = str(ex)
+            self.wfile.write(json.dumps({"success": False, "error": err}).encode())
 
     def log_message(self, format, *args):
         # Custom logging to avoid cluttering the console

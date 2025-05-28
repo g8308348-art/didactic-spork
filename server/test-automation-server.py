@@ -4,6 +4,7 @@ import json
 import http.server
 import socketserver
 from datetime import datetime
+import logging
 
 # Add parent directory to path to find xml_processor
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,7 +17,7 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
 
-PORT = 8080
+PORT = 8090
 TEMPLATES_DIR = os.path.join(SERVER_DIR, "templates")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "test_data")
 PUBLIC_DIR = os.path.join(PROJECT_ROOT, "public")
@@ -180,17 +181,37 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Generated files: {generated_files}")
             print(f"Relative files: {relative_files}")
 
-            # Extract UPI from first generated XML
+            # Extract UPI from first generated XML file, fallback to timestamp
             import xml.etree.ElementTree as ET
-            first_file = generated_files[0]
-            tree = ET.parse(first_file)
-            upi_value = tree.find('UPI').text
+
+            xml_files = [f for f in generated_files if f.lower().endswith(".xml")]
+            if xml_files:
+                first_file = xml_files[0]
+                try:
+                    tree = ET.parse(first_file)
+                    upi_elem = tree.find("UPI")
+                    upi_value = (
+                        upi_elem.text
+                        if upi_elem is not None and upi_elem.text
+                        else timestamp
+                    )
+                except Exception as pe:
+                    logging.warning(
+                        f"Failed to parse UPI from {first_file}, defaulting to timestamp: {pe}"
+                    )
+                    upi_value = timestamp
+            else:
+                logging.warning(
+                    f"No XML files found, defaulting UPI to timestamp {timestamp}"
+                )
+                upi_value = timestamp
+
             # Prepare response
             response = {
                 "success": True,
                 "files": relative_files,
                 "outputDir": timestamp,
-                "upi": upi_value
+                "upi": upi_value,
             }
 
             self._set_headers(200)
@@ -203,11 +224,11 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """Handle MTex upload via mtex.py script"""
         try:
             # Read request body for outputDir override
-            length = int(self.headers.get('Content-Length', 0))
+            length = int(self.headers.get("Content-Length", 0))
             if length:
                 post_data = self.rfile.read(length)
                 data = json.loads(post_data.decode())
-                output_dir_name = data.get('outputDir')
+                output_dir_name = data.get("outputDir")
                 if not output_dir_name:
                     raise ValueError("Missing outputDir in request")
                 test_data_override = os.path.join(OUTPUT_DIR, output_dir_name)
@@ -218,7 +239,11 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             mtex_main(test_data_override)
             self._set_headers(200)
-            self.wfile.write(json.dumps({"success": True, "message": "Upload to MTex completed"}).encode())
+            self.wfile.write(
+                json.dumps(
+                    {"success": True, "message": "Upload to MTex completed"}
+                ).encode()
+            )
         except Exception as ex:
             self._set_headers(500)
             err = str(ex)
@@ -228,13 +253,13 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """Process transactions and snapshot pages to a screenshots folder"""
         try:
             # Read request body for outputDir and action
-            length = int(self.headers.get('Content-Length', 0))
+            length = int(self.headers.get("Content-Length", 0))
             if length:
                 post_data = self.rfile.read(length)
                 data = json.loads(post_data.decode())
-                output_dir_name = data.get('outputDir')
-                action = data.get('action')
-                upi = data.get('upi')
+                output_dir_name = data.get("outputDir")
+                action = data.get("action")
+                upi = data.get("upi")
                 if not output_dir_name or not action or not upi:
                     raise ValueError("Missing outputDir, action, or upi")
             else:
@@ -242,15 +267,20 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # Call disposition logic
             from disposition_service import run_disposition
+
             result = run_disposition(output_dir_name, action, upi)
-            screenshots_dir = result.get('screenshot_path')
+            screenshots_dir = result.get("screenshot_path")
 
             self._set_headers(200)
-            self.wfile.write(json.dumps({
-                "success": True,
-                "screenshotsDir": screenshots_dir,
-                "result": result
-            }).encode())
+            self.wfile.write(
+                json.dumps(
+                    {
+                        "success": True,
+                        "screenshotsDir": screenshots_dir,
+                        "result": result,
+                    }
+                ).encode()
+            )
         except Exception as ex:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
@@ -258,22 +288,23 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def handle_generate_pdf(self):
         """Assemble screenshots into a PDF and serve its URL"""
         try:
-            length = int(self.headers.get('Content-Length', 0))
+            length = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(length)) if length else {}
-            screenshots_dir = data.get('screenshotsDir')
+            screenshots_dir = data.get("screenshotsDir")
             if not screenshots_dir or not os.path.isdir(screenshots_dir):
                 raise ValueError("Invalid screenshotsDir")
             from PIL import Image
+
             imgs = []
             for fname in sorted(os.listdir(screenshots_dir)):
-                if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
+                if fname.lower().endswith((".png", ".jpg", ".jpeg")):
                     path = os.path.join(screenshots_dir, fname)
-                    imgs.append(Image.open(path).convert('RGB'))
+                    imgs.append(Image.open(path).convert("RGB"))
             if not imgs:
                 raise ValueError("No images found to generate PDF")
-            pdf_dir = os.path.join(PUBLIC_DIR, 'pdfs')
+            pdf_dir = os.path.join(PUBLIC_DIR, "pdfs")
             os.makedirs(pdf_dir, exist_ok=True)
-            pdf_name = os.path.basename(screenshots_dir) + '.pdf'
+            pdf_name = os.path.basename(screenshots_dir) + ".pdf"
             pdf_path = os.path.join(pdf_dir, pdf_name)
             imgs[0].save(pdf_path, save_all=True, append_images=imgs[1:])
             url = f"/pdfs/{pdf_name}"

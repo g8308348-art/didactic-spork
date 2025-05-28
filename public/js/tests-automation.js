@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let stage = 'none';
     let currentUpi = null;
     
+    // API configuration
+    const API_PORT = 8090;
+    const API_BASE = `http://localhost:${API_PORT}`;
+    
     // Event Listeners
     testOptions.forEach(option => {
         option.addEventListener('change', function() {
@@ -58,12 +62,12 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             console.log('Sending request:', {
-                url: 'http://localhost:8080/api/generate-test-files',
+                url: `${API_BASE}/api/generate-test-files`,
                 method: 'POST',
                 body: requestBody
             });
             
-            const response = await fetch('http://localhost:8080/api/generate-test-files', {
+            const response = await fetch(`${API_BASE}/api/generate-test-files`, {
                 method: 'POST',
                 mode: 'cors',
                 credentials: 'same-origin',
@@ -131,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadBtn.disabled = true;
             
             // Call server API to trigger MTex upload
-            const response = await fetch('http://localhost:8080/api/upload-to-mtex', {
+            const response = await fetch(`${API_BASE}/api/upload-to-mtex`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ files: generatedFiles, outputDir: currentOutputDir })
@@ -161,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const idAction = dispositionBtn.id;
             const [outputDir, action] = idAction.split('-');
             const upi = currentUpi;
-            const response = await fetch('http://localhost:8080/api/disposition-transactions', {
+            const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outputDir, action, upi })
@@ -181,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Generating PDF...', 'info');
             pdfBtn.disabled = true;
-            const response = await fetch('http://localhost:8080/api/generate-pdf', {
+            const response = await fetch(`${API_BASE}/api/generate-pdf`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
@@ -227,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileItem.className = 'file-item';
             
             const fileName = file.split('/').pop();
-            const fileUrl = `http://localhost:8080/${file}`;
+            const fileUrl = `${API_BASE}/${file}`;
             
             const link = document.createElement('a');
             link.href = fileUrl;

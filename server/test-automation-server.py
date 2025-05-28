@@ -181,23 +181,22 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Generated files: {generated_files}")
             print(f"Relative files: {relative_files}")
 
-            # Derive UPI including action: use filename pattern <prefix>_<action>.xml
-            xml_files = [f for f in generated_files if f.lower().endswith(".xml")]
+            # Derive UPI from folder timestamp and XML action
+            xml_files = [f for f in generated_files if f.lower().endswith('.xml')]
             if xml_files:
                 first_basename = os.path.basename(xml_files[0])
                 base, _ = os.path.splitext(first_basename)
-                # action is the last segment after underscore
                 action_part = base.split('_')[-1]
-                upi_value = f"{timestamp}-{action_part}"
+                upi_value = timestamp.replace('_', '') + '-' + action_part
             else:
-                upi_value = timestamp
+                upi_value = timestamp.replace('_', '')
 
             # Prepare response
             response = {
                 "success": True,
                 "files": relative_files,
                 "outputDir": timestamp,
-                "upi": upi_value,
+                "upi": upi_value
             }
 
             self._set_headers(200)

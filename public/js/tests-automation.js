@@ -161,10 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Disposing transactions...', 'info');
             dispositionBtn.disabled = true;
-            // Derive action and upi from currentUpi (format: timestamp-action)
+            // Split currentUpi (timestamp-action) into timestamp and full action
             const parts = currentUpi.split('-');
-            const action = parts.pop();
-            const upi = parts.join('-');
+            const upi = currentUpi;
+            const action = parts.slice(1).join('-');
             const outputDir = currentOutputDir;
             const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
                 method: 'POST',

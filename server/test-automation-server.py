@@ -180,11 +180,17 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Generated files: {generated_files}")
             print(f"Relative files: {relative_files}")
 
+            # Extract UPI from first generated XML
+            import xml.etree.ElementTree as ET
+            first_file = generated_files[0]
+            tree = ET.parse(first_file)
+            upi_value = tree.find('UPI').text
             # Prepare response
             response = {
                 "success": True,
                 "files": relative_files,
                 "outputDir": timestamp,
+                "upi": upi_value
             }
 
             self._set_headers(200)
@@ -228,14 +234,15 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 data = json.loads(post_data.decode())
                 output_dir_name = data.get('outputDir')
                 action = data.get('action')
-                if not output_dir_name or not action:
-                    raise ValueError("Missing outputDir or action")
+                upi = data.get('upi')
+                if not output_dir_name or not action or not upi:
+                    raise ValueError("Missing outputDir, action, or upi")
             else:
                 raise ValueError("Empty request body")
 
             # Call disposition logic
             from disposition_service import run_disposition
-            result = run_disposition(output_dir_name, action)
+            result = run_disposition(output_dir_name, action, upi)
             screenshots_dir = result.get('screenshot_path')
 
             self._set_headers(200)

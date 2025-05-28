@@ -4,13 +4,14 @@ from playwright.sync_api import sync_playwright
 from main_logic import process_transaction, OUTPUT_DIR
 
 
-def run_disposition(output_dir_name: str, action: str) -> dict:
+def run_disposition(output_dir_name: str, action: str, upi: str) -> dict:
     """
     Generate a transaction text file and process it to capture screenshots.
 
     Args:
         output_dir_name: The timestamped folder name containing generated test files.
         action: The action to perform on the transaction (e.g., 'release', 'reject').
+        upi: The UPI to use for the transaction.
 
     Returns:
         A dict with the JSON result from process_transaction.
@@ -22,7 +23,7 @@ def run_disposition(output_dir_name: str, action: str) -> dict:
     txt_path = os.path.join(txt_folder, txt_name)
 
     # Write transaction instruction line
-    transaction = output_dir_name
+    transaction = upi
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(f"{transaction}|{action}|BEYOND")
 

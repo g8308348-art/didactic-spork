@@ -163,13 +163,19 @@ class FircoPage:
                         f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
                     )
                     # If not found in BPM, return not_found status
-                    if fourth_column_value == "NotFound" and last_column_value == "NotFound":
+                    if (
+                        fourth_column_value == "NotFound"
+                        and last_column_value == "NotFound"
+                    ):
                         return {
                             "status": "transaction_not_found",
                             "message": f"Transaction {transaction} not found in BPM.",
                         }
                     # If BPM indicates explicit failure, return failed_in_bpm
-                    if fourth_column_value == "PostedTxtnToFirco" or last_column_value in ("WARNING", "FAILURE"):
+                    if (
+                        fourth_column_value == "PostedTxtnToFirco"
+                        or last_column_value in ("WARNING", "FAILURE")
+                    ):
                         return {
                             "status": "failed_in_bpm",
                             "message": f"Transaction {transaction} failed in BPM.",
@@ -320,41 +326,6 @@ class FircoPage:
                     f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
                     409,
                 )
-        # If SearchStatus.NONE, proceed to History tab
-
-        """        # 2. Search in Sanctions Bypass View tab (if not uniquely found in Live or History)
-        logging.info(
-            f"Transaction {transaction} not uniquely found in Live or History. Checking Sanctions Bypass View tab."
-        )
-        # Assuming self.sel.sanctions_bypass_view_tab is defined in Selectors
-        self.sel.sanctions_bypass_view_tab.click()
-        # Add appropriate wait/expectation for tab to be active if needed, e.g.:
-        # expect(self.sel.sanctions_bypass_view_tab).to_have_class(r"tab-center tab-center-selected")
-        self.page.wait_for_timeout(
-            1000
-        )  # Placeholder for tab switch, replace with explicit wait
-        self.clear_filtered_column()  # Assuming this works for Sanctions Bypass View tab as well
-        self.search_transaction(transaction)
-        sanctions_bypass_status = self.verify_search_results(transaction)
-
-        if sanctions_bypass_status == SearchStatus.FOUND:
-            logging.info(
-                f"Transaction {transaction} found in Sanctions Bypass View. Considered handled for this flow."
-            )
-            return {
-                "status": "found_in_sanctions_bypass",
-                "message": f"Transaction {transaction} found in Sanctions Bypass View. No further action taken by this process.",
-            }
-        elif sanctions_bypass_status == SearchStatus.MULTIPLE:
-            logging.error(
-                f"Multiple transactions found for ID: {transaction} in Sanctions Bypass View."
-            )
-            raise TransactionError(
-                f"Multiple transactions found for ID: {transaction} in Sanctions Bypass View. Ambiguous state.",
-                409,
-            )
-        # If SearchStatus.NONE, proceed to History tab"""
-
         # 3. Search in History tab (if not uniquely found in Live Messages)
         logging.info(
             f"Transaction {transaction} not uniquely found in Live Messages. Checking History tab."

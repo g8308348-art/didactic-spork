@@ -56,8 +56,17 @@ def main():
             # Wait (if needed)
             page.wait_for_timeout(500)
 
-            # Upload files
-            file_paths = ["path/to/your/file1.txt", "path/to/your/file2.txt"]
+            # Upload files: gather all files under test_data directory
+            import glob
+            PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+            test_data_dir = os.path.join(PROJECT_ROOT, 'test_data')
+            # Recursively collect files in test_data/**
+            file_paths = [
+                os.path.join(root, f)
+                for root, dirs, files in os.walk(test_data_dir)
+                for f in files
+            ]
+            logging.info(f"Files to upload to MTex: {file_paths}")
             mtex_page.upload_files_and_click_button(
                 'input[name="file"]', file_paths, "button.ant-btn-primary"
             )

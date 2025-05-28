@@ -181,29 +181,15 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Generated files: {generated_files}")
             print(f"Relative files: {relative_files}")
 
-            # Extract UPI from first generated XML file, fallback to timestamp
-            import xml.etree.ElementTree as ET
-
+            # Derive UPI including action: use filename pattern <prefix>_<action>.xml
             xml_files = [f for f in generated_files if f.lower().endswith(".xml")]
             if xml_files:
-                first_file = xml_files[0]
-                try:
-                    tree = ET.parse(first_file)
-                    upi_elem = tree.find("UPI")
-                    upi_value = (
-                        upi_elem.text
-                        if upi_elem is not None and upi_elem.text
-                        else timestamp
-                    )
-                except Exception as pe:
-                    logging.warning(
-                        f"Failed to parse UPI from {first_file}, defaulting to timestamp: {pe}"
-                    )
-                    upi_value = timestamp
+                first_basename = os.path.basename(xml_files[0])
+                base, _ = os.path.splitext(first_basename)
+                # action is the last segment after underscore
+                action_part = base.split('_')[-1]
+                upi_value = f"{timestamp}-{action_part}"
             else:
-                logging.warning(
-                    f"No XML files found, defaulting UPI to timestamp {timestamp}"
-                )
                 upi_value = timestamp
 
             # Prepare response

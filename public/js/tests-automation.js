@@ -161,11 +161,11 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Disposing transactions...', 'info');
             dispositionBtn.disabled = true;
-            // Derive outputDir and action from button's id (e.g. "20250528_153911-release")
-            const idAction = dispositionBtn.id;
-            const action = idAction.split('-')[1];
+            // Derive action and upi from currentUpi (format: timestamp-action)
+            const parts = currentUpi.split('-');
+            const action = parts.pop();
+            const upi = parts.join('-');
             const outputDir = currentOutputDir;
-            const upi = currentUpi;
             const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

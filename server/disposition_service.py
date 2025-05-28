@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from playwright.sync_api import sync_playwright
 from main_logic import process_transaction, OUTPUT_DIR
 
@@ -19,7 +20,10 @@ def run_disposition(output_dir_name: str, action: str, upi: str) -> dict:
     # Build paths
     txt_folder = os.path.join(OUTPUT_DIR, output_dir_name)
     os.makedirs(txt_folder, exist_ok=True)
-    txt_name = f"{output_dir_name}-{action}.txt"
+    # Sanitize UPI and action to safe filename components
+    safe_upi = re.sub(r"[^\w\-]", "", upi)
+    safe_action = re.sub(r"[^\w\-]", "", action)
+    txt_name = f"{safe_upi}-{safe_action}.txt"
     txt_path = os.path.join(txt_folder, txt_name)
 
     # Write transaction instruction line

@@ -163,7 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
             dispositionBtn.disabled = true;
             // Derive outputDir and action from button's id (e.g. "20250528_153911-release")
             const idAction = dispositionBtn.id;
-            const [outputDir, action] = idAction.split('-');
+            const action = idAction.split('-')[1];
+            const outputDir = currentOutputDir;
             const upi = currentUpi;
             const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
                 method: 'POST',

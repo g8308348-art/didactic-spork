@@ -21,15 +21,26 @@ def run_disposition(output_dir_name: str, action: str, upi: str) -> dict:
     txt_folder = os.path.join(OUTPUT_DIR, output_dir_name)
     os.makedirs(txt_folder, exist_ok=True)
     # Sanitize UPI and action to safe filename components
-    safe_upi = re.sub(r"[^\w\-]", "", upi)
+    safe_upi = re.sub(r"[^\w]", "", upi)
     safe_action = re.sub(r"[^\w\-]", "", action)
     txt_name = f"{safe_upi}-{safe_action}.txt"
     txt_path = os.path.join(txt_folder, txt_name)
 
-    # Write transaction instruction lines: transaction, action, and comment each on its own line
+    # Normalize action to match expected casing
+    action_lower = action.lower()
+    action_map = {
+        'stp-release': 'STP-Release',
+        'release': 'Release',
+        'block': 'Block',
+        'reject': 'Reject'
+    }
+    norm_action = action_map.get(action_lower)
+    if not norm_action:
+        raise ValueError(f"Unknown action '{action}'")
+    # Write transaction instruction lines: transaction, action, and comment
     transaction = upi
     with open(txt_path, 'w', encoding='utf-8') as f:
-        f.write(f"{transaction}\n{action}\nBEYOND")
+        f.write(f"{transaction}\n{norm_action}\nBEYOND")
 
     # Run Playwright processor
     with sync_playwright() as p:

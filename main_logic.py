@@ -362,12 +362,13 @@ def process_transaction(
         # File operations and logging remain largely the same, assuming success means the workflow step completed
         if result["success"]:
             try:
-                move_screenshots_to_folder(date_folder)
+                # Move screenshots into the per-transaction folder
+                move_screenshots_to_folder(transaction_folder)
             except FileNotFoundError:
-                logging.error("Screenshot folder not found: %s", date_folder)
+                logging.error("Screenshot folder not found: %s", transaction_folder)
             except PermissionError:
                 logging.error(
-                    "Permission denied when moving screenshots to %s", date_folder
+                    "Permission denied when moving screenshots to %s", transaction_folder
                 )
             except OSError as e:
                 logging.error("OS error when moving screenshots: %s", e)

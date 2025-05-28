@@ -87,7 +87,10 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.handle_generate_test_files()
             elif self.path == "/api/upload-to-mtex":
                 return self.handle_upload_to_mtex()
-
+            elif self.path == "/api/disposition-transactions":
+                return self.handle_disposition_transactions()
+            elif self.path == "/api/generate-pdf":
+                return self.handle_generate_pdf()
             self.send_error(404, "Not Found")
         except Exception as e:
             print(f"Error in POST handler: {str(e)}")
@@ -207,6 +210,52 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._set_headers(500)
             err = str(ex)
             self.wfile.write(json.dumps({"success": False, "error": err}).encode())
+
+    def handle_disposition_transactions(self):
+        """Process transactions and snapshot pages to a screenshots folder"""
+        try:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            screenshots_dir = os.path.join(OUTPUT_DIR, "screenshots", timestamp)
+            os.makedirs(screenshots_dir, exist_ok=True)
+            # TODO: invoke transaction processing & snapshot logic here
+            # e.g., call a function that uses Playwright to capture screenshots
+            self._set_headers(200)
+            self.wfile.write(json.dumps({
+                "success": True,
+                "screenshotsDir": screenshots_dir
+            }).encode())
+        except Exception as ex:
+            self._set_headers(500)
+            self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
+
+    def handle_generate_pdf(self):
+        """Assemble screenshots into a PDF and serve its URL"""
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            data = json.loads(self.rfile.read(length)) if length else {}
+            screenshots_dir = data.get('screenshotsDir')
+            if not screenshots_dir or not os.path.isdir(screenshots_dir):
+                raise ValueError("Invalid screenshotsDir")
+            from PIL import Image
+            imgs = []
+            for fname in sorted(os.listdir(screenshots_dir)):
+                if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    path = os.path.join(screenshots_dir, fname)
+                    imgs.append(Image.open(path).convert('RGB'))
+            if not imgs:
+                raise ValueError("No images found to generate PDF")
+            pdf_dir = os.path.join(PUBLIC_DIR, 'pdfs')
+            os.makedirs(pdf_dir, exist_ok=True)
+            pdf_name = os.path.basename(screenshots_dir) + '.pdf'
+            pdf_path = os.path.join(pdf_dir, pdf_name)
+            imgs[0].save(pdf_path, save_all=True, append_images=imgs[1:])
+            url = f"/pdfs/{pdf_name}"
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"success": True, "url": url}).encode())
+        except Exception as ex:
+            self._set_headers(500)
+            self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
 
     def log_message(self, format, *args):
         # Custom logging to avoid cluttering the console

@@ -26,10 +26,10 @@ def run_disposition(output_dir_name: str, action: str, upi: str) -> dict:
     txt_name = f"{safe_upi}-{safe_action}.txt"
     txt_path = os.path.join(txt_folder, txt_name)
 
-    # Write transaction instruction line
+    # Write transaction instruction lines: transaction, action, and comment each on its own line
     transaction = upi
     with open(txt_path, 'w', encoding='utf-8') as f:
-        f.write(f"{transaction}|{action}|BEYOND")
+        f.write(f"{transaction}\n{action}\nBEYOND")
 
     # Run Playwright processor
     with sync_playwright() as p:

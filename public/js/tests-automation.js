@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const testOptions = document.querySelectorAll('input[name="test"]');
     const generateBtn = document.getElementById('generate-btn');
     const uploadBtn = document.getElementById('upload-btn');
+    const dispositionBtn = document.getElementById('disposition-btn');
+    const pdfBtn = document.getElementById('pdf-btn');
     const statusDiv = document.getElementById('status');
     const generatedFilesDiv = document.getElementById('generated-files');
     const customFieldsDiv = document.getElementById('custom-fields');
@@ -11,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTest = null;
     let generatedFiles = [];
     let currentOutputDir = '';
+    let stage = 'none';
     
     // Event Listeners
     testOptions.forEach(option => {
@@ -19,12 +22,19 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCustomFields();
             clearStatus();
             generatedFilesDiv.innerHTML = '';
+            // reset flow
+            stage = 'none';
+            generateBtn.disabled = false;
             uploadBtn.disabled = true;
+            dispositionBtn.disabled = true;
+            pdfBtn.disabled = true;
         });
     });
     
     generateBtn.addEventListener('click', generateTestFiles);
     uploadBtn.addEventListener('click', uploadToMtex);
+    dispositionBtn.addEventListener('click', dispositionTransactions);
+    pdfBtn.addEventListener('click', generatePdf);
     
     // Initialize
     updateCustomFields();
@@ -91,7 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentOutputDir = result.outputDir || '';
                 showGeneratedFiles(generatedFiles);
                 showStatus('Test files generated successfully!', 'success');
+                // advance flow
+                stage = 'generated';
                 uploadBtn.disabled = false;
+                dispositionBtn.disabled = true;
+                pdfBtn.disabled = true;
             } else {
                 throw new Error(result.error || 'Failed to generate test files');
             }
@@ -124,11 +138,52 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!result.success) throw new Error(result.error);
             
             showStatus('Files uploaded to MTex successfully!', 'success');
+            // advance flow
+            stage = 'uploaded';
+            dispositionBtn.disabled = false;
+            pdfBtn.disabled = true;
         } catch (error) {
             console.error('Upload error:', error);
             showStatus(`Upload failed: ${error.message}`, 'error');
         } finally {
             uploadBtn.disabled = false;
+        }
+    }
+    
+    // Disposition Transactions handler
+    async function dispositionTransactions() {
+        try {
+            showStatus('Disposing transactions...', 'info');
+            dispositionBtn.disabled = true;
+            const response = await fetch('http://localhost:8080/api/disposition-transactions', { method: 'POST' });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            stage = 'dispositioned';
+            pdfBtn.disabled = false;
+            showStatus('Transactions dispositioned and screenshots saved!', 'success');
+        } catch (e) {
+            showStatus(`Disposition failed: ${e.message}`, 'error');
+        }
+    }
+    
+    // Generate PDF handler
+    async function generatePdf() {
+        try {
+            showStatus('Generating PDF...', 'info');
+            pdfBtn.disabled = true;
+            const response = await fetch('http://localhost:8080/api/generate-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            window.open(result.url, '_blank');
+            showStatus('PDF generated successfully!', 'success');
+        } catch (e) {
+            showStatus(`PDF generation failed: ${e.message}`, 'error');
+        } finally {
+            pdfBtn.disabled = stage !== 'dispositioned';
         }
     }
     

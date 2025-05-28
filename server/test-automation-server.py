@@ -221,16 +221,28 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def handle_disposition_transactions(self):
         """Process transactions and snapshot pages to a screenshots folder"""
         try:
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshots_dir = os.path.join(OUTPUT_DIR, "screenshots", timestamp)
-            os.makedirs(screenshots_dir, exist_ok=True)
-            # TODO: invoke transaction processing & snapshot logic here
-            # e.g., call a function that uses Playwright to capture screenshots
+            # Read request body for outputDir and action
+            length = int(self.headers.get('Content-Length', 0))
+            if length:
+                post_data = self.rfile.read(length)
+                data = json.loads(post_data.decode())
+                output_dir_name = data.get('outputDir')
+                action = data.get('action')
+                if not output_dir_name or not action:
+                    raise ValueError("Missing outputDir or action")
+            else:
+                raise ValueError("Empty request body")
+
+            # Call disposition logic
+            from disposition_service import run_disposition
+            result = run_disposition(output_dir_name, action)
+            screenshots_dir = result.get('screenshot_path')
+
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "success": True,
-                "screenshotsDir": screenshots_dir
+                "screenshotsDir": screenshots_dir,
+                "result": result
             }).encode())
         except Exception as ex:
             self._set_headers(500)

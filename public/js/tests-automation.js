@@ -155,7 +155,14 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Disposing transactions...', 'info');
             dispositionBtn.disabled = true;
-            const response = await fetch('http://localhost:8080/api/disposition-transactions', { method: 'POST' });
+            // Derive outputDir and action from button's id (e.g. "20250528_153911-release")
+            const idAction = dispositionBtn.id;
+            const [outputDir, action] = idAction.split('-');
+            const response = await fetch('http://localhost:8080/api/disposition-transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ outputDir, action })
+            });
             const result = await response.json();
             if (!result.success) throw new Error(result.error);
             stage = 'dispositioned';

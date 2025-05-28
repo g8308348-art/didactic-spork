@@ -197,10 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Generating PDF...', 'info');
             pdfBtn.disabled = true;
+            // Normalize directory separators for Linux paths
+            const normalizedDirs = screenshotDirs.map(d => d.replace(/\\/g, '/'));
             const response = await fetch(`${API_BASE}/api/generate-pdf`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ screenshotDirs })
+                body: JSON.stringify({ screenshotDirs: normalizedDirs })
             });
             const result = await response.json();
             if (!result.success) throw new Error(result.error);

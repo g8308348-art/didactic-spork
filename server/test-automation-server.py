@@ -254,9 +254,10 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             from disposition_service import run_disposition
 
             result = run_disposition(output_dir_name, action, upi)
-            # Compute screenshot directory directly for PDF generation
-            date_folder = datetime.now().strftime("%Y-%m-%d")
-            screenshots_dir = os.path.join(OUTPUT_DIR, date_folder, upi)
+            # Use screenshot_path returned by run_disposition
+            screenshots_dir = result.get("screenshot_path")
+            if not screenshots_dir:
+                raise ValueError("Disposition did not return screenshot_path")
 
             self._set_headers(200)
             self.wfile.write(
@@ -278,16 +279,27 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Read screenshotDirs from request body
             length = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(length)) if length else {}
-            dirs = data.get("screenshotDirs", [])
+            raw = data.get("screenshotDirs", [])
+            dirs = []
+            for d in raw:
+                if isinstance(d, str) and d:
+                    # unify separators and normalize
+                    d2 = d.replace('\\', os.sep).replace('/', os.sep)
+                    d2 = d2.lstrip(os.sep)
+                    dirs.append(os.path.normpath(d2))
             if not dirs:
                 raise ValueError("No screenshotDirs provided")
+
             # Collect PNGs from each provided directory
             pngs = []
             for d in dirs:
+                # absolute path under project root
                 full_d = os.path.join(PROJECT_ROOT, d)
+                if not os.path.isdir(full_d):
+                    # fallback to cwd
+                    full_d = os.path.join(os.getcwd(), d)
                 if os.path.isdir(full_d):
                     files = [os.path.join(full_d, f) for f in os.listdir(full_d) if f.lower().endswith('.png')]
-                    # sort within transaction by creation
                     files.sort(key=lambda p: os.path.getctime(p))
                     pngs.extend(files)
             if not pngs:

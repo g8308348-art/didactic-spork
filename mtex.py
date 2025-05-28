@@ -71,9 +71,16 @@ def main():
                 raise FileNotFoundError(
                     f"Test data directory not found: {test_data_dir}"
                 )
-            # Recursively collect files
+            # Choose the most recent timestamped subfolder under test_data_dir
+            subdirs = [d for d in os.listdir(test_data_dir) if os.path.isdir(os.path.join(test_data_dir, d))]
+            if not subdirs:
+                raise FileNotFoundError(f"No subdirectories in test_data: {test_data_dir}")
+            latest = sorted(subdirs)[-1]
+            target_dir = os.path.join(test_data_dir, latest)
+            logging.info(f"Uploading files from subfolder: {target_dir}")
+            # Collect files in that subfolder
             file_paths = []
-            for root, dirs, files in os.walk(test_data_dir):
+            for root, dirs, files in os.walk(target_dir):
                 for f in files:
                     file_paths.append(os.path.join(root, f))
             logging.info(f"Files to upload to MTex: {file_paths}")

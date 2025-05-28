@@ -161,21 +161,27 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showStatus('Disposing transactions...', 'info');
             dispositionBtn.disabled = true;
-            // Split currentUpi (timestamp-action) into timestamp and full action
-            const parts = currentUpi.split('-');
-            const upi = currentUpi;
-            const action = parts.slice(1).join('-');
             const outputDir = currentOutputDir;
-            const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ outputDir, action, upi })
-            });
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error);
+            // Process each generated XML file for disposition
+            for (const filePath of generatedFiles) {
+                if (!filePath.toLowerCase().endsWith('.xml')) continue;
+                const namePart = filePath.split('/').pop().split('.')[0];
+                const action = namePart.split('_').pop();
+                const timestampNoUnderscore = outputDir.replace('_', '');
+                const upi = `${timestampNoUnderscore}-${action}`;
+                const response = await fetch(`${API_BASE}/api/disposition-transactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ outputDir, action, upi })
+                });
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(`Action ${action} failed: ${result.error}`);
+                }
+            }
             stage = 'dispositioned';
             pdfBtn.disabled = false;
-            showStatus('Transactions dispositioned and screenshots saved!', 'success');
+            showStatus('All dispositions processed!', 'success');
         } catch (e) {
             showStatus(`Disposition failed: ${e.message}`, 'error');
         }

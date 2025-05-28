@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('http://localhost:8080/api/upload-to-mtex', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ files: generatedFiles })
+                body: JSON.stringify({ files: generatedFiles, outputDir: currentOutputDir })
             });
             const result = await response.json();
             if (!result.success) throw new Error(result.error);

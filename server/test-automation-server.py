@@ -196,14 +196,21 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def handle_upload_to_mtex(self):
         """Handle MTex upload via mtex.py script"""
         try:
-            # Read request body (can include files list if needed)
+            # Read request body for outputDir override
             length = int(self.headers.get('Content-Length', 0))
             if length:
-                _ = self.rfile.read(length)
-            # Import and run MTex login/upload
+                post_data = self.rfile.read(length)
+                data = json.loads(post_data.decode())
+                output_dir_name = data.get('outputDir')
+                if not output_dir_name:
+                    raise ValueError("Missing outputDir in request")
+                test_data_override = os.path.join(OUTPUT_DIR, output_dir_name)
+            else:
+                test_data_override = None
+            # Import and run MTex login/upload with override
             from mtex import main as mtex_main
 
-            mtex_main()
+            mtex_main(test_data_override)
             self._set_headers(200)
             self.wfile.write(json.dumps({"success": True, "message": "Upload to MTex completed"}).encode())
         except Exception as ex:

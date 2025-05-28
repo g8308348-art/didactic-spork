@@ -15,7 +15,7 @@ PASSWORD = "123!"
 
 # Dropdown selectors and values
 DROPDOWN_BU = ("rc_select_0", "UAT")
-DROPDOWN_WORKFLOW = ("rc_select_1", "ORI - TSF RTPS SRCBYP Taiwan")
+DROPDOWN_WORKFLOW = ("rc_select_1", "ORI - TSF DEH ISO")
 
 TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"
 
@@ -56,16 +56,26 @@ def main():
             # Wait (if needed)
             page.wait_for_timeout(500)
 
-            # Upload files: gather all files under test_data directory
-            import glob
+            # Upload files: determine test_data directory
             PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-            test_data_dir = os.path.join(PROJECT_ROOT, 'test_data')
-            # Recursively collect files in test_data/**
-            file_paths = [
-                os.path.join(root, f)
-                for root, dirs, files in os.walk(test_data_dir)
-                for f in files
-            ]
+            # Allow overriding via env or default to project-root/test_data or C:/test_data
+            env_dir = os.environ.get("TEST_DATA_DIR")
+            if env_dir and os.path.isdir(env_dir):
+                test_data_dir = env_dir
+            elif os.path.isdir("C:/test_data"):
+                test_data_dir = "C:/test_data"
+            else:
+                test_data_dir = os.path.join(PROJECT_ROOT, "test_data")
+            logging.info(f"Looking for files in test_data directory: {test_data_dir}")
+            if not os.path.isdir(test_data_dir):
+                raise FileNotFoundError(
+                    f"Test data directory not found: {test_data_dir}"
+                )
+            # Recursively collect files
+            file_paths = []
+            for root, dirs, files in os.walk(test_data_dir):
+                for f in files:
+                    file_paths.append(os.path.join(root, f))
             logging.info(f"Files to upload to MTex: {file_paths}")
             mtex_page.upload_files_and_click_button(
                 'input[name="file"]', file_paths, "button.ant-btn-primary"

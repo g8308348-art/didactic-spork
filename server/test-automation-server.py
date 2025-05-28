@@ -247,7 +247,11 @@ def run_server():
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\nShutting down server...")
+            print("\nKeyboard interrupt received, shutting down server...")
+            # Gracefully stop serving
+            httpd.shutdown()
+        finally:
+            print("Server has been stopped.")
 
 
 if __name__ == "__main__":

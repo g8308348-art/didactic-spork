@@ -70,22 +70,31 @@ def main(test_data_dir_override=None):
                 else:
                     base_dir = os.path.join(PROJECT_ROOT, "test_data")
                 if not os.path.isdir(base_dir):
-                    raise FileNotFoundError(f"Test data directory not found: {base_dir}")
+                    raise FileNotFoundError(
+                        f"Test data directory not found: {base_dir}"
+                    )
                 # Pick the latest timestamped subfolder
-                subdirs = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
+                subdirs = [
+                    d
+                    for d in os.listdir(base_dir)
+                    if os.path.isdir(os.path.join(base_dir, d))
+                ]
                 if not subdirs:
-                    raise FileNotFoundError(f"No subdirectories in test_data: {base_dir}")
+                    raise FileNotFoundError(
+                        f"No subdirectories in test_data: {base_dir}"
+                    )
                 latest = sorted(subdirs)[-1]
                 target_dir = os.path.join(base_dir, latest)
             logging.info(f"Uploading files from: {target_dir}")
             # Collect files in target directory
-            file_paths = [os.path.join(r, f)
-                for r, _, files in os.walk(target_dir)
-                for f in files]
+            file_paths = [
+                os.path.join(r, f) for r, _, files in os.walk(target_dir) for f in files
+            ]
             logging.info(f"Files to upload to MTex: {file_paths}")
             mtex_page.upload_files_and_click_button(
                 'input[name="file"]', file_paths, "button.ant-btn-primary"
             )
+            mtex_page.screenshot("mtex.png")
 
         except Exception as e:
             logging.exception("Unhandled exception occurred")

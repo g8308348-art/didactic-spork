@@ -4,11 +4,14 @@ import json
 import http.server
 import socketserver
 from datetime import datetime
-import logging
 
 # Add parent directory to path to find xml_processor
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from xml_processor import XMLTemplateProcessor
+from mtex import main as mtex_main
+from disposition_service import run_disposition
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
 
 # Configuration
 import os
@@ -182,21 +185,21 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Relative files: {relative_files}")
 
             # Derive UPI from folder timestamp and XML action
-            xml_files = [f for f in generated_files if f.lower().endswith('.xml')]
+            xml_files = [f for f in generated_files if f.lower().endswith(".xml")]
             if xml_files:
                 first_basename = os.path.basename(xml_files[0])
                 base, _ = os.path.splitext(first_basename)
-                action_part = base.split('_')[-1]
-                upi_value = timestamp.replace('_', '') + '-' + action_part
+                action_part = base.split("_")[-1]
+                upi_value = timestamp.replace("_", "") + "-" + action_part
             else:
-                upi_value = timestamp.replace('_', '')
+                upi_value = timestamp.replace("_", "")
 
             # Prepare response
             response = {
                 "success": True,
                 "files": relative_files,
                 "outputDir": timestamp,
-                "upi": upi_value
+                "upi": upi_value,
             }
 
             self._set_headers(200)
@@ -219,8 +222,6 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 test_data_override = os.path.join(OUTPUT_DIR, output_dir_name)
             else:
                 test_data_override = None
-            # Import and run MTex login/upload with override
-            from mtex import main as mtex_main
 
             mtex_main(test_data_override)
             self._set_headers(200)
@@ -250,9 +251,6 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 raise ValueError("Empty request body")
 
-            # Call disposition logic
-            from disposition_service import run_disposition
-
             result = run_disposition(output_dir_name, action, upi)
             # Use screenshot_path returned by run_disposition
             screenshots_dir = result.get("screenshot_path")
@@ -274,52 +272,56 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
 
     def handle_generate_pdf(self):
-        """Generate a PDF by combining provided screenshotDirs sorted by creation date"""
+        """Generate a PDF per provided directory, saving alongside screenshots"""
         try:
-            # Read screenshotDirs from request body
+            # Read and normalize screenshot directories
             length = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(length)) if length else {}
             raw = data.get("screenshotDirs", [])
             dirs = []
             for d in raw:
                 if isinstance(d, str) and d:
-                    # unify separators and normalize
-                    d2 = d.replace('\\', os.sep).replace('/', os.sep)
+                    d2 = d.replace("\\", os.sep).replace("/", os.sep)
                     d2 = d2.lstrip(os.sep)
                     dirs.append(os.path.normpath(d2))
             if not dirs:
                 raise ValueError("No screenshotDirs provided")
+            # Generate one PDF per directory
 
-            # Collect PNGs from each provided directory
-            pngs = []
+            pdf_paths = []
             for d in dirs:
-                # absolute path under project root
+                # Locate folder
                 full_d = os.path.join(PROJECT_ROOT, d)
                 if not os.path.isdir(full_d):
-                    # fallback to cwd
                     full_d = os.path.join(os.getcwd(), d)
-                if os.path.isdir(full_d):
-                    files = [os.path.join(full_d, f) for f in os.listdir(full_d) if f.lower().endswith('.png')]
-                    files.sort(key=lambda p: os.path.getctime(p))
-                    pngs.extend(files)
-            if not pngs:
-                raise FileNotFoundError("No screenshots found in provided dirs")
-            # Generate PDF
-            pdf_dir = os.path.join(PUBLIC_DIR, "pdfs")
-            os.makedirs(pdf_dir, exist_ok=True)
-            pdf_filename = "screenshots.pdf"
-            pdf_path = os.path.join(pdf_dir, pdf_filename)
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import A4, landscape
-            c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
-            w, h = landscape(A4)
-            for img in pngs:
-                c.drawImage(img, 0, 0, width=w, height=h)
-                c.showPage()
-            c.save()
-            pdf_url = f"/pdfs/{pdf_filename}"
+                if not os.path.isdir(full_d):
+                    continue
+                # Gather PNGs, sorted by creation time
+                files = [f for f in os.listdir(full_d) if f.lower().endswith(".png")]
+                files = sorted(
+                    files, key=lambda f: os.path.getctime(os.path.join(full_d, f))
+                )
+                if not files:
+                    continue
+                # Create PDF in same folder
+                pdf_path = os.path.join(full_d, "screenshots.pdf")
+                c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
+                w, h = landscape(A4)
+                for fname in files:
+                    img_path = os.path.join(full_d, fname)
+                    c.drawImage(img_path, 0, 0, width=w, height=h)
+                    c.showPage()
+                c.save()
+                pdf_paths.append(pdf_path)
+            if not pdf_paths:
+                raise FileNotFoundError(
+                    "No PDFs generated, directories empty or not found"
+                )
+            # Respond with generated paths
             self._set_headers(200)
-            self.wfile.write(json.dumps({"success": True, "pdfUrl": pdf_url}).encode())
+            self.wfile.write(
+                json.dumps({"success": True, "pdfPaths": pdf_paths}).encode()
+            )
         except Exception as e:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())

@@ -13,9 +13,6 @@ from disposition_service import run_disposition
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 
-# Configuration
-import os
-
 # Get the absolute path to the project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -174,7 +171,7 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # Process the template
             processor = XMLTemplateProcessor(template_path, output_dir)
-            generated_files = processor.generate_test_files(test_name, placeholders)
+            generated_files = processor.generate_test_files(test_name)
 
             # Convert to relative paths for the frontend
             relative_files = [

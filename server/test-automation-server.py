@@ -5,7 +5,11 @@ import http.server
 import socketserver
 from datetime import datetime
 from playwright.sync_api import sync_playwright
-from bpm import perform_login_and_setup, select_options_and_submit, handle_dropdown_and_search
+from bpm import (
+    perform_login_and_setup,
+    select_options_and_submit,
+    handle_dropdown_and_search,
+)
 from Bpm_Page import BPMPage, Options
 from xml_processor import XMLTemplateProcessor
 from mtex import main as mtex_main
@@ -259,7 +263,7 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 select_options_and_submit(bpm_page, page_bpm, [Options.ENTERPRISE_ISO])
                 before_val, _ = handle_dropdown_and_search(bpm_page, page_bpm, upi)
                 pre_path = os.path.join(screenshot_folder, f"bpm_before_{upi}.png")
-                page_bpm.screenshot(path=pre_path, full_page=True)
+                page_bpm.screenshot(path="bpm_before.png", full_page=True)
                 ctx_bpm.close()
                 browser_bpm.close()
 
@@ -277,17 +281,24 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 page_bpm2 = ctx_bpm2.new_page()
                 bpm_page2 = BPMPage(page_bpm2)
                 perform_login_and_setup(bpm_page2)
-                select_options_and_submit(bpm_page2, page_bpm2, [Options.ENTERPRISE_ISO])
+                select_options_and_submit(
+                    bpm_page2, page_bpm2, [Options.ENTERPRISE_ISO]
+                )
                 after_val, _ = handle_dropdown_and_search(bpm_page2, page_bpm2, upi)
                 post_path = os.path.join(screenshot_folder, f"bpm_after_{upi}.png")
-                page_bpm2.screenshot(path=post_path, full_page=True)
+                page_bpm2.screenshot(path="bpm_after.png", full_page=True)
                 ctx_bpm2.close()
                 browser_bpm2.close()
 
             # Generate PDF of all screenshots in folder
-            png_files = [f for f in os.listdir(screenshot_folder) if f.lower().endswith('.png')]
-            png_files = sorted(png_files, key=lambda f: os.path.getctime(os.path.join(screenshot_folder, f)))
-            pdf_path = os.path.join(screenshot_folder, 'screenshots.pdf')
+            png_files = [
+                f for f in os.listdir(screenshot_folder) if f.lower().endswith(".png")
+            ]
+            png_files = sorted(
+                png_files,
+                key=lambda f: os.path.getctime(os.path.join(screenshot_folder, f)),
+            )
+            pdf_path = os.path.join(screenshot_folder, "screenshots.pdf")
             c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
             w, h = landscape(A4)
             for fname in png_files:
@@ -298,14 +309,18 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"Generated PDF: {pdf_path}")
 
             self._set_headers(200)
-            self.wfile.write(json.dumps({
-                "success": True,
-                "screenshotsDir": screenshot_folder,
-                "result": result,
-                "bpm_before_value": before_val,
-                "bpm_after_value": after_val,
-                "pdfPath": pdf_path,
-            }).encode())
+            self.wfile.write(
+                json.dumps(
+                    {
+                        "success": True,
+                        "screenshotsDir": screenshot_folder,
+                        "result": result,
+                        "bpm_before_value": before_val,
+                        "bpm_after_value": after_val,
+                        "pdfPath": pdf_path,
+                    }
+                ).encode()
+            )
         except Exception as ex:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())

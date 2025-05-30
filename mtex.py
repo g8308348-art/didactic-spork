@@ -99,7 +99,7 @@ def main(test_data_dir_override=None):
             el.scroll_into_view_if_needed()
             # Take a full-page screenshot after scrolling element into view, saving to target_dir
             screenshot_path = os.path.join(target_dir, "mtexops.png")
-            page.screenshot(path=screenshot_path, full_page=True)
+            page.screenshot(path="mtexops.png", full_page=True)
             logging.info(f"MTEx screenshot saved to: {screenshot_path}")
 
         except Exception as e:

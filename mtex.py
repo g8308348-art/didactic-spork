@@ -94,7 +94,11 @@ def main(test_data_dir_override=None):
             mtex_page.upload_files_and_click_button(
                 'input[name="file"]', file_paths, "button.ant-btn-primary"
             )
-            page.screenshot(path="mtex.png", full_page=True)
+            # Find element and center/scroll into view before screenshot
+            el = page.locator('span.file-name[title="screening_response_release_xml"]')
+            el.scroll_into_view_if_needed()
+            # Take a full-page screenshot after scrolling element into view
+            page.screenshot(path="mtexops.png", full_page=True)
 
         except Exception as e:
             logging.exception("Unhandled exception occurred")

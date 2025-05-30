@@ -19,7 +19,7 @@ SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
 
 PORT = 8090
 TEMPLATES_DIR = os.path.join(SERVER_DIR, "templates")
-OUTPUT_DIR = os.path.join(PROJECT_ROOT, "test_data")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")  # Changed to use 'output' folder
 PUBLIC_DIR = os.path.join(PROJECT_ROOT, "public")
 
 
@@ -175,7 +175,7 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # Convert to relative paths for the frontend
             relative_files = [
-                os.path.join("test_data", timestamp, os.path.basename(f))
+                os.path.join("output", timestamp, os.path.basename(f))
                 for f in generated_files
             ]
             print(f"Generated files: {generated_files}")

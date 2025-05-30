@@ -237,116 +237,6 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             # Read request body for outputDir and action
             length = int(self.headers.get("Content-Length", 0))
-            data = json.loads(self.rfile.read(length)) if length else {}
-            raw = data.get("screenshotDirs", [])
-            dirs = []
-            for d in raw:
-                if isinstance(d, str) and d:
-                    d2 = d.replace("\\", os.sep).replace("/", os.sep)
-                    d2 = d2.lstrip(os.sep)
-                    dirs.append(os.path.normpath(d2))
-            if not dirs:
-                raise ValueError("No screenshotDirs provided")
-            # Generate one PDF per directory
-
-            pdf_paths = []
-            for d in dirs:
-                # Locate folder
-                full_d = os.path.join(PROJECT_ROOT, d)
-                if not os.path.isdir(full_d):
-                    full_d = os.path.join(os.getcwd(), d)
-                if not os.path.isdir(full_d):
-                    continue
-                # Gather PNGs, sorted by creation time
-                files = [f for f in os.listdir(full_d) if f.lower().endswith(".png")]
-                files = sorted(
-                    files, key=lambda f: os.path.getctime(os.path.join(full_d, f))
-                )
-                if not files:
-                    continue
-                # Create PDF in same folder
-                pdf_path = os.path.join(full_d, "screenshots.pdf")
-                c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
-                w, h = landscape(A4)
-                for fname in files:
-                    img_path = os.path.join(full_d, fname)
-                    c.drawImage(img_path, 0, 0, width=w, height=h)
-                    c.showPage()
-                c.save()
-                pdf_paths.append(pdf_path)
-            if not pdf_paths:
-                raise FileNotFoundError(
-                    "No PDFs generated, directories empty or not found"
-                )
-            # Respond with generated paths
-            self._set_headers(200)
-            self.wfile.write(
-                json.dumps({"success": True, "pdfPaths": pdf_paths}).encode()
-            )
-        except Exception as e:
-            self._set_headers(500)
-            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
-
-    def handle_generate_pdf(self):
-        """Generate a PDF per provided directory, saving alongside screenshots"""
-        try:
-            # Read and normalize screenshot directories
-            length = int(self.headers.get("Content-Length", 0))
-            data = json.loads(self.rfile.read(length)) if length else {}
-            raw = data.get("screenshotDirs", [])
-            dirs = []
-            for d in raw:
-                if isinstance(d, str) and d:
-                    d2 = d.replace("\\", os.sep).replace("/", os.sep)
-                    d2 = d2.lstrip(os.sep)
-                    dirs.append(os.path.normpath(d2))
-            if not dirs:
-                raise ValueError("No screenshotDirs provided")
-            # Generate one PDF per directory
-
-            pdf_paths = []
-            for d in dirs:
-                # Locate folder
-                full_d = os.path.join(PROJECT_ROOT, d)
-                if not os.path.isdir(full_d):
-                    full_d = os.path.join(os.getcwd(), d)
-                if not os.path.isdir(full_d):
-                    continue
-                # Gather PNGs, sorted by creation time
-                files = [f for f in os.listdir(full_d) if f.lower().endswith(".png")]
-                files = sorted(
-                    files, key=lambda f: os.path.getctime(os.path.join(full_d, f))
-                )
-                if not files:
-                    continue
-                # Create PDF in same folder
-                pdf_path = os.path.join(full_d, "screenshots.pdf")
-                c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
-                w, h = landscape(A4)
-                for fname in files:
-                    img_path = os.path.join(full_d, fname)
-                    c.drawImage(img_path, 0, 0, width=w, height=h)
-                    c.showPage()
-                c.save()
-                pdf_paths.append(pdf_path)
-            if not pdf_paths:
-                raise FileNotFoundError(
-                    "No PDFs generated, directories empty or not found"
-                )
-            # Respond with generated paths
-            self._set_headers(200)
-            self.wfile.write(
-                json.dumps({"success": True, "pdfPaths": pdf_paths}).encode()
-            )
-        except Exception as e:
-            self._set_headers(500)
-            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
-
-    def handle_disposition_transactions(self):
-        """Process transactions and snapshot pages to a screenshots folder"""
-        try:
-            # Read request body for outputDir and action
-            length = int(self.headers.get("Content-Length", 0))
             if length:
                 post_data = self.rfile.read(length)
                 data = json.loads(post_data.decode())
@@ -405,6 +295,63 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as ex:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
+
+    def handle_generate_pdf(self):
+        """Generate a PDF per provided directory, saving alongside screenshots"""
+        try:
+            # Read and normalize screenshot directories
+            length = int(self.headers.get("Content-Length", 0))
+            data = json.loads(self.rfile.read(length)) if length else {}
+            raw = data.get("screenshotDirs", [])
+            dirs = []
+            for d in raw:
+                if isinstance(d, str) and d:
+                    d2 = d.replace("\\", os.sep).replace("/", os.sep)
+                    d2 = d2.lstrip(os.sep)
+                    dirs.append(os.path.normpath(d2))
+            if not dirs:
+                raise ValueError("No screenshotDirs provided")
+            # Generate one PDF per directory
+
+            pdf_paths = []
+            for d in dirs:
+                # Locate folder
+                full_d = os.path.join(PROJECT_ROOT, d)
+                if not os.path.isdir(full_d):
+                    full_d = os.path.join(os.getcwd(), d)
+                if not os.path.isdir(full_d):
+                    continue
+                # Gather PNGs, sorted by creation time
+                files = [f for f in os.listdir(full_d) if f.lower().endswith(".png")]
+                files = sorted(
+                    files, key=lambda f: os.path.getctime(os.path.join(full_d, f))
+                )
+                if not files:
+                    continue
+                # Create PDF in same folder
+                pdf_path = os.path.join(full_d, "screenshots.pdf")
+                c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
+                w, h = landscape(A4)
+                for fname in files:
+                    img_path = os.path.join(full_d, fname)
+                    c.drawImage(img_path, 0, 0, width=w, height=h)
+                    c.showPage()
+                c.save()
+                # Log PDF creation path
+                print(f"Generated PDF (generate_pdf): {pdf_path}")
+                pdf_paths.append(pdf_path)
+            if not pdf_paths:
+                raise FileNotFoundError(
+                    "No PDFs generated, directories empty or not found"
+                )
+            # Respond with generated paths
+            self._set_headers(200)
+            self.wfile.write(
+                json.dumps({"success": True, "pdfPaths": pdf_paths}).encode()
+            )
+        except Exception as e:
+            self._set_headers(500)
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
 
     def log_message(self, format, *args):
         # Custom logging to avoid cluttering the console

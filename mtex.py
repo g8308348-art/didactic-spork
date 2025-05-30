@@ -94,7 +94,7 @@ def main(test_data_dir_override=None):
             mtex_page.upload_files_and_click_button(
                 'input[name="file"]', file_paths, "button.ant-btn-primary"
             )
-            mtex_page.screenshot("mtex.png")
+            page.screenshot(path="mtex.png", full_page=True)
 
         except Exception as e:
             logging.exception("Unhandled exception occurred")

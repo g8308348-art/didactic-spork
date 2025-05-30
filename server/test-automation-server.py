@@ -4,9 +4,9 @@ import json
 import http.server
 import socketserver
 from datetime import datetime
-
-# Add parent directory to path to find xml_processor
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from playwright.sync_api import sync_playwright
+from bpm import perform_login_and_setup, select_options_and_submit, handle_dropdown_and_search
+from Bpm_Page import BPMPage
 from xml_processor import XMLTemplateProcessor
 from mtex import main as mtex_main
 from disposition_service import run_disposition
@@ -248,22 +248,50 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 raise ValueError("Empty request body")
 
+            # Prepare common screenshot folder and BPM pre-check
+            date_folder = datetime.now().strftime("%Y-%m-%d")
+            screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
+            os.makedirs(screenshot_folder, exist_ok=True)
+            with sync_playwright() as pw:
+                browser_bpm = pw.chromium.connect_over_cdp("http://localhost:9222")
+                ctx_bpm = browser_bpm.new_context()
+                page_bpm = ctx_bpm.new_page()
+                bpm_page = BPMPage(page_bpm)
+                perform_login_and_setup(bpm_page)
+                select_options_and_submit(bpm_page, page_bpm, [])
+                before_val, _ = handle_dropdown_and_search(bpm_page, page_bpm, upi)
+                pre_path = os.path.join(screenshot_folder, f"bpm_before_{upi}.png")
+                page_bpm.screenshot(path=pre_path, full_page=True)
+                ctx_bpm.close()
+                browser_bpm.close()
+
+            # Run disposition and collect MTex screenshots
             result = run_disposition(output_dir_name, action, upi)
-            # Use screenshot_path returned by run_disposition
-            screenshots_dir = result.get("screenshot_path")
-            if not screenshots_dir:
-                raise ValueError("Disposition did not return screenshot_path")
+            # Ensure result uses our combined folder
+            result["screenshot_path"] = screenshot_folder
+
+            # BPM post-check
+            with sync_playwright() as pw2:
+                browser_bpm2 = pw2.chromium.connect_over_cdp("http://localhost:9222")
+                ctx_bpm2 = browser_bpm2.new_context()
+                page_bpm2 = ctx_bpm2.new_page()
+                bpm_page2 = BPMPage(page_bpm2)
+                perform_login_and_setup(bpm_page2)
+                select_options_and_submit(bpm_page2, page_bpm2, [])
+                after_val, _ = handle_dropdown_and_search(bpm_page2, page_bpm2, upi)
+                post_path = os.path.join(screenshot_folder, f"bpm_after_{upi}.png")
+                page_bpm2.screenshot(path=post_path, full_page=True)
+                ctx_bpm2.close()
+                browser_bpm2.close()
 
             self._set_headers(200)
-            self.wfile.write(
-                json.dumps(
-                    {
-                        "success": True,
-                        "screenshotsDir": screenshots_dir,
-                        "result": result,
-                    }
-                ).encode()
-            )
+            self.wfile.write(json.dumps({
+                "success": True,
+                "screenshotsDir": screenshot_folder,
+                "result": result,
+                "bpm_before_value": before_val,
+                "bpm_after_value": after_val,
+            }).encode())
         except Exception as ex:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())

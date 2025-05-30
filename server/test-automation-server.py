@@ -237,18 +237,16 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             # Read request body for outputDir and action
             length = int(self.headers.get("Content-Length", 0))
-            if length:
-                post_data = self.rfile.read(length)
-                data = json.loads(post_data.decode())
-                output_dir_name = data.get("outputDir")
-                action = data.get("action")
-                upi = data.get("upi")
-                if not output_dir_name or not action or not upi:
-                    raise ValueError("Missing outputDir, action, or upi")
-            else:
-                raise ValueError("Empty request body")
+            data = json.loads(self.rfile.read(length)) if length else {}
+            raw = data.get("outputDir", "")
+            output_dir_name = raw
+            action = data.get("action")
+            upi = data.get("upi")
+            if not output_dir_name or not action or not upi:
+                raise ValueError("Missing outputDir, action, or upi")
 
             # Prepare common screenshot folder and BPM pre-check
+            # Compute screenshot folder matching disposition_service structure
             date_folder = datetime.now().strftime("%Y-%m-%d")
             screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
             os.makedirs(screenshot_folder, exist_ok=True)
@@ -284,6 +282,19 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 ctx_bpm2.close()
                 browser_bpm2.close()
 
+            # Generate PDF of all screenshots in folder
+            png_files = [f for f in os.listdir(screenshot_folder) if f.lower().endswith('.png')]
+            png_files = sorted(png_files, key=lambda f: os.path.getctime(os.path.join(screenshot_folder, f)))
+            pdf_path = os.path.join(screenshot_folder, 'screenshots.pdf')
+            c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
+            w, h = landscape(A4)
+            for fname in png_files:
+                img_path = os.path.join(screenshot_folder, fname)
+                c.drawImage(img_path, 0, 0, width=w, height=h)
+                c.showPage()
+            c.save()
+            print(f"Generated PDF: {pdf_path}")
+
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "success": True,
@@ -291,6 +302,7 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "result": result,
                 "bpm_before_value": before_val,
                 "bpm_after_value": after_val,
+                "pdfPath": pdf_path,
             }).encode())
         except Exception as ex:
             self._set_headers(500)

@@ -263,8 +263,10 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 ctx_bpm.close()
                 browser_bpm.close()
 
-            # Run disposition and collect MTex screenshots
+            # Run disposition
             result = run_disposition(output_dir_name, action, upi)
+            # Run MTex to capture its screenshot into same folder
+            mtex_main(screenshot_folder)
             # Ensure result uses our combined folder
             result["screenshot_path"] = screenshot_folder
 

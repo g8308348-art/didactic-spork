@@ -97,8 +97,10 @@ def main(test_data_dir_override=None):
             # Find element and center/scroll into view before screenshot
             el = page.locator('span.file-name[title="screening_response_release_xml"]')
             el.scroll_into_view_if_needed()
-            # Take a full-page screenshot after scrolling element into view
-            page.screenshot(path="mtexops.png", full_page=True)
+            # Take a full-page screenshot after scrolling element into view, saving to target_dir
+            screenshot_path = os.path.join(target_dir, "mtexops.png")
+            page.screenshot(path=screenshot_path, full_page=True)
+            logging.info(f"MTEx screenshot saved to: {screenshot_path}")
 
         except Exception as e:
             logging.exception("Unhandled exception occurred")

@@ -6,7 +6,7 @@ import socketserver
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 from bpm import perform_login_and_setup, select_options_and_submit, handle_dropdown_and_search
-from Bpm_Page import BPMPage
+from Bpm_Page import BPMPage, Options
 from xml_processor import XMLTemplateProcessor
 from mtex import main as mtex_main
 from disposition_service import run_disposition
@@ -237,64 +237,55 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             # Read request body for outputDir and action
             length = int(self.headers.get("Content-Length", 0))
-            if length:
-                post_data = self.rfile.read(length)
-                data = json.loads(post_data.decode())
-                output_dir_name = data.get("outputDir")
-                action = data.get("action")
-                upi = data.get("upi")
-                if not output_dir_name or not action or not upi:
-                    raise ValueError("Missing outputDir, action, or upi")
-            else:
-                raise ValueError("Empty request body")
+            data = json.loads(self.rfile.read(length)) if length else {}
+            raw = data.get("screenshotDirs", [])
+            dirs = []
+            for d in raw:
+                if isinstance(d, str) and d:
+                    d2 = d.replace("\\", os.sep).replace("/", os.sep)
+                    d2 = d2.lstrip(os.sep)
+                    dirs.append(os.path.normpath(d2))
+            if not dirs:
+                raise ValueError("No screenshotDirs provided")
+            # Generate one PDF per directory
 
-            # Prepare common screenshot folder and BPM pre-check
-            date_folder = datetime.now().strftime("%Y-%m-%d")
-            screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
-            os.makedirs(screenshot_folder, exist_ok=True)
-            with sync_playwright() as pw:
-                browser_bpm = pw.chromium.connect_over_cdp("http://localhost:9222")
-                ctx_bpm = browser_bpm.new_context()
-                page_bpm = ctx_bpm.new_page()
-                bpm_page = BPMPage(page_bpm)
-                perform_login_and_setup(bpm_page)
-                select_options_and_submit(bpm_page, page_bpm, [])
-                before_val, _ = handle_dropdown_and_search(bpm_page, page_bpm, upi)
-                pre_path = os.path.join(screenshot_folder, f"bpm_before_{upi}.png")
-                page_bpm.screenshot(path=pre_path, full_page=True)
-                ctx_bpm.close()
-                browser_bpm.close()
-
-            # Run disposition and collect MTex screenshots
-            result = run_disposition(output_dir_name, action, upi)
-            # Ensure result uses our combined folder
-            result["screenshot_path"] = screenshot_folder
-
-            # BPM post-check
-            with sync_playwright() as pw2:
-                browser_bpm2 = pw2.chromium.connect_over_cdp("http://localhost:9222")
-                ctx_bpm2 = browser_bpm2.new_context()
-                page_bpm2 = ctx_bpm2.new_page()
-                bpm_page2 = BPMPage(page_bpm2)
-                perform_login_and_setup(bpm_page2)
-                select_options_and_submit(bpm_page2, page_bpm2, [])
-                after_val, _ = handle_dropdown_and_search(bpm_page2, page_bpm2, upi)
-                post_path = os.path.join(screenshot_folder, f"bpm_after_{upi}.png")
-                page_bpm2.screenshot(path=post_path, full_page=True)
-                ctx_bpm2.close()
-                browser_bpm2.close()
-
+            pdf_paths = []
+            for d in dirs:
+                # Locate folder
+                full_d = os.path.join(PROJECT_ROOT, d)
+                if not os.path.isdir(full_d):
+                    full_d = os.path.join(os.getcwd(), d)
+                if not os.path.isdir(full_d):
+                    continue
+                # Gather PNGs, sorted by creation time
+                files = [f for f in os.listdir(full_d) if f.lower().endswith(".png")]
+                files = sorted(
+                    files, key=lambda f: os.path.getctime(os.path.join(full_d, f))
+                )
+                if not files:
+                    continue
+                # Create PDF in same folder
+                pdf_path = os.path.join(full_d, "screenshots.pdf")
+                c = canvas.Canvas(pdf_path, pagesize=landscape(A4))
+                w, h = landscape(A4)
+                for fname in files:
+                    img_path = os.path.join(full_d, fname)
+                    c.drawImage(img_path, 0, 0, width=w, height=h)
+                    c.showPage()
+                c.save()
+                pdf_paths.append(pdf_path)
+            if not pdf_paths:
+                raise FileNotFoundError(
+                    "No PDFs generated, directories empty or not found"
+                )
+            # Respond with generated paths
             self._set_headers(200)
-            self.wfile.write(json.dumps({
-                "success": True,
-                "screenshotsDir": screenshot_folder,
-                "result": result,
-                "bpm_before_value": before_val,
-                "bpm_after_value": after_val,
-            }).encode())
-        except Exception as ex:
+            self.wfile.write(
+                json.dumps({"success": True, "pdfPaths": pdf_paths}).encode()
+            )
+        except Exception as e:
             self._set_headers(500)
-            self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
 
     def handle_generate_pdf(self):
         """Generate a PDF per provided directory, saving alongside screenshots"""
@@ -350,6 +341,70 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             self._set_headers(500)
             self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
+
+    def handle_disposition_transactions(self):
+        """Process transactions and snapshot pages to a screenshots folder"""
+        try:
+            # Read request body for outputDir and action
+            length = int(self.headers.get("Content-Length", 0))
+            if length:
+                post_data = self.rfile.read(length)
+                data = json.loads(post_data.decode())
+                output_dir_name = data.get("outputDir")
+                action = data.get("action")
+                upi = data.get("upi")
+                if not output_dir_name or not action or not upi:
+                    raise ValueError("Missing outputDir, action, or upi")
+            else:
+                raise ValueError("Empty request body")
+
+            # Prepare common screenshot folder and BPM pre-check
+            date_folder = datetime.now().strftime("%Y-%m-%d")
+            screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
+            os.makedirs(screenshot_folder, exist_ok=True)
+            with sync_playwright() as pw:
+                browser_bpm = pw.chromium.connect_over_cdp("http://localhost:9222")
+                ctx_bpm = browser_bpm.new_context()
+                page_bpm = ctx_bpm.new_page()
+                bpm_page = BPMPage(page_bpm)
+                perform_login_and_setup(bpm_page)
+                select_options_and_submit(bpm_page, page_bpm, [Options.ENTERPRISE_ISO])
+                before_val, _ = handle_dropdown_and_search(bpm_page, page_bpm, upi)
+                pre_path = os.path.join(screenshot_folder, f"bpm_before_{upi}.png")
+                page_bpm.screenshot(path=pre_path, full_page=True)
+                ctx_bpm.close()
+                browser_bpm.close()
+
+            # Run disposition and collect MTex screenshots
+            result = run_disposition(output_dir_name, action, upi)
+            # Ensure result uses our combined folder
+            result["screenshot_path"] = screenshot_folder
+
+            # BPM post-check
+            with sync_playwright() as pw2:
+                browser_bpm2 = pw2.chromium.connect_over_cdp("http://localhost:9222")
+                ctx_bpm2 = browser_bpm2.new_context()
+                page_bpm2 = ctx_bpm2.new_page()
+                bpm_page2 = BPMPage(page_bpm2)
+                perform_login_and_setup(bpm_page2)
+                select_options_and_submit(bpm_page2, page_bpm2, [Options.ENTERPRISE_ISO])
+                after_val, _ = handle_dropdown_and_search(bpm_page2, page_bpm2, upi)
+                post_path = os.path.join(screenshot_folder, f"bpm_after_{upi}.png")
+                page_bpm2.screenshot(path=post_path, full_page=True)
+                ctx_bpm2.close()
+                browser_bpm2.close()
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps({
+                "success": True,
+                "screenshotsDir": screenshot_folder,
+                "result": result,
+                "bpm_before_value": before_val,
+                "bpm_after_value": after_val,
+            }).encode())
+        except Exception as ex:
+            self._set_headers(500)
+            self.wfile.write(json.dumps({"success": False, "error": str(ex)}).encode())
 
     def log_message(self, format, *args):
         # Custom logging to avoid cluttering the console

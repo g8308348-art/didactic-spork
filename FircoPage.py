@@ -101,12 +101,22 @@ class FircoPage:
         """
         Clear any filters that may be applied to the transaction column.
 
-        Checks if a filter icon is visible and clicks it if present.
+        Checks if a filter icon is visible and clicks it if present. Verifies the action
+        was successful and logs detailed feedback.
         """
-        if self.sel.filtered_column_icon.is_visible():
-            self.sel.filtered_column_icon.click()
-        else:
-            logging.info("No filter in transaction column.")
+        try:
+            if self.sel.filtered_column_icon.is_visible(timeout=5000):
+                logging.info("Filter icon detected. Attempting to clear filter.")
+                self.sel.filtered_column_icon.click()
+                # Verify if the filter icon is still visible after clicking
+                if self.sel.filtered_column_icon.is_visible(timeout=2000):
+                    logging.warning("Filter icon still visible after click. Filter may not have cleared.")
+                else:
+                    logging.info("Filter successfully cleared.")
+            else:
+                logging.info("No filter icon detected in transaction column. No action needed.")
+        except PlaywrightTimeoutError:
+            logging.error("Timeout while checking for filter icon. Assuming no filter present.")
 
     def search_transaction(self, transaction: str):
         """

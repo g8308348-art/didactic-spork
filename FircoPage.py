@@ -415,18 +415,18 @@ class FircoPage:
         Verify search results for a transaction and return status.
         """
         if self.sel.no_data_notice.is_visible():
-            self.page.screenshot(path="noTransactions.png", full_page=True)
+            self.page.screenshot(path="no_transactions.png", full_page=True)
             return SearchStatus.NONE
 
         if (self.sel.first_odd_row_td_text.text_content() or "").strip():
-            self.page.screenshot(path="moreTransactions.png", full_page=True)
+            self.page.screenshot(path="more_transactions.png", full_page=True)
             return SearchStatus.MULTIPLE
 
         self.page.screenshot(path="one_transaction.png", full_page=True)
         try:
             self.sel.first_row.click()
         except Exception as e:
-            screenshot_path = "transaction_notActive.png"
+            screenshot_path = "not_active_transaction.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
             raise TransactionError(
                 f"Transaction {transaction} found but cannot be selected: {str(e)}",

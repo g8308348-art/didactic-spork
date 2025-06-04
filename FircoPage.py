@@ -59,7 +59,9 @@ class Selectors:
         self.comment_field = page.locator(
             "textarea.stick.ui-autocomplete-input[name='COMMENT']"
         )
-        self.transaction_rows = page.locator("table.hit-table.live tbody tr")
+        self.transaction_rows = page.locator(
+            "table.hit-table.live tbody tr"
+        )  # was self.table / duplicated
 
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
@@ -393,7 +395,7 @@ class FircoPage:
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
 
-        rows = self.sel.transaction_rows.all()
+        rows = self.sel.transaction_rows.element_handles()
 
         for i in range(3, len(rows)):
             row = rows[i]
@@ -411,28 +413,36 @@ class FircoPage:
     def verify_search_results(self, transaction: str) -> SearchStatus:
         """
         Verify search results for a transaction and return status.
+        Uses direct row counting for reliable determination of search results.
         """
+        # Check if no data notice is visible as a first indicator
         if self.sel.no_data_notice.is_visible():
             self.page.screenshot(path="noTransactions.png", full_page=True)
             return SearchStatus.NONE
 
-        if (self.sel.first_odd_row_td_text.text_content() or "").strip():
+        # Get all transaction rows to determine count
+        rows = self.sel.transaction_rows.element_handles()
+        row_count = len(rows)
+
+        if row_count == 0:
+            self.page.screenshot(path="noTransactions.png", full_page=True)
+            return SearchStatus.NONE
+        elif row_count > 1:
             self.page.screenshot(path="moreTransactions.png", full_page=True)
             return SearchStatus.MULTIPLE
-
-        self.page.screenshot(path="transaction_one.png", full_page=True)
-        try:
-            self.sel.first_row.click()
-        except Exception as e:
-            screenshot_path = "transaction_notActive.png"
-            self.page.screenshot(path=screenshot_path, full_page=True)
-            raise TransactionError(
-                f"Transaction {transaction} found but cannot be selected: {str(e)}",
-                error_code=422,
-                screenshot_path=screenshot_path,
-            ) from e
-
-        return SearchStatus.FOUND
+        elif row_count == 1:
+            self.page.screenshot(path="transaction_one.png", full_page=True)
+            try:
+                rows[0].click()
+            except Exception as e:
+                screenshot_path = "transaction_notActive.png"
+                self.page.screenshot(path=screenshot_path, full_page=True)
+                raise TransactionError(
+                    f"Transaction {transaction} found but cannot be selected: {str(e)}",
+                    error_code=422,
+                    screenshot_path=screenshot_path,
+                ) from e
+            return SearchStatus.FOUND
 
     def fill_comment_field(self, text: str):
         """

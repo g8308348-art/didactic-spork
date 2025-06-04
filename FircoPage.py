@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from collections import namedtuple
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -60,7 +59,7 @@ class Selectors:
         self.comment_field = page.locator(
             "textarea.stick.ui-autocomplete-input[name='COMMENT']"
         )
-        self.table = page.locator("table.hit-table.live tbody tr")
+        self.transaction_rows = page.locator("table.hit-table.live tbody tr")
 
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
@@ -311,7 +310,7 @@ class FircoPage:
                 self.sel.filtered_date_menu_opener.click()
                 self.sel.descending_date.click()
                 # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
-                self.sel.table.first.click()
+                self.sel.transaction_rows.first.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
@@ -357,7 +356,7 @@ class FircoPage:
                 self.sel.filtered_date_menu_opener.click()
                 self.sel.descending_date.click()
                 # Click the first transaction row
-                self.sel.table.first.click()
+                self.sel.transaction_rows.first.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
@@ -394,7 +393,7 @@ class FircoPage:
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
 
-        rows = self.sel.table.all()
+        rows = self.sel.transaction_rows.all()
 
         for i in range(3, len(rows)):
             row = rows[i]

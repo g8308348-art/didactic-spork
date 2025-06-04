@@ -46,7 +46,6 @@ class Selectors:
 
         # Table selectors
         self.table = page.locator("table")
-        self.bpm_tab = page.locator("a.tab-center").filter(has_text="BPM")
         self.filtered_column_icon = page.locator("a.column-filtered-icon")
         self.menu_opener = page.locator("#fmf-table-column-message-id-col-menu-opener")
         self.input_field = page.locator("input.quick-filter-input")
@@ -104,7 +103,7 @@ class FircoPage:
 
         Checks if a filter icon is visible and clicks it if present.
         """
-        if self.sel.filtered_column_icon.is_visible(timeout=60000):
+        if self.sel.filtered_column_icon.is_visible():
             self.sel.filtered_column_icon.click()
         else:
             logging.info("No filter in transaction column.")

@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
@@ -110,13 +109,19 @@ class FircoPage:
                 self.sel.filtered_column_icon.click()
                 # Verify if the filter icon is still visible after clicking
                 if self.sel.filtered_column_icon.is_visible(timeout=2000):
-                    logging.warning("Filter icon still visible after click. Filter may not have cleared.")
+                    logging.warning(
+                        "Filter icon still visible after click. Filter may not have cleared."
+                    )
                 else:
                     logging.info("Filter successfully cleared.")
             else:
-                logging.info("No filter icon detected in transaction column. No action needed.")
+                logging.info(
+                    "No filter icon detected in transaction column. No action needed."
+                )
         except PlaywrightTimeoutError:
-            logging.error("Timeout while checking for filter icon. Assuming no filter present.")
+            logging.error(
+                "Timeout while checking for filter icon. Assuming no filter present."
+            )
 
     def search_transaction(self, transaction: str):
         """

@@ -16,6 +16,7 @@
             <div class="nav-links">
                 <a href="#transaction-form" class="nav-link active">Transaction Form</a>
                 <a href="#transaction-history" class="nav-link">Transactions History</a>
+                <a href="#batch-processing" class="nav-link">Batch Processing</a>
             </div>
             <div class="theme-toggle">
                 <button id="theme-toggle-btn" aria-label="Toggle dark mode">
@@ -144,6 +145,18 @@
                 </div>
             </div>
         </section>
+
+        <section id="batch-processing" class="section">
+            <div class="container">
+                <div id="batch-processing" class="tab-content">
+                    <h2>Batch Processing</h2>
+                    <input type="file" id="csvFileInput" accept=".csv" />
+                    <button onclick="processBatch()">Process Batch</button>
+                    <div id="batchResult"></div>
+                    <a id="downloadLink" style="display: none;" download="batch_results.csv">Download Results</a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer>
@@ -153,5 +166,6 @@
     </footer>
 
     <script src="js/script.js"></script>
+    <script src="js/batchProcessing.js"></script>
 </body>
 </html>

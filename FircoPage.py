@@ -436,6 +436,7 @@ class FircoPage:
             self.page.screenshot(path="more_transactions.png", full_page=True)
             return SearchStatus.MULTIPLE
 
+        # one transaction found
         self.page.screenshot(path="one_transaction.png", full_page=True)
         try:
             self.sel.first_row.click()

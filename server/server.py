@@ -1,4 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import signal
@@ -9,6 +9,7 @@ from datetime import datetime
 from main_logic import process_transaction
 from main_logic import setup_logging, INCOMING_DIR, OUTPUT_DIR
 from playwright.sync_api import sync_playwright
+from filelock import FileLock
 
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,8 +34,11 @@ def create_output_structure(transaction):
     date_folder = os.path.join(OUTPUT_DIR, today)
     transaction_folder = os.path.join(date_folder, transaction)
 
-    os.makedirs(date_folder, exist_ok=True)
-    os.makedirs(transaction_folder, exist_ok=True)
+    # Ensure directories are created atomically to avoid race conditions in multi-threaded mode
+    lock_path = os.path.join(OUTPUT_DIR, ".dir.lock")
+    with FileLock(lock_path):
+        os.makedirs(date_folder, exist_ok=True)
+        os.makedirs(transaction_folder, exist_ok=True)
 
     return transaction_folder, date_folder
 
@@ -216,16 +220,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Endpoint not found")
 
 
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8080):
+def run(
+    server_class=ThreadingHTTPServer,
+    handler_class=SimpleHTTPRequestHandler,
+    host: str = "0.0.0.0",
+    port: int = 8080,
+):
     # Set up logging
     setup_logging()
-    logging.info("Starting server on port %s...", port)
+    logging.info("Starting server on %s:%s ...", host, port)
 
     # Ensure directories exist
     os.makedirs(INCOMING_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    server_address = ("", port)
+    server_address = (host, port)
     httpd = server_class(server_address, handler_class)
 
     # Set up signal handler for graceful shutdown
@@ -249,4 +258,4 @@ def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=80
 
 
 if __name__ == "__main__":
-    run()
+    run()  # uses default host 0.0.0.0 and port 8080

@@ -401,17 +401,25 @@ tbody tr:hover {
     right: 0.6rem;
     top: 50%;
     transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 1.2rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--hover-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    font-size: 0.9rem;
     line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
     display: none; /* shown only when input has value */
 }
 
 .clear-btn:hover {
-    color: var(--error-color);
+    background-color: var(--error-color);
+    color: #ffffff;
 }
 
 .status-badge.success-live,

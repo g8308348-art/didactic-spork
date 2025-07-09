@@ -1,4 +1,5 @@
 import logging
+logging.info("FircoPage module loaded from %s", __file__)
 import time
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
@@ -113,6 +114,7 @@ class FircoPage:
         Args:
             page: The Playwright Page object to use for interactions
         """
+        logging.info("FircoPage.__init__ called")
         self.page = page
         self.selectors = Selectors(page)  # Group all selectors in a separate object
 

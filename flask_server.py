@@ -30,7 +30,8 @@ from server.server import (
 )
 from playwright.sync_api import sync_playwright
 
-app = Flask(__name__, static_folder="static", static_url_path="/")
+# Serve files from 'public' so index.html is accessible at root
+app = Flask(__name__, static_folder="public", static_url_path="")
 
 # ---------------------------------------------------------------------------
 # Helper utilities specific to this Flask layer
@@ -56,6 +57,16 @@ def _write_temp_transaction_file(data: Dict[str, str]) -> str:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
+# Serve the SPA
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
+
+# Fallback for any other static assets (CSS, JS, images)
+@app.route('/<path:path>')
+def static_proxy(path):
+    return send_from_directory(app.static_folder, path)
 
 
 @app.route("/api", methods=["POST"])

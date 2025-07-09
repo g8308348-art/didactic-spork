@@ -1,4 +1,5 @@
 import logging
+
 logging.info("FircoPage module loaded from %s", __file__)
 import time
 from enum import Enum, auto
@@ -67,7 +68,9 @@ class Selectors:
         self.table_rows = self.table.locator("tbody tr")
         # Avoid evaluating locators during initialization; evaluate lazily later
         self.table_rows_first = self.table_rows.first
-        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(1)
+        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(
+            1
+        )
 
         self.data_filters = page.locator("text=Data filters...")
         self.data_filters_input = page.locator("id=text-input-element-44")
@@ -467,6 +470,7 @@ class FircoPage:
             return SearchStatus.MULTIPLE
 
         # one transaction found
+        logging.info("One transaction found")
         self.page.screenshot(path="one_transaction.png", full_page=True)
         try:
             self.selectors.first_row.click()

@@ -78,9 +78,8 @@ class Selectors:
         self.data_filters_add_button = page.locator("id=Add Filter Button")
         self.data_filters_ok_button = page.locator("id=Confirm Button")
 
-        self._live_messages_link: Locator = page.locator(
-            "li#root-menu-0 a.hide-idle-and-page"
-        )
+        # Navigation link to open Live Messages view (anchor has classes 'hide' and 'unload-page')
+        self._live_messages_link = page.locator("li#root-menu-0 a.hide.unload-page")
 
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")

@@ -315,8 +315,8 @@ class FircoPage:
         then checks History, then BPM.
         Returns a dictionary indicating the outcome.
         """
-        time.sleep(1)
-        logging.info("Navigating to live messages")
+
+        logging.info("Navigating to live messages link!")
         # self.sel.menu_item.click()
         self.selectors._live_messages_link.click()
 

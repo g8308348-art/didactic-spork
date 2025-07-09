@@ -84,6 +84,7 @@ def process_firco_transaction(
     Process a Firco transaction with the specified action.
     Returns a dictionary with processing status.
     """
+    logging.info("Processing transaction %s with action %s.", transaction, action)
     firco_page = FircoPage(page)
 
     details_result = firco_page.go_to_transaction_details(

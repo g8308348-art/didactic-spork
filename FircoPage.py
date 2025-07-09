@@ -40,7 +40,8 @@ class Selectors:
         self.filtered_date_menu_opener = page.locator(
             "#fmf-table-column-filtered-date-col-menu-opener"
         )
-        self.descending_date = page.locator(".sort-desc-menu-item")
+        # self.ascending_date = page.locator(".sort-desc-menu-item")
+        self.ascending_date = page.locator("text=Sort ascending")
         self.reset_filter = page.locator(".remove-sort-menu-item")
 
         # Table selectors
@@ -60,6 +61,17 @@ class Selectors:
         self.transaction_rows = page.locator(
             "table.hit-table.live tbody tr"
         )  # was self.table / duplicated
+
+        self._table = page.locator("table#table-element-1")
+        self._table_rows = self._table.locator("tbody tr")
+        self._table_rows_count = self._table_rows.count()
+        self._table_rows_first = self._table_rows.first
+        self._table_rows_first_message_id_cell = self._table_rows_first.locator(
+            "td"
+        ).nth(1)
+        self._table_rows_first_message_id = (
+            self._table_rows_first_message_id_cell.text_content()
+        )
 
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
@@ -324,9 +336,9 @@ class FircoPage:
                 )
                 # Click filter menu, descending sort, then first row
                 self.sel.filtered_date_menu_opener.click()
-                self.sel.descending_date.click()
+                self.sel.ascending_date.click()
                 # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
-                self.sel.transaction_rows.first.click()
+                self.sel._table_rows_first_message_id_cell.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
@@ -370,7 +382,7 @@ class FircoPage:
                 )
                 # Click filter menu, descending sort, then first row
                 self.sel.filtered_date_menu_opener.click()
-                self.sel.descending_date.click()
+                self.sel.ascending_date.click()
                 # Click the first transaction row
                 self.sel.transaction_rows.first.click()
                 self.fill_comment_field(comment)

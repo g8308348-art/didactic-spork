@@ -120,7 +120,7 @@ def process_firco_transaction(
             logging.info(
                 f"Transaction {transaction} found in Live Messages. Escalating for action '{action}'."
             )
-            firco_page.sel.escalate.click()
+            firco_page.selectors.escalate.click()
             time.sleep(2)  # Consider replacing with an explicit wait
             firco_page.logout()
             return {

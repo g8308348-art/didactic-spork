@@ -78,6 +78,10 @@ class Selectors:
         self.data_filters_add_button = page.locator("id=Add Filter Button")
         self.data_filters_ok_button = page.locator("id=Confirm Button")
 
+        self._live_messages_link: Locator = page.locator(
+            "li#root-menu-0 a.hide-idle-and-page"
+        )
+
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
         self.confirm = page.locator("input#Confirm\\ Button")
@@ -111,7 +115,7 @@ class FircoPage:
             page: The Playwright Page object to use for interactions
         """
         self.page = page
-        self.sel = Selectors(page)  # Group all selectors in a separate object
+        self.selectors = Selectors(page)  # Group all selectors in a separate object
 
     def clear_filtered_column(self):
         """
@@ -121,11 +125,11 @@ class FircoPage:
         was successful and logs detailed feedback.
         """
         try:
-            if self.sel.filtered_column_icon.is_visible(timeout=5000):
+            if self.selectors.filtered_column_icon.is_visible(timeout=5000):
                 logging.info("Filter icon detected. Attempting to clear filter.")
-                self.sel.filtered_column_icon.click()
+                self.selectors.filtered_column_icon.click()
                 # Verify if the filter icon is still visible after clicking
-                if self.sel.filtered_column_icon.is_visible(timeout=2000):
+                if self.selectors.filtered_column_icon.is_visible(timeout=2000):
                     logging.warning(
                         "Filter icon still visible after click. Filter may not have cleared."
                     )
@@ -147,9 +151,9 @@ class FircoPage:
         Args:
             transaction: The transaction ID to search for
         """
-        self.sel.menu_opener.click()
-        self.sel.input_field.fill(transaction)
-        self.sel.search_btn.click()
+        self.selectors.menu_opener.click()
+        self.selectors.input_field.fill(transaction)
+        self.selectors.search_btn.click()
         try:
             self.page.wait_for_selector(".loading-indicator", state="visible")
             self.page.wait_for_selector(
@@ -161,8 +165,8 @@ class FircoPage:
             logging.error("Error while waiting for loading indicator: %s", e)
 
     def data_filters(self, transaction: str, amount: str = ""):
-        self.sel.menu_opener.click()
-        self.sel.data_filters.click()
+        self.selectors.menu_opener.click()
+        self.selectors.data_filters.click()
         self.page.fill("id=text-input-element-44", transaction)
         self.page.click("id=Add Filter Button")
         self.page.click("id=Confirm Button")
@@ -312,18 +316,23 @@ class FircoPage:
         then checks History, then BPM.
         Returns a dictionary indicating the outcome.
         """
-        self.sel.menu_item.click()
-        expect(self.sel.live_messages).to_contain_text("Live Messages")
+        time.sleep(1)
+        logging.info("Navigating to live messages")
+        # self.sel.menu_item.click()
+        self.selectors._live_messages_link.click()
+
+        expect(self.selectors.live_messages).to_contain_text("Live Messages")
+
         try:
-            expect(self.sel.live_messages_tab).to_be_visible()
-            expect(self.sel.live_messages_tab).to_have_class(
+            expect(self.selectors.live_messages_tab).to_be_visible()
+            expect(self.selectors.live_messages_tab).to_have_class(
                 r"tab-center tab-center-selected"
             )
         except (AssertionError, PlaywrightTimeoutError) as e:
             logging.info("Live Messages tab not active: %s", e)
             logging.info("Clicking on Live Messages tab.")
-            self.sel.live_messages_tab.click()
-            expect(self.sel.live_messages_tab).to_have_class(
+            self.selectors.live_messages_tab.click()
+            expect(self.selectors.live_messages_tab).to_have_class(
                 r"tab-center tab-center-selected"
             )
 
@@ -348,10 +357,10 @@ class FircoPage:
                     f"Multiple transactions found for ID: {transaction} in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction."
                 )
                 # Click filter menu, descending sort, then first row
-                self.sel.filtered_date_menu_opener.click()
-                self.sel.ascending_date.click()
+                self.selectors.filtered_date_menu_opener.click()
+                self.selectors.ascending_date.click()
                 # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
-                self.sel._table_rows_first_message_id_cell.click()
+                self.selectors._table_rows_first_message_id_cell.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
@@ -370,7 +379,7 @@ class FircoPage:
         logging.info(
             f"Transaction {transaction} not uniquely found in Live Messages. Checking History tab."
         )
-        self.sel.history_item.click()
+        self.selectors.history_item.click()
         self.page.wait_for_timeout(
             2000
         )  # User-added timeout, consider explicit wait if possible
@@ -394,10 +403,10 @@ class FircoPage:
                     f"Multiple transactions found for ID: {transaction} in History, but 'perform_on_latest' is set. Selecting the latest transaction."
                 )
                 # Click filter menu, descending sort, then first row
-                self.sel.filtered_date_menu_opener.click()
-                self.sel.ascending_date.click()
+                self.selectors.filtered_date_menu_opener.click()
+                self.selectors.ascending_date.click()
                 # Click the first transaction row
-                self.sel.transaction_rows.first.click()
+                self.selectors.transaction_rows.first.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
@@ -434,7 +443,7 @@ class FircoPage:
         if screenshots:
             self.page.screenshot(path="hit_0.png", full_page=True)
 
-        rows = self.sel.transaction_rows.element_handles()
+        rows = self.selectors.transaction_rows.element_handles()
 
         for i in range(3, len(rows)):
             row = rows[i]
@@ -453,18 +462,18 @@ class FircoPage:
         """
         Verify search results for a transaction and return status.
         """
-        if self.sel.no_data_notice.is_visible():
+        if self.selectors.no_data_notice.is_visible():
             self.page.screenshot(path="no_transactions.png", full_page=True)
             return SearchStatus.NONE
 
-        if (self.sel.first_odd_row_td_text.text_content() or "").strip():
+        if (self.selectors.first_odd_row_td_text.text_content() or "").strip():
             self.page.screenshot(path="more_transactions.png", full_page=True)
             return SearchStatus.MULTIPLE
 
         # one transaction found
         self.page.screenshot(path="one_transaction.png", full_page=True)
         try:
-            self.sel.first_row.click()
+            self.selectors.first_row.click()
         except Exception as e:
             screenshot_path = "not_active_transaction.png"
             self.page.screenshot(path=screenshot_path, full_page=True)
@@ -483,8 +492,8 @@ class FircoPage:
         Args:
             text: The comment text to enter
         """
-        expect(self.sel.comment_field).to_be_visible()
-        self.sel.comment_field.fill(text)
+        expect(self.selectors.comment_field).to_be_visible()
+        self.selectors.comment_field.fill(text)
 
     def logout(self):
         """
@@ -494,7 +503,7 @@ class FircoPage:
         then clicks the logout button and logs the action.
         """
         self.page.wait_for_timeout(2000)
-        self.sel.logout.click()
+        self.selectors.logout.click()
         logging.info("logged out!")
 
     def perform_action(self, action: str):
@@ -508,10 +517,10 @@ class FircoPage:
             action: The action to perform (STP-Release, Release, Block, or Reject)
         """
         action_button_map = {
-            "STP-Release": self.sel.stp_release,
-            "Release": self.sel.release,
-            "Block": self.sel.block,
-            "Reject": self.sel.reject,
+            "STP-Release": self.selectors.stp_release,
+            "Release": self.selectors.release,
+            "Block": self.selectors.block,
+            "Reject": self.selectors.reject,
         }
 
         if action in action_button_map:
@@ -528,7 +537,7 @@ class FircoPage:
             self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
 
             # Click confirm button
-            self.sel.confirm.click()
+            self.selectors.confirm.click()
 
             # Take screenshot after confirmation
             self.page.screenshot(path=f"{action_name}_3.png", full_page=True)

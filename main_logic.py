@@ -277,6 +277,7 @@ def process_transaction(
 
         if action != "STP-Release":
             # For non-STP actions, we expect escalation
+            logging.info("Processing non-STP action with escalation.")
             firco_result_user1 = process_firco_transaction(
                 page,
                 transaction,
@@ -288,6 +289,7 @@ def process_transaction(
             )
         else:
             # For STP-Release, process directly without escalation flag initially
+            logging.info("Processing STP-Release transaction directly.")
             firco_result_user1 = process_firco_transaction(
                 page,
                 transaction,

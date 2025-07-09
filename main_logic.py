@@ -368,7 +368,8 @@ def process_transaction(
                 logging.error("Screenshot folder not found: %s", transaction_folder)
             except PermissionError:
                 logging.error(
-                    "Permission denied when moving screenshots to %s", transaction_folder
+                    "Permission denied when moving screenshots to %s",
+                    transaction_folder,
                 )
             except OSError as e:
                 logging.error("OS error when moving screenshots: %s", e)

@@ -280,7 +280,7 @@ class FircoPage:
         transaction: str,
         comment: str,
         transaction_type: str = "",
-        perform_on_latest: bool = False,
+        perform_on_latest: bool = True,
     ):
         """
         Navigate to a specific transaction's details page and determine its status.

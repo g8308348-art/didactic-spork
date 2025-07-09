@@ -49,26 +49,31 @@ def move_screenshots_to_folder(target_folder):
     The original screenshots are removed from the main folder.
     """
     import shutil
-    
+
     for file in os.listdir("."):
-        if file.endswith(".png") and ("screenshot" in file or "hld" in file or "release" in file or "transaction" in file):
+        if file.endswith(".png") and (
+            "screenshot" in file
+            or "hld" in file
+            or "release" in file
+            or "transaction" in file
+        ):
             src_path = os.path.join(".", file)
             dest_path = os.path.join(target_folder, file)
-            
+
             try:
                 # If destination exists, remove it first to avoid errors
                 if os.path.exists(dest_path):
                     os.remove(dest_path)
                     logging.info(f"Removed existing file at destination: {dest_path}")
-                
+
                 # Copy the file to destination
                 shutil.copy2(src_path, dest_path)
                 logging.info(f"Copied screenshot to: {dest_path}")
-                
+
                 # Remove the original file
                 os.remove(src_path)
                 logging.info(f"Removed original screenshot: {src_path}")
-                
+
             except Exception as e:
                 logging.error(f"Failed to handle screenshot {file}: {e}")
                 # Continue with next file even if this one failed
@@ -92,8 +97,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if self.path == "/":
             self.path = "/index.html"
 
-        # Build the file path relative to the 'static' folder
-        file_path = os.path.join(os.getcwd(), "static", self.path.lstrip("/"))
+        # Build the file path relative to the 'public' folder
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "public", self.path.lstrip("/"))
         try:
             with open(file_path, "rb") as file:
                 self.send_response(200)
@@ -101,6 +107,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-type", "text/html")
                 elif self.path.endswith(".js"):
                     self.send_header("Content-type", "application/javascript")
+                elif self.path.endswith(".css"):
+                    self.send_header("Content-type", "text/css")
                 else:
                     self.send_header("Content-type", "application/octet-stream")
                 self._set_cors_headers()
@@ -156,10 +164,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
                 with sync_playwright() as playwright:
                     response = process_transaction(
-                        playwright, 
-                        temp_file_path, 
+                        playwright,
+                        temp_file_path,
                         transaction_type=transaction_type,
-                        perform_on_latest=perform_on_latest
+                        perform_on_latest=perform_on_latest,
                     )
                     # Ensure response is a dict, not a JSON string
                     if isinstance(response, str):
@@ -170,7 +178,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     response = {
                         "success": True,
                         "message": response["message"],
-                        "status_detail": response.get("status_detail", response.get("status")), # Include status_detail for frontend
+                        "status_detail": response.get(
+                            "status_detail", response.get("status")
+                        ),  # Include status_detail for frontend
                         "transactionId": os.path.basename(temp_file_path).split(".")[0],
                     }
                 else:
@@ -180,7 +190,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         "message": response["message"],
                         "errorCode": response["error_code"],
                         "screenshotPath": response["screenshot_path"],
-                        "status_detail": response.get("status_detail", response.get("status")) # Include status_detail for frontend
+                        "status_detail": response.get(
+                            "status_detail", response.get("status")
+                        ),  # Include status_detail for frontend
                     }
 
                     # If temp file was created but processing failed, we should clean it up
@@ -224,7 +236,7 @@ def run(
     server_class=ThreadingHTTPServer,
     handler_class=SimpleHTTPRequestHandler,
     host: str = "0.0.0.0",
-    port: int = 8080,
+    port: int = 8088,
 ):
     # Set up logging
     setup_logging()
@@ -258,4 +270,4 @@ def run(
 
 
 if __name__ == "__main__":
-    run()  # uses default host 0.0.0.0 and port 8080
+    run()  # uses default host 0.0.0.0 and port 8088

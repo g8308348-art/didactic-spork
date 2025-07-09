@@ -134,7 +134,7 @@ def serve_index():
 def main() -> None:  # pragma: no cover
     """Run the Flask app with thread support (development use)."""
     setup_logging()
-    logging.info("Starting Flask server on http://0.0.0.0:8080 …")
+    logging.info("Starting Flask server on http://0.0.0.0:8088 …")
     app.run(host="0.0.0.0", port=8088, threaded=True)
 
 

@@ -382,6 +382,38 @@ tbody tr:hover {
 
 /* Tooltip hover effects now handled by JavaScript */
 
+/* Clearable input styles */
+.input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.input-wrapper input[type="text"],
+.input-wrapper input[type="search"] {
+    padding-right: 2.2rem; /* space for the clear button */
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: none; /* shown only when input has value */
+}
+
+.clear-btn:hover {
+    color: var(--error-color);
+}
+
 .status-badge.success-live,
 .status-badge.success { /* Fallback for existing 'success' if any */
   background-color: var(--secondary-color); /* Standard green for happy path */

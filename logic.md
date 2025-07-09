@@ -11,7 +11,7 @@ The MURDOCK Transaction Processing Tool is a web-based application that automate
 - **style.css**: Styling
 
 #### 2. Backend (Server-Side)
-- API endpoint at `http://localhost:8080/api` for transaction processing
+- API endpoint at `http://localhost:8088/api` for transaction processing
 
 ### Transaction Processing Flow
 

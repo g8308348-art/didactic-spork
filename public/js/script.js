@@ -38,6 +38,7 @@ themeToggleBtn.addEventListener('click', () => {
 
 // Check for saved theme preference
 document.addEventListener('DOMContentLoaded', () => {
+    // existing theme & init code ...
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
@@ -54,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
             section.style.display = 'none';
         }
     });
+
+    // Initialize clear buttons on all inputs
+    setupClearableInputs();
 });
 
 // Navigation links
@@ -80,6 +84,55 @@ navLinks.forEach(link => {
         document.getElementById(targetId).style.display = 'block';
     });
 });
+
+// Clearable input setup
+function setupClearableInputs() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="search"]');
+    inputs.forEach(input => {
+        // Skip if already wrapped
+        if (input.parentElement && input.parentElement.classList.contains('input-wrapper')) {
+            return;
+        }
+
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'input-wrapper';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        // Create clear button
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'clear-btn';
+        clearBtn.innerHTML = '&times;';
+        wrapper.appendChild(clearBtn);
+
+        // Show/hide button based on value
+        const toggleBtn = () => {
+            if (input.value) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        };
+        input.addEventListener('input', toggleBtn);
+        // Initial state
+        toggleBtn();
+
+        // Clear logic
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            input.dispatchEvent(new Event('input')); // trigger other listeners
+            toggleBtn();
+
+            // Special handling for comment input to reset char count
+            if (input.id === 'comment' && typeof commentCharCount !== 'undefined') {
+                commentCharCount.textContent = '0';
+                commentCharCount.style.color = 'var(--text-secondary)';
+            }
+        });
+    });
+}
 
 // Character count for comment
 commentInput.addEventListener('input', () => {
@@ -416,7 +469,7 @@ async function simulateServerSubmission(data) {
 async function sendTransactionToServer(data) {
     try {
         // Use the actual server endpoint
-        const response = await fetch('http://localhost:8080/api', {
+        const response = await fetch('http://localhost:8088/api', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

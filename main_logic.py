@@ -3,6 +3,10 @@ import logging
 import time
 import json
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if present
+load_dotenv()
 
 # Add current directory to path to find local modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -19,15 +23,15 @@ from utils import (
     get_txt_files,
 )
 
-# --- Config ---
-INCOMING_DIR = "input"
-OUTPUT_DIR = "output"
-LOG_FILE = "transactions.log"
-TEST_URL = "https://example.com"
-USERNAME = "user"
-PASSWORD = "pass"
-MANAGER_USERNAME = "manager"
-MANAGER_PASSWORD = "pass"
+# --- Config (environment overrides .env) ---
+INCOMING_DIR = os.getenv("INCOMING_DIR", "input")
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
+LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
+TEST_URL = os.getenv("TEST_URL", "https://example.com")
+USERNAME = os.getenv("USERNAME", "user")
+PASSWORD = os.getenv("PASSWORD", "pass")
+MANAGER_USERNAME = os.getenv("MANAGER_USERNAME", "manager")
+MANAGER_PASSWORD = os.getenv("MANAGER_PASSWORD", "pass")
 
 # Define module-level constants for status strings
 TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"

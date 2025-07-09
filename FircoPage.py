@@ -73,6 +73,11 @@ class Selectors:
             self._table_rows_first_message_id_cell.text_content()
         )
 
+        self.data_filters = page.locator("text=Data filters...")
+        self.data_filters_input = page.locator("id=text-input-element-44")
+        self.data_filters_add_button = page.locator("id=Add Filter Button")
+        self.data_filters_ok_button = page.locator("id=Confirm Button")
+
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
         self.confirm = page.locator("input#Confirm\\ Button")
@@ -154,6 +159,13 @@ class FircoPage:
             logging.error("Timeout waiting for loading indicator: %s", e)
         except (ValueError, RuntimeError) as e:
             logging.error("Error while waiting for loading indicator: %s", e)
+
+    def data_filters(self, transaction: str, amount: str = ""):
+        self.sel.menu_opener.click()
+        self.sel.data_filters.click()
+        self.page.fill("id=text-input-element-44", transaction)
+        self.page.click("id=Add Filter Button")
+        self.page.click("id=Confirm Button")
 
     def check_bpm_page(self, transaction: str, transaction_type: str = ""):
         """
@@ -296,7 +308,8 @@ class FircoPage:
     ):
         """
         Navigate to a specific transaction's details page and determine its status.
-        Prioritizes Live Messages for processing, then checks History, then Sanctions Bypass View, then BPM.
+        Prioritizes Live Messages for processing,
+        then checks History, then BPM.
         Returns a dictionary indicating the outcome.
         """
         self.sel.menu_item.click()
@@ -316,7 +329,7 @@ class FircoPage:
 
         # 1. Search in Live Messages tab
         self.clear_filtered_column()  # Assuming this is for Live Messages context
-        self.search_transaction(transaction)
+        self.data_filters(transaction)
         live_status = self.verify_search_results(transaction)
 
         if live_status == SearchStatus.FOUND:
@@ -364,7 +377,7 @@ class FircoPage:
 
         # Clear any existing filters and search for the transaction
         self.clear_filtered_column()
-        self.search_transaction(transaction)
+        self.data_filters(transaction)
         history_status = self.verify_search_results(transaction)
 
         if history_status == SearchStatus.FOUND:

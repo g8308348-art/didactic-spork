@@ -62,15 +62,15 @@ class Selectors:
             "table.hit-table.live tbody tr"
         )  # was self.table / duplicated
 
-        self._table = page.locator("table#table-element-1")
-        self._table_rows = self._table.locator("tbody tr")
-        self._table_rows_count = self._table_rows.count()
-        self._table_rows_first = self._table_rows.first
-        self._table_rows_first_message_id_cell = self._table_rows_first.locator(
-            "td"
-        ).nth(1)
-        self._table_rows_first_message_id = (
-            self._table_rows_first_message_id_cell.text_content()
+        self.table = page.locator("table#table-element-1")
+        self.table_rows = self.table.locator("tbody tr")
+        self.table_rows_count = self.table_rows.count()
+        self.table_rows_first = self.table_rows.first
+        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(
+            1
+        )
+        self.table_rows_first_message_id = (
+            self.table_rows_first_message_id_cell.text_content()
         )
 
         self.data_filters = page.locator("text=Data filters...")
@@ -79,7 +79,7 @@ class Selectors:
         self.data_filters_ok_button = page.locator("id=Confirm Button")
 
         # Navigation link to open Live Messages view (anchor has classes 'hide' and 'unload-page')
-        self._live_messages_link = page.locator("li#root-menu-0 a.hide.unload-page")
+        self.live_messages_link = page.locator("li#root-menu-0 a.hide.unload-page")
 
         # Action buttons
         self.stp_release = page.locator("input[value='STP_Release']")
@@ -318,7 +318,7 @@ class FircoPage:
 
         logging.info("Navigating to live messages link!")
         # self.sel.menu_item.click()
-        self.selectors._live_messages_link.click()
+        self.selectors.live_messages_link.click()
 
         expect(self.selectors.live_messages).to_contain_text("Live Messages")
 
@@ -359,7 +359,7 @@ class FircoPage:
                 self.selectors.filtered_date_menu_opener.click()
                 self.selectors.ascending_date.click()
                 # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
-                self.selectors._table_rows_first_message_id_cell.click()
+                self.selectors.table_rows_first_message_id_cell.click()
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {

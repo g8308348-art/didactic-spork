@@ -65,14 +65,9 @@ class Selectors:
 
         self.table = page.locator("table#table-element-1")
         self.table_rows = self.table.locator("tbody tr")
-        self.table_rows_count = self.table_rows.count()
+        # Avoid evaluating locators during initialization; evaluate lazily later
         self.table_rows_first = self.table_rows.first
-        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(
-            1
-        )
-        self.table_rows_first_message_id = (
-            self.table_rows_first_message_id_cell.text_content()
-        )
+        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(1)
 
         self.data_filters = page.locator("text=Data filters...")
         self.data_filters_input = page.locator("id=text-input-element-44")

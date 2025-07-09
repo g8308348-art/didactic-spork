@@ -470,7 +470,9 @@ async function sendTransactionToServer(data) {
     try {
         // Use the actual server endpoint
         // Use relative URL to work regardless of host/port
-const API_URL = '/api';
+const API_URL = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== '')
+  ? window.location.origin + '/api'
+  : 'http://localhost:5000/api';
 const response = await fetch(API_URL, {
             method: 'POST',
             headers: {

@@ -469,7 +469,9 @@ async function simulateServerSubmission(data) {
 async function sendTransactionToServer(data) {
     try {
         // Use the actual server endpoint
-        const response = await fetch('http://localhost:8088/api', {
+        // Use relative URL to work regardless of host/port
+const API_URL = '/api';
+const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -92,6 +92,7 @@ def process_firco_transaction(
         "found_in_sanctions_bypass",  # Found in Sanctions Bypass View
         "found_in_bpm",  # Found in BPM
         "failed_in_bpm",  # BPM search failed
+        "action_performed_on_live",  # Action already performed on transaction in Live Messages
         TRANSACTION_NOT_FOUND_STATUS,  # Not found in any tab
     ]
 

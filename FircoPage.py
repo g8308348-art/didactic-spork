@@ -52,7 +52,9 @@ class Selectors:
         self.menu_opener = page.locator("#fmf-table-column-message-id-col-menu-opener")
         self.input_field = page.locator("input.quick-filter-input")
         self.search_btn = page.locator("div.quick-filter-icon")
-        self.no_data_notice = page.locator("div.no-data-notice")
+        self.no_data_notice = page.locator(
+            "div.no-data-notice-wrapper div.no-data-notice"
+        )
         self.first_odd_row_td_text = (
             page.locator("tr.odd-row").first.locator("td").first
         )
@@ -339,10 +341,10 @@ class FircoPage:
         self.clear_filtered_column()  # Assuming this is for Live Messages context
         self.data_filters(transaction)
         live_status = self.verify_search_results(transaction)
-        
+
         # Return immediately after verify_search_results, regardless of status
         logging.info(f"Breaking after verify_search_results with status: {live_status}")
-        
+
         # Handle all possible status values and return immediately
         if live_status == SearchStatus.NONE:
             return {

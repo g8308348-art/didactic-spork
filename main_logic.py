@@ -37,6 +37,20 @@ MANAGER_PASSWORD = os.getenv("MANAGER_PASSWORD", "pass")
 TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"
 
 
+# --- Logging Setup ---
+def setup_logging() -> None:
+    """Set up logging configuration with file and console handlers."""
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(msecs)03d] :: %(levelname)s :: %(name)s :: %(funcName)s :: %(message)s",
+        datefmt="%X",
+        handlers=[
+            logging.FileHandler(LOG_FILE, encoding="utf-8"),
+            logging.StreamHandler(),
+        ],
+    )
+
+
 # --- Firco Login ---
 def login_to_firco(
     page: Page, url: str = TEST_URL, username: str = USERNAME, password: str = PASSWORD

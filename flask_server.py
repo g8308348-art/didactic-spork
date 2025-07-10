@@ -34,6 +34,9 @@ import os
 LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
 
 root_logger = logging.getLogger()
+# Ensure we see INFO lines from our code
+root_logger.setLevel(logging.DEBUG)
+
 if not root_logger.handlers:
     logging.basicConfig(
         level=logging.DEBUG,
@@ -45,7 +48,10 @@ if not root_logger.handlers:
         ],
     )
 else:
-    # If reloader, ensure file handler exists
+    # Ensure a stream handler exists for console output
+    if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
+        root_logger.addHandler(logging.StreamHandler())
+    # Ensure file handler exists
     if not any(
         isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(LOG_FILE)
         for h in root_logger.handlers

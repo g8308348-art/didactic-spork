@@ -30,6 +30,27 @@ from server.server import (
 )
 from playwright.sync_api import sync_playwright
 
+# ---------------------------------------------------------------------------
+# Logging configuration (console + file) for Flask process
+# ---------------------------------------------------------------------------
+from main_logic import setup_logging, LOG_FILE  # reuse helper
+
+root_logger = logging.getLogger()
+if not root_logger.handlers:
+    # First import / main process – initialise
+    setup_logging()
+else:
+    # When running under Flask's reloader a handler may already exist; ensure file handler present
+    if not any(
+        isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(LOG_FILE)
+        for h in root_logger.handlers
+    ):
+        root_logger.addHandler(logging.FileHandler(LOG_FILE, encoding="utf-8"))
+
+# Make sure Werkzeug HTTP logs propagate
+logging.getLogger("werkzeug").setLevel(logging.INFO)
+logging.getLogger("werkzeug").propagate = True
+
 # Serve files from 'public' so index.html is accessible at root
 app = Flask(__name__, static_folder="public", static_url_path="")
 

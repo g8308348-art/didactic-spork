@@ -339,8 +339,17 @@ class FircoPage:
         self.clear_filtered_column()  # Assuming this is for Live Messages context
         self.data_filters(transaction)
         live_status = self.verify_search_results(transaction)
-
-        if live_status == SearchStatus.FOUND:
+        
+        # Return immediately after verify_search_results, regardless of status
+        logging.info(f"Breaking after verify_search_results with status: {live_status}")
+        
+        # Handle all possible status values and return immediately
+        if live_status == SearchStatus.NONE:
+            return {
+                "status": "not_found_in_live",
+                "message": f"Transaction {transaction} not found in Live Messages. Breaking without checking History or BPM.",
+            }
+        elif live_status == SearchStatus.FOUND:
             logging.info(
                 f"Transaction {transaction} found in Live Messages. Preparing for action."
             )

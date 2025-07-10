@@ -12,19 +12,15 @@ import json
 import logging
 import os
 import tempfile
-from datetime import datetime
 from typing import Any, Dict
 
-from filelock import FileLock
 from flask import Flask, jsonify, request, send_from_directory
 from main_logic import (
     INCOMING_DIR,
     OUTPUT_DIR,
     process_transaction,
-    setup_logging,
 )
-from server.server import (
-    parse_txt_file,
+from server import (
     create_output_structure,
     move_screenshots_to_folder,
 )
@@ -33,14 +29,23 @@ from playwright.sync_api import sync_playwright
 # ---------------------------------------------------------------------------
 # Logging configuration (console + file) for Flask process
 # ---------------------------------------------------------------------------
-from main_logic import setup_logging, LOG_FILE  # reuse helper
+import os
+
+LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
 
 root_logger = logging.getLogger()
 if not root_logger.handlers:
-    # First import / main process – initialise
-    setup_logging()
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(msecs)03d] :: %(levelname)s :: %(name)s :: %(funcName)s :: %(message)s",
+        datefmt="%X",
+        handlers=[
+            logging.FileHandler(LOG_FILE, encoding="utf-8"),
+            logging.StreamHandler(),
+        ],
+    )
 else:
-    # When running under Flask's reloader a handler may already exist; ensure file handler present
+    # If reloader, ensure file handler exists
     if not any(
         isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(LOG_FILE)
         for h in root_logger.handlers
@@ -79,13 +84,15 @@ def _write_temp_transaction_file(data: Dict[str, str]) -> str:
 # Routes
 # ---------------------------------------------------------------------------
 
+
 # Serve the SPA
 @app.route("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
 
+
 # Fallback for any other static assets (CSS, JS, images)
-@app.route('/<path:path>')
+@app.route("/<path:path>")
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
 
@@ -165,7 +172,6 @@ def serve_index():
 
 def main() -> None:  # pragma: no cover
     """Run the Flask app with thread support (development use)."""
-    setup_logging()
     logging.info("Starting Flask server on http://0.0.0.0:8088 …")
     app.run(host="0.0.0.0", port=8088, threaded=True)
 

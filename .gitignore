@@ -1,1 +1,4 @@
 helpers/
+venv/
+*.pyc
+transactions.log

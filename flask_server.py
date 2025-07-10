@@ -12,12 +12,13 @@ import json
 import logging
 import os
 import tempfile
+import sys
+from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
 
 from flask import Flask, jsonify, request, send_from_directory
 from main_logic import (
     INCOMING_DIR,
-    OUTPUT_DIR,
     process_transaction,
 )
 from server import (
@@ -26,44 +27,34 @@ from server import (
 )
 from playwright.sync_api import sync_playwright
 
+# Create Flask application
+app = Flask(__name__, static_folder="public")
+
+
 # ---------------------------------------------------------------------------
-# Logging configuration (console + file) for Flask process
+# Logging Configuration
 # ---------------------------------------------------------------------------
-import os
 
-LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
+def setup_logging():
+    """Configure logging to output to both console and transactions.log file."""
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
+    
+    # File handler with rotation (10 MB max size, keep 5 backup files)
+    file_handler = RotatingFileHandler('transactions.log', maxBytes=10*1024*1024, backupCount=5)
+    file_handler.setFormatter(log_formatter)
+    root_logger.addHandler(file_handler)
+    
+    logging.info('Logging configured to console and transactions.log file')
 
-root_logger = logging.getLogger()
-# Ensure we see INFO lines from our code
-root_logger.setLevel(logging.DEBUG)
-
-if not root_logger.handlers:
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s [%(msecs)03d] :: %(levelname)s :: %(name)s :: %(funcName)s :: %(message)s",
-        datefmt="%X",
-        handlers=[
-            logging.FileHandler(LOG_FILE, encoding="utf-8"),
-            logging.StreamHandler(),
-        ],
-    )
-else:
-    # Ensure a stream handler exists for console output
-    if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
-        root_logger.addHandler(logging.StreamHandler())
-    # Ensure file handler exists
-    if not any(
-        isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(LOG_FILE)
-        for h in root_logger.handlers
-    ):
-        root_logger.addHandler(logging.FileHandler(LOG_FILE, encoding="utf-8"))
-
-# Make sure Werkzeug HTTP logs propagate
-logging.getLogger("werkzeug").setLevel(logging.INFO)
-logging.getLogger("werkzeug").propagate = True
-
-# Serve files from 'public' so index.html is accessible at root
-app = Flask(__name__, static_folder="public", static_url_path="")
 
 # ---------------------------------------------------------------------------
 # Helper utilities specific to this Flask layer
@@ -178,6 +169,7 @@ def serve_index():
 
 def main() -> None:  # pragma: no cover
     """Run the Flask app with thread support (development use)."""
+    setup_logging()
     logging.info("Starting Flask server on http://0.0.0.0:8088 …")
     app.run(host="0.0.0.0", port=8088, threaded=True)
 

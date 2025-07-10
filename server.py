@@ -7,7 +7,7 @@ import logging
 import tempfile
 from datetime import datetime
 from main_logic import process_transaction
-from main_logic import setup_logging, INCOMING_DIR, OUTPUT_DIR
+from main_logic import INCOMING_DIR, OUTPUT_DIR
 from playwright.sync_api import sync_playwright
 from filelock import FileLock
 

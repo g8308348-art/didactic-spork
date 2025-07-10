@@ -343,7 +343,7 @@ class FircoPage:
         live_status = self.verify_search_results(transaction)
 
         # Return immediately after verify_search_results, regardless of status
-        logging.info(f"Breaking after verify_search_results with status: {live_status}")
+        # logging.info(f"Breaking after verify_search_results with status: {live_status}")
 
         # Handle all possible status values and return immediately
         if live_status == SearchStatus.NONE:

@@ -472,6 +472,9 @@ class FircoPage:
         """
         Verify search results for a transaction and return status.
         """
+        logging.info("Verifying search results for transaction %s.", transaction)
+        logging.info("Waiting for 2 seconds.")
+        time.sleep(2)
         if self.selectors.no_data_notice.is_visible():
             self.page.screenshot(path="no_transactions.png", full_page=True)
             return SearchStatus.NONE

@@ -24,7 +24,20 @@ const actionError = document.getElementById('action-error');
 
 // Theme toggle functionality
 themeToggleBtn.addEventListener('click', () => {
+    // Toggle dark mode class and capture result
     const isDarkMode = document.body.classList.toggle('dark-mode');
+
+    // Ensure classes are mutually exclusive
+    if (isDarkMode) {
+        document.body.classList.remove('light-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.body.classList.add('light-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('theme', 'light');
+    }
+
     
     // Update icon based on current theme
     if (isDarkMode) {

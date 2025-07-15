@@ -37,6 +37,32 @@
   --hover-color: #3D3D3D;
 }
 
+/* Light mode overrides */
+body.light-mode .container,
+body.light-mode .navbar,
+body.light-mode .btn.btn-secondary,
+body.light-mode .input-wrapper,
+body.light-mode .comment-input,
+body.light-mode select#action,
+body.light-mode select#transaction-type,
+body.light-mode select#filter-action,
+body.light-mode #filter-action,
+body.light-mode #csvFileInput {
+  background-color: #f5f6f7;
+}
+
+body.light-mode input,
+body.light-mode textarea,
+body.light-mode select {
+  background-color: #ffffff !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+body.light-mode .btn {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Base Styles */
 * {
   margin: 0;
@@ -186,6 +212,10 @@ label {
 }
 
 input, textarea, select {
+  background-color: #ffffff; /* ensure white for contrast */
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  
   width: 100%;
   padding: var(--spacing-md);
   border: 1px solid var(--border-color);
@@ -297,6 +327,44 @@ textarea {
   background-color: rgba(30, 144, 255, 0.1);
   border: 1px solid #1E90FF;
   color: #1E90FF;
+}
+
+/* Batch Controls Layout */
+.batch-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.batch-controls > * {
+  flex: 1 1 calc(33.333% - var(--spacing-md));
+  min-width: 0;
+}
+
+.batch-controls .btn {
+  white-space: nowrap;
+}
+
+/* Process explanation block */
+.process-explanation {
+  background-color: var(--hover-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-md);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Batch processing row states */
+.success-row {
+  background-color: #d4edda; /* Green background */
+}
+
+.fail-row {
+  background-color: #f8d7da; /* Red background */
 }
 
 /* Table Styles */

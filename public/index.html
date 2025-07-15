@@ -150,9 +150,37 @@
             <div class="container">
                 <div id="batch-processing" class="tab-content">
                     <h2>Batch Processing</h2>
-                    <input type="file" id="csvFileInput" accept=".csv" />
-                    <button onclick="processBatch()">Process Batch</button>
-                    <div id="batchResult"></div>
+                    <p class="process-explanation">
+                        1. Download the CSV template.<br />
+                        2. Fill in each row with <strong>Transaction</strong>, <strong>Market</strong>, and <strong>Action</strong> values.<br />
+                        3. Save the file as <code>.csv</code> and select it using the file picker.<br />
+                        4. Click <em>Process&nbsp;Batch</em>. Progress will appear below and the results table will turn green for successes or red for failures.<br />
+                        5. When finished, download the results CSV for your records.
+                    </p>
+                    <br />
+                    <div class="batch-controls">
+                        <a id="templateLink" download="template.csv" class="btn btn-secondary">Download CSV Template</a>
+                        <input type="file" id="csvFileInput" accept=".csv" />
+                        <button id="processBatchBtn" class="btn btn-primary">Process Batch</button>
+                    </div>
+                    <p id="progressInfo" style="margin-top:1rem;"></p>
+
+                    <div class="table-container" style="margin-top:1rem;">
+                        <table id="batchTable" class="hidden">
+                            <thead>
+                                <tr>
+                                    <th>Transaction</th>
+                                    <th>Market</th>
+                                    <th>Action</th>
+                                    <th>Status</th>
+                                    <th>Error Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <a id="downloadLink" style="display: none;" download="batch_results.csv">Download Results</a>
                 </div>
             </div>

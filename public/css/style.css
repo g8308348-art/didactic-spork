@@ -37,31 +37,7 @@
   --hover-color: #3D3D3D;
 }
 
-/* Light mode overrides */
-body.light-mode .container,
-body.light-mode .navbar,
-body.light-mode .btn.btn-secondary,
-body.light-mode .input-wrapper,
-body.light-mode .comment-input,
-body.light-mode select#action,
-body.light-mode select#transaction-type,
-body.light-mode select#filter-action,
-body.light-mode #filter-action,
-body.light-mode #csvFileInput {
-  background-color: #f5f6f7;
-}
-
-body.light-mode input,
-body.light-mode textarea,
-body.light-mode select {
-  background-color: #ffffff !important;
-  border: 1px solid #ccc !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-body.light-mode .btn {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+/* Light mode variables are already defined in :root */
 
 /* Base Styles */
 * {
@@ -348,7 +324,6 @@ textarea {
 
 /* Process explanation block */
 .process-explanation {
-  background-color: var(--hover-color);
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-md);

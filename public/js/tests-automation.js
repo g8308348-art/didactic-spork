@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const testOptions = document.querySelectorAll('input[name="test"]');
+    const transactionTypeSelect = document.getElementById('transaction-type');
     const generateBtn = document.getElementById('generate-btn');
     const uploadBtn = document.getElementById('upload-btn');
     const dispositionBtn = document.getElementById('disposition-btn');
@@ -23,9 +24,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_BASE = `http://localhost:${API_PORT}`;
     
     // Event Listeners
+    // Enable / disable tests based on transaction type selection
+    if (transactionTypeSelect) {
+        transactionTypeSelect.addEventListener('change', () => {
+            const hasSelection = transactionTypeSelect.value !== '';
+            testOptions.forEach(opt => {
+                opt.disabled = !hasSelection;
+                if (!hasSelection) {
+                    opt.checked = false;
+                }
+            });
+            currentTest = null;
+            generateBtn.disabled = true;
+            updateCustomFields();
+            clearStatus();
+        });
+    }
+
     testOptions.forEach(option => {
         option.addEventListener('change', function() {
             currentTest = this.value;
+            generateBtn.disabled = false;
             updateCustomFields();
             clearStatus();
             generatedFilesDiv.innerHTML = '';

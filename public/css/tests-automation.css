@@ -98,6 +98,30 @@ button:hover:not(:disabled) {
     background-color: var(--color-button-hover);
     transform: translateY(-2px);
 }
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-buttons button {
+    width: 100%;
+}
+
+/* Transaction type dropdown */
+select[data-tag="transactionType"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-background);
+    color: var(--color-text);
+    margin-bottom: 15px;
+}
 #status {
     margin-top: 20px;
     padding: 10px;

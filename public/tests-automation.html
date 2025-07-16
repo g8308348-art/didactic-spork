@@ -15,6 +15,12 @@
     <h1>Test Automation</h1>
     
     <div class="container">
+        <label for="transaction-type"><strong>Transaction Type:</strong></label>
+        <select id="transaction-type" data-tag="transactionType">
+            <option value="" selected disabled>select a transaction type</option>
+            <option value="PCC_TAIWAN_ISO">PCC TAIWAN ISO</option>
+            <option value="ENTERPRISE_ISO">Enterprise ISO</option>
+        </select>
         <h2>Select Test:</h2>
         <div id="test-options">
             <div class="test-option">
@@ -22,7 +28,7 @@
                 <label for="screening-bpm" class="disabled-label">Screening BPM response validation</label>
             </div>
             <div class="test-option">
-                <input type="radio" id="cuban" name="test" value="Cuban Filter Validation" checked>
+                <input type="radio" id="cuban" name="test" value="Cuban Filter Validation" disabled>
                 <label for="cuban">Cuban Filter Validation</label>
             </div>
             <div class="test-option">
@@ -59,7 +65,7 @@
             <!-- Dynamic fields will be added here -->
         </div>
         
-        <div style="margin-top: 20px;">
+        <div class="action-buttons" style="margin-top: 20px;">
             <button id="generate-btn">Generate Test Files</button>
             <button id="upload-btn" disabled>Upload to MTex</button>
             <button id="disposition-btn" disabled>Disposition Transactions</button>

@@ -374,8 +374,8 @@ class FircoPage:
                 self.fill_comment_field(comment)
                 self.click_all_hits(True)
                 return {
-                    "status": "action_performed_on_live",
-                    "message": f"Action performed on the latest transaction for ID: {transaction} in Live Messages.",
+                    "status": "found_in_live",
+                    "message": f"Latest transaction for ID: {transaction} selected in Live Messages and ready for action.",
                 }
             else:
                 logging.error(
@@ -521,6 +521,7 @@ class FircoPage:
         logging.info("logged out!")
 
     def perform_action(self, action: str):
+        logging.info("perform_action called with action '%s'", action)
         """
         Perform a specified action on the current transaction.
 
@@ -543,18 +544,23 @@ class FircoPage:
 
             # Take screenshot before action
             self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
+            logging.info("Taking screenshot before %s action", action_name)
 
             # Click the action button
+            logging.info("Clicking %s button", action_name)
             action_button_map[action].click()
 
             # Take screenshot after action button click
             self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
+            logging.info("Taking screenshot after %s button click", action_name)
 
             # Click confirm button
+            logging.info("Clicking Confirm button")
             self.selectors.confirm.click()
 
             # Take screenshot after confirmation
             self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
+            logging.info("%s action confirmed", action_name)
         else:
             logging.warning(
                 "Action '%s' not recognized. Available actions: %s",

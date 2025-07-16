@@ -123,7 +123,9 @@ def process_firco_transaction(
             logging.info(
                 f"Transaction {transaction} found in Live Messages. Performing action '{action}'."
             )
+            logging.info("Calling perform_action with '%s'", action)
             firco_page.perform_action(action)
+            logging.info("perform_action completed, proceeding to logout")
             firco_page.logout()
             return {
                 "status": "action_performed_on_live",

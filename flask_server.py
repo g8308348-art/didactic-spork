@@ -160,6 +160,11 @@ def serve_index():
     return send_from_directory(app.static_folder, "index.html")
 
 
+@app.route("/tests-automation")
+def serve_tests_automation():
+    return send_from_directory(app.static_folder, "tests-automation.html")
+
+
 # Flask already serves static files when `static_folder` is configured.
 
 # ---------------------------------------------------------------------------

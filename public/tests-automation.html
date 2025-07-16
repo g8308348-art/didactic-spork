@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light-mode">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,18 +7,51 @@
     <link rel="stylesheet" href="css/tests-automation.css">
 </head>
 <body>
+    <div class="theme-toggle">
+        <button id="theme-toggle-btn">
+            <span>🌙</span> Toggle Dark Mode
+        </button>
+    </div>
     <h1>Test Automation</h1>
     
     <div class="container">
-        <h2>Select Test</h2>
+        <h2>Select Test:</h2>
         <div id="test-options">
             <div class="test-option">
-                <input type="radio" id="screening" name="test" value="Screening response">
-                <label for="screening">Screening Response</label>
+                <input type="radio" id="screening-bpm" name="test" value="Screening BPM response validation" disabled>
+                <label for="screening-bpm" class="disabled-label">Screening BPM response validation</label>
             </div>
             <div class="test-option">
-                <input type="radio" id="cuban" name="test" value="Cuban Filter">
-                <label for="cuban">Cuban Filter</label>
+                <input type="radio" id="cuban" name="test" value="Cuban Filter Validation" checked>
+                <label for="cuban">Cuban Filter Validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="unit" name="test" value="Unit Validation" disabled>
+                <label for="unit" class="disabled-label">Unit Validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="value-date" name="test" value="Value Date Incorrect Format Validation" disabled>
+                <label for="value-date" class="disabled-label">Value Date Incorrect Format Validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="no-hit" name="test" value="No hit Validation" disabled>
+                <label for="no-hit" class="disabled-label">No hit Validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="special-char" name="test" value="Special Character" disabled>
+                <label for="special-char" class="disabled-label">Special Character</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="exception" name="test" value="Exception validation" disabled>
+                <label for="exception" class="disabled-label">Exception validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="reference-field" name="test" value="Referrence Field Lenght Validation" disabled>
+                <label for="reference-field" class="disabled-label">Referrence Field Lenght Validation</label>
+            </div>
+            <div class="test-option">
+                <input type="radio" id="user-profile" name="test" value="User Profile Unit Validation" disabled>
+                <label for="user-profile" class="disabled-label">User Profile Unit Validation</label>
             </div>
         </div>
         

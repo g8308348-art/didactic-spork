@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusDiv = document.getElementById('status');
     const generatedFilesDiv = document.getElementById('generated-files');
     const customFieldsDiv = document.getElementById('custom-fields');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
     
     // State
     let currentTest = null;
@@ -35,6 +36,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dispositionBtn.disabled = true;
             pdfBtn.disabled = true;
         });
+    });
+    
+    // Theme toggle functionality
+    themeToggleBtn.addEventListener('click', function () {
+        const root = document.documentElement; // <html> element
+        const isDarkMode = root.classList.contains('dark-mode');
+
+        if (isDarkMode) {
+            root.classList.remove('dark-mode');
+            root.classList.add('light-mode');
+            this.innerHTML = '<span>🌙</span> Toggle Dark Mode';
+        } else {
+            root.classList.remove('light-mode');
+            root.classList.add('dark-mode');
+            this.innerHTML = '<span>☀️</span> Toggle Light Mode';
+        }
     });
     
     generateBtn.addEventListener('click', generateTestFiles);

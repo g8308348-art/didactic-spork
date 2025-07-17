@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+    <Status>Pending</Status>
+    <UniqiePaymentIdentifier>{upi}</UniqiePaymentIdentifier>
+    <Timestamp>{timestamp}</Timestamp>
+    <AdrLine>{adr_line}</AdrLine>
+    <Details>
+        <Name>Test Transaction</Name>
+        <Amount>1000.00</Amount>
+        <Currency>USD</Currency>
+    </Details>
+</root>

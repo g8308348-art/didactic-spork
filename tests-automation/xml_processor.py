@@ -36,12 +36,12 @@ class XMLTemplateProcessor:
             self.output_dir = Path(output_dir)
         else:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            self.output_dir = Path("test_data") / timestamp
+            self.output_dir = Path("public") / "generated" / timestamp
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         logging.info("Output directory: %s", self.output_dir)
 
-    def generate_test_files(self, test_name: str) -> List[str]:
+    def generate_test_files(self, test_name: str, extra_placeholders: Optional[Dict[str,str]] = None) -> List[str]:
         """
         Generate XML test files based on the specified test name.
 
@@ -56,6 +56,7 @@ class XMLTemplateProcessor:
             ValueError: If the test_name is not supported.
         """
         generated_files: List[str] = []
+        extra_placeholders = extra_placeholders or {}
         key = test_name.strip().lower()
 
         if key == "screening response":
@@ -67,15 +68,22 @@ class XMLTemplateProcessor:
                 output_path = self.output_dir / filename
 
                 replacements = {"upi_timestamp": upi, "timestamp": now.isoformat()}
+                replacements.update(extra_placeholders)
                 self._generate_file(replacements, output_path)
                 generated_files.append(str(output_path))
 
         elif key == "cuban filter":
-            filename = "cuban_filter.xml"
-            now = datetime.now()
-            output_path = self.output_dir / filename
-            self._generate_file({"timestamp": now.isoformat()}, output_path)
-            generated_files.append(str(output_path))
+            actions = ["stp-release", "release", "block", "reject"]
+            for action in actions:
+                now = datetime.now()
+                upi = f"{now.strftime('%Y%m%d%H%M%S')}-{action}"
+                filename = f"cuban_filter_{action}.xml"
+                output_path = self.output_dir / filename
+
+                replacements = {"upi_timestamp": upi, "timestamp": now.isoformat()}
+                replacements.update(extra_placeholders)
+                self._generate_file(replacements, output_path)
+                generated_files.append(str(output_path))
 
         else:
             msg = f"Unsupported test_name: '{test_name}'"

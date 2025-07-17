@@ -128,10 +128,22 @@ def generate_test_files():
     if not test_name:
         return jsonify(success=False, error="testName is required"), 400
 
-    # Placeholder simple implementation: just echo request.
-    # TODO: integrate with actual XML template generation.
-    logging.info("[generate-test-files] Requested test '%s'", test_name)
-    return jsonify(success=True, files=[]), 200
+        from tests_automation.xml_processor import XMLTemplateProcessor  # type: ignore
+    try:
+        template_file = os.path.join(os.path.dirname(__file__), "tests-automation", "templates", "PCC_TAIWAN_ISO.xml")
+        processor = XMLTemplateProcessor(template_path=template_file)
+        placeholders = data.get("placeholders", {}) or {}
+        files = processor.generate_test_files("Cuban Filter", extra_placeholders=placeholders)
+    except Exception as exc:
+        logging.exception("Failed to generate XML files")
+        return jsonify(success=False, error=str(exc)), 500
+
+    if not files:
+        return jsonify(success=False, error="No files were generated"), 400
+
+    # Return relative paths for front-end to link
+    rel_files = [os.path.relpath(f, start=app.static_folder) for f in files]
+    return jsonify(success=True, files=rel_files, outputDir=os.path.relpath(os.path.dirname(files[0]), start=app.static_folder)), 200
 
 
 @app.route("/api", methods=["POST"])

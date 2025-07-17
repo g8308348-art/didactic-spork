@@ -147,6 +147,13 @@ function setupClearableInputs() {
     });
 }
 
+// Utility to hide all clear (x) buttons after inputs are cleared/processed
+function hideAllClearButtons() {
+    document.querySelectorAll('.clear-btn').forEach(btn => {
+        btn.style.display = 'none';
+    });
+}
+
 // Character count for comment
 commentInput.addEventListener('input', () => {
     const currentLength = commentInput.value.length;
@@ -412,6 +419,7 @@ transactionForm.addEventListener('submit', async (e) => {
             
             // Reset form
             transactionForm.reset();
+            hideAllClearButtons();
             commentCharCount.textContent = '0';
             
             // Update table

@@ -113,7 +113,7 @@ button:hover:not(:disabled) {
 /* Transaction type dropdown */
 select[data-tag="transactionType"] {
     width: 100%;
-    max-width: 400px;
+    /* max-width: 400px; */
     padding: 10px;
     font-size: 1rem;
     border: 1px solid var(--color-border);

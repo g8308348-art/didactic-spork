@@ -20,25 +20,34 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentUpi = null;
     
     // API configuration
-    const API_PORT = 8090;
+    const API_PORT = 8088;
     const API_BASE = `http://localhost:${API_PORT}`;
     
     // Event Listeners
-    // Enable / disable tests based on transaction type selection
-    if (transactionTypeSelect) {
-        transactionTypeSelect.addEventListener('change', () => {
-            const hasSelection = transactionTypeSelect.value !== '';
-            testOptions.forEach(opt => {
-                opt.disabled = !hasSelection;
-                if (!hasSelection) {
-                    opt.checked = false;
-                }
-            });
+    // helper to toggle test radio enabled state
+    function updateTestOptionState() {
+        const hasSelection = transactionTypeSelect && transactionTypeSelect.value !== '';
+        testOptions.forEach(opt => {
+            opt.disabled = !hasSelection;
+            if (!hasSelection) {
+                opt.checked = false;
+            }
+        });
+        if (!hasSelection) {
             currentTest = null;
             generateBtn.disabled = true;
+        }
+    }
+
+    // Enable / disable tests whenever transaction type changes
+    if (transactionTypeSelect) {
+        transactionTypeSelect.addEventListener('change', () => {
+            updateTestOptionState();
             updateCustomFields();
             clearStatus();
         });
+        // initial state on page load
+        updateTestOptionState();
     }
 
     testOptions.forEach(option => {

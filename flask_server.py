@@ -16,7 +16,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, make_response
 from main_logic import (
     INCOMING_DIR,
     process_transaction,
@@ -29,6 +29,10 @@ from playwright.sync_api import sync_playwright
 
 # Create Flask application
 app = Flask(__name__, static_folder="public")
+
+# Enable CORS for all routes (development convenience)
+from flask_cors import CORS
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 
 # ---------------------------------------------------------------------------
@@ -82,6 +86,15 @@ def _write_temp_transaction_file(data: Dict[str, str]) -> str:
 # ---------------------------------------------------------------------------
 
 
+@app.after_request
+def add_cors_headers(resp):
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    return resp
+
+
+
 # Serve the SPA
 @app.route("/")
 def index():
@@ -92,6 +105,33 @@ def index():
 @app.route("/<path:path>")
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
+
+
+@app.route("/api/generate-test-files", methods=["POST","OPTIONS"])
+def generate_test_files():
+    """Generate test files based on template name from the front-end.
+    Expected JSON: {testName: str, placeholders: {key: value}}
+    Returns JSON {success, files: [relative paths]}
+    For now, this is a thin wrapper that forwards to tests-automation logic if available,
+    or returns a Not Implemented message.
+    """
+    if request.method == "OPTIONS":
+        # Pre-flight CORS request
+        return make_response("", 200)
+
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify(success=False, error="Invalid JSON"), 400
+
+    test_name = data.get("testName")
+    if not test_name:
+        return jsonify(success=False, error="testName is required"), 400
+
+    # Placeholder simple implementation: just echo request.
+    # TODO: integrate with actual XML template generation.
+    logging.info("[generate-test-files] Requested test '%s'", test_name)
+    return jsonify(success=True, files=[]), 200
 
 
 @app.route("/api", methods=["POST"])

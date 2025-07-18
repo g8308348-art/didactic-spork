@@ -1,430 +1,592 @@
-/*
+/* 
  * MURDOCK - Transaction Processing Tool
- * Optimized Stylesheet
+ * Main Stylesheet
  */
 
-/* ================================
-   Theme Variables
-   ================================ */
-   :root {
-    --input-height: 38px;
-    /* Base Colors */
-    --bg: #f8f9fa;
-    --bg-alt: #d3d3d3;
-    --fg: #333;
-    --fg-alt: #666;
-    --primary: #3498db;
-    --secondary: #2ecc71;
-    --error: #e74c3c;
-    --border: #dee2e6;
-    --shadow: rgba(0,0,0,0.1);
-    --hover: #f1f1f1;
+/* CSS Variables for Theming */
+:root {
+  /* Light Mode Colors */
+  --bg-color: #f8f9fa;
+  --bg-secondary: #d3d3d3;
+  --text-color: #333333;
+  --text-secondary: #666666;
+  --primary-color: #3498DB;
+  --secondary-color: #2ECC71;
+  --error-color: #E74C3C;
+  --border-color: #dee2e6;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --hover-color: #f1f1f1;
   
-    /* Layout & Typography */
-    --radius: 4px;
-    --transition: 0.3s;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --font-base: 'Helvetica Neue', Arial, sans-serif;
-    --line-height: 1.6;
-  }
-  .dark-mode {
-    --bg: #1a1a1a;
-    --bg-alt: #2d2d2d;
-    --fg: #fff;
-    --fg-alt: #ccc;
-    --border: #444;
-    --shadow: rgba(0,0,0,0.3);
-    --hover: #3d3d3d;
-  }
+  /* Common Variables */
+  --border-radius: 4px;
+  --transition-speed: 0.3s;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+}
+
+/* Dark Mode Colors */
+.dark-mode {
+  --bg-color: #1A1A1A;
+  --bg-secondary: #2D2D2D;
+  --text-color: #FFFFFF;
+  --text-secondary: #CCCCCC;
+  --border-color: #444444;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --hover-color: #3D3D3D;
+}
+
+/* Light mode variables are already defined in :root */
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color var(--transition-speed);
+}
+
+a:hover {
+  color: var(--secondary-color);
+}
+
+/* Navigation */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.logo h1 {
+  margin: 0;
+  color: var(--primary-color);
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  transition: color var(--transition-speed), background-color var(--transition-speed);
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--primary-color);
+  background-color: var(--hover-color);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+}
+
+#theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: 50%;
+  transition: color var(--transition-speed), background-color var(--transition-speed);
+}
+
+#theme-toggle-btn:hover {
+  color: var(--primary-color);
+  background-color: var(--hover-color);
+}
+
+/* Sections */
+.section {
+  padding: var(--spacing-xl) 0;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Required field indicator */
+.required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
+/* Form row for side-by-side form groups */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group-half {
+  flex: 1 1 calc(50% - var(--spacing-md) / 2);
+  min-width: 0; /* Prevents flex items from overflowing */
+  margin-bottom: 0;
+}
+
+/* Ensure form controls take full width of their container */
+.form-group-half input[type="text"],
+.form-group-half select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+input, textarea, select {
+  background-color: #ffffff; /* ensure white for contrast */
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   
-  /* ================================
-     Global Resets & Base
-     ================================ */
-  *, *::before, *::after {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-top: var(--spacing-sm);
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.8rem;
+  margin-top: var(--spacing-sm);
+  display: none;
+}
+
+.error-message.visible {
+  display: block;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), transform var(--transition-speed);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--hover-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+/* Submission Status */
+.submission-status {
+  margin: var(--spacing-lg) 0;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  min-height: 20px; /* Ensure space is always reserved */
+  visibility: hidden; /* Hide but keep space */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.submission-status:not(:empty) {
+  visibility: visible;
+  opacity: 1;
+}
+
+.submission-status.success {
+  background-color: rgba(46, 204, 113, 0.1);
+  border: 1px solid var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+.submission-status.error {
+  background-color: rgba(231, 76, 60, 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+}
+
+.submission-status.no-action {
+  background-color: rgba(30, 144, 255, 0.1);
+  border: 1px solid #1E90FF;
+  color: #1E90FF;
+}
+
+/* Batch Controls Layout */
+.batch-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.batch-controls > * {
+  flex: 1 1 calc(33.333% - var(--spacing-md));
+  min-width: 0;
+}
+
+.batch-controls .btn {
+  white-space: nowrap;
+}
+
+/* Process explanation block */
+.process-explanation {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-md);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Batch processing row states */
+.success-row {
+  background-color: #d4edda; /* Green background */
+}
+
+.fail-row {
+  background-color: #f8d7da; /* Red background */
+}
+
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  margin-top: var(--spacing-lg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+}
+
+tbody tr {
+  transition: background-color var(--transition-speed);
+}
+
+tbody tr:hover {
+  background-color: var(--hover-color);
+}
+
+.no-data {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Filter Controls */
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.filter-controls .form-group {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
+}
+
+.inline-checkbox {
+  width: auto !important;
+}
+
+/* Status badges for transaction history */
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+}
+
+.status-badge[data-tooltip] {
+  position: relative;
+  cursor: help;
+  display: inline-block;
+}
+
+/* Container to properly handle tooltips */
+.table-container {
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Tooltips now handled by JavaScript */
+
+/* Tooltip arrow now handled by JavaScript */
+
+/* Tooltip hover effects now handled by JavaScript */
+
+/* Clearable input styles */
+.input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.input-wrapper input[type="text"],
+.input-wrapper input[type="search"] {
+    padding-right: 2.2rem; /* space for the clear button */
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  body {
-    font: 100%/var(--line-height) var(--font-base);
-    background: var(--bg);
-    color: var(--fg);
-    transition: background var(--transition), color var(--transition);
-  }
-  img, svg { max-width: 100%; height: auto; }
-  
-  /* ================================
-     Containers & Layout
-     ================================ */
-  .container {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--space-md);
-  }
-  
-  /* ================================
-     Typography
-     ================================ */
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.5rem; margin-bottom: var(--space-lg); }
-  h1, h2, h3, h4, h5, h6 {
-    margin-bottom: var(--space-md);
-    font-weight: 600;
-  }
-  a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color var(--transition);
-  }
-  a:hover { color: var(--secondary); }
-  
-  /* ================================
-     Navbar
-     ================================ */
-  .navbar {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-md) var(--space-lg);
-    background: var(--bg-alt);
-    box-shadow: 0 2px 4px var(--shadow);
-  }
-  .logo h1 { color: var(--primary); }
-  .nav-links {
-    display: flex;
-    gap: var(--space-lg);
-  }
-  .nav-link {
-    padding: var(--space-sm);
-    border-radius: var(--radius);
-    font-weight: 500;
-    color: var(--fg-alt);
-    transition: all var(--transition);
-  }
-  .nav-link:hover,
-  .nav-link.active {
-    color: var(--primary);
-    background: var(--hover);
-  }
-  
-  /* ================================
-     Theme Toggle
-     ================================ */
-  .theme-toggle {
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.6rem;
+    height: 1.6rem;
     display: flex;
     align-items: center;
-  }
-  #theme-toggle-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    color: var(--fg-alt);
-    padding: var(--space-sm);
+    justify-content: center;
+    background-color: var(--hover-color);
+    border: 1px solid var(--border-color);
     border-radius: 50%;
+    font-size: 0.9rem;
+    line-height: 1;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition);
-  }
-  #theme-toggle-btn:hover {
-    color: var(--primary);
-    background: var(--hover);
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+    display: none; /* shown only when input has value */
+}
+
+.clear-btn:hover {
+    background-color: var(--error-color);
+    color: #ffffff;
+}
+
+.status-badge.success-live,
+.status-badge.success { /* Fallback for existing 'success' if any */
+  background-color: var(--secondary-color); /* Standard green for happy path */
+  color: white;
+}
+
+.status-badge.success-escalated {
+  background-image: linear-gradient(to right, var(--secondary-color), #f1c40f); /* Green to Yellow */
+  color: white;
+}
+
+.status-badge.success-history {
+  background-image: linear-gradient(to right, var(--secondary-color), #3498db); /* Green to Blue */
+  color: white;
+}
+
+.status-badge.success-bpm {
+  background-image: linear-gradient(to right, var(--secondary-color), #9b59b6); /* Green to Purple */
+  color: white;
+}
+
+.status-badge.success-sanctions {
+  background-image: linear-gradient(to right, var(--secondary-color), #e67e22); /* Green to Orange */
+  color: white;
+}
+
+.status-badge.success-not-found {
+  background-color: #bdc3c7; /* Light grey/silver */
+  color: #2c3e50; /* Darker grey text */
+}
+
+.status-badge.error {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.status-badge.no-action {
+  background-color: #ADD8E6; /* light blue */
+  color: #1A1A1A;
+}
+
+/* Add some spacing for transaction IDs under status badges */
+.status-badge + small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Footer */
+footer {
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-lg) 0;
+  text-align: center;
+  margin-top: var(--spacing-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.transaction-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.transaction-input-col {
+  flex: 8 1 0%;
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-type-col {
+  flex: 2 1 0%;
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-details-label,
+.transaction-type-label {
+  /* Inherit from base label styles */
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-color);
+}
+
+.transaction-type-col select#transaction-type {
+  width: 100%;
+  min-width: 90px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
   }
   
-  /* ================================
-     Sections & Spacing
-     ================================ */
-  .section { padding: var(--space-xl) 0; }
-  
-  /* ================================
-     Forms & Inputs
-     ================================ */
-  label {
-    display: block;
-    margin-bottom: var(--space-sm);
-    font-weight: 500;
-    color: var(--fg);
-    font-size: 0.95em;
-  }
-  input, textarea {
-    height: var(--input-height);
+  .nav-links {
     width: 100%;
-    background: transparent;
-    border: none;
-    border-radius: var(--radius);
-    padding: var(--space-sm) var(--space-md);
-    color: var(--fg);
-    outline: none;
-    box-shadow: none;
-    transition: color var(--transition);
-  }
-
-  /* Dedicated select styling */
-  select {
-    height: var(--input-height);
-    width: 100%;
-    background: var(--bg-alt);
-    border: none;
-    border-radius: var(--radius);
-    padding: var(--space-sm) var(--space-md);
-    color: var(--fg);
-    box-shadow: inset 0 0 0 1px var(--border);
-    transition: box-shadow var(--transition);
-  }
-  select:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--primary);
-  }
-
-  /* Wrapper handles the single border */
-  .input-wrapper {
-    position: relative;
-    height: var(--input-height);
-    display:flex;
-    align-items:center;
-    background: var(--bg-alt);
-    border-radius: var(--radius);
-    box-shadow: inset 0 0 0 1px var(--border);
-    transition: box-shadow var(--transition);
-  }
-
-  /* Highlight wrapper when any child input is focused */
-  .input-wrapper:focus-within {
-    box-shadow: inset 0 0 0 2px var(--primary);
-  }
-
-  /* Maintain full width for wrapped inputs */
-  .input-wrapper > input[type="text"],
-  .input-wrapper > input[type="search"] {
-    width: 100%;
-    background: var(--bg-alt);
-    border: none;
-    border-radius: var(--radius);
-    padding: var(--space-sm) var(--space-md);
-    color: var(--fg);
-    box-shadow: inset 0 0 0 1px var(--border);
-    transition: border-color var(--transition), box-shadow var(--transition);
-  }
-  input:focus, textarea:focus, select:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--primary);
-  }
-  textarea { min-height: 100px; resize: vertical; }
-
-  /* Style CSV file input to match other controls */
-  #csvFileInput {
-    /* Match button padding for consistent height */
-    padding: var(--space-md) var(--space-lg);
-    width: 100%;
-    height: 60px;  
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--space-sm) var(--space-md);
-    color: var(--fg);
-    cursor: pointer;
-    transition: box-shadow var(--transition), background var(--transition);
-  }
-  #csvFileInput:hover {
-    background: var(--hover);
-  }
-  #csvFileInput:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--primary);
-  }
-  /* Style the inner file upload button */
-  #csvFileInput::-webkit-file-upload-button {
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--fg);
-    cursor: pointer;
-    transition: background var(--transition);
-  }
-  #csvFileInput::-webkit-file-upload-button:hover {
-    background: var(--hover);
-  }
-  /* For Firefox */
-  #csvFileInput::file-selector-button {
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--fg);
-    cursor: pointer;
-    transition: background var(--transition);
-  }
-  #csvFileInput::file-selector-button:hover {
-    background: var(--hover);
+    justify-content: center;
   }
   
-  .char-count,
-  .error-message {
-    display: block;
-    margin-top: var(--space-sm);
-    font-size: 0.8rem;
-    color: var(--fg-alt);
+  .form-actions {
+    flex-direction: column;
   }
-  .error-message { color: var(--error); display: none; }
-  .error-message.visible { display: block; }
   
-  .form-row,
   .filter-controls {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
+    flex-direction: column;
   }
-  /* Ensure each filter control spans full width */
-  .filter-controls > * {
-    flex: 0 0 calc(50% - var(--space-md)/2);
-    min-width: 0;
-  }
-  /* Explicit width 100% for search input */
-  #search-transactions {
+  
+  .filter-controls .form-group {
     width: 100%;
-  }
-  .form-group-half { flex: 1 1 calc(50% - var(--space-md)/2); min-width: 0; }
-
-  /* Keep comment & action in same row */
-  .form-row { flex-wrap: nowrap; align-items: flex-start; }
-
-  /* Align comment/action row to 60/40  */
-  .form-row .form-group-half:first-child { flex: 0 0 60%; }
-  .form-row .form-group-half:last-child  { flex: 0 0 40%; }
-  .batch-controls { display: flex; flex-wrap: wrap; gap: var(--space-md); }
-  .batch-controls > * { flex: 1 1 calc(33.333% - var(--space-md)); }
-  .inline-checkbox { width: auto!important; }
-  
-  /*
-     Transaction Row Layout
-     ---------------------- */
-  .transaction-row {
-    display: flex;
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-  }
-  .transaction-input-col { flex: 1 0 70%; min-width: 0; }
-  .transaction-type-col { flex: 1 0 30%; min-width: 0; }
-
-  /* Stack vertically on small screens */
-  @media (max-width: 768px) {
-    .transaction-row { flex-direction: column; }
-    .transaction-input-col,
-    .transaction-type-col { flex: 1 1 100%; }
-  }
-
-  /* ================================
-     Buttons
-     ================================ */
-  .btn {
-    display: inline-block;
-    padding: var(--space-md) var(--space-lg);
-    border: none;
-    border-radius: var(--radius);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background var(--transition), transform var(--transition);
-  }
-  .btn:hover { transform: translateY(-2px); }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: #2980b9; }
-  .btn-secondary { background: var(--bg-alt); color: var(--fg); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--hover); }
-  .form-actions { display: flex; gap: var(--space-md); margin-top: var(--space-lg); }
-  
-  /* ================================
-     Status & Badges
-     ================================ */
-  .submission-status {
-    margin: var(--space-lg) 0;
-    padding: var(--space-md);
-    border-radius: var(--radius);
-    min-height: 20px;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity var(--transition);
-  }
-  .submission-status:not(:empty) {
-    visibility: visible;
-    opacity: 1;
-  }
-  .submission-status.success { background: rgba(46,204,113,0.1); border: 1px solid var(--secondary); color: var(--secondary); }
-  .submission-status.error   { background: rgba(231,76,60,0.1);  border: 1px solid var(--error);     color: var(--error); }
-  .submission-status.no-action { background: rgba(30,144,255,0.1);border: 1px solid #1E90FF; color: #1E90FF; }
-  
-  .status-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-align: center;
-    background: var(--bg-alt);
-    color: var(--fg);
-  }
-  .status-badge.success { background: var(--secondary); color: #fff; }
-  .status-badge.error   { background: var(--error);     color: #fff; }
-  .status-badge.no-action { background: #ADD8E6; color: #1A1A1A; }
-  
-  /* ================================
-     Tables
-     ================================ */
-  .table-container {
-    position: relative;
-    overflow-x: auto;
-    margin-top: var(--space-lg);
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  th, td {
-    padding: var(--space-md);
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-  }
-  th { background: var(--bg-alt); font-weight: 600; }
-  tbody tr:hover { background: var(--hover); }
-  .no-data { text-align: center; color: var(--fg-alt); }
-  
-  /* ================================
-     Utilities & Helpers
-     ================================ */
-  .hidden { display: none!important; }
-  .clear-btn { position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%);
-              width: 1.6rem; height: 1.6rem; display: none;
-              align-items: center; justify-content: center;
-              border: 1px solid var(--border);
-              border-radius: 50%; font-size: 0.9rem; line-height: 1;
-              background: var(--hover); color: var(--fg-alt);
-              cursor: pointer; transition: all var(--transition);
-  }
-  .input-wrapper input:not(:placeholder-shown) + .clear-btn { display: flex; }
-  .clear-btn:hover { background: var(--error); color: #fff; }
-  
-  /* ================================
-     Footer
-     ================================ */
-  footer {
-    background: var(--bg-alt);
-    padding: var(--space-lg) 0;
-    text-align: center;
-    margin-top: var(--space-xl);
-    border-top: 1px solid var(--border);
+    margin-bottom: var(--spacing-md);
   }
   
-  /* ================================
-     Responsive
-     ================================ */
-  @media (max-width: 768px) {
-    .form-row, .filter-controls { flex-direction: column; }
-    .form-group-half { flex: 1 1 100%; }
-    .nav-links { justify-content: center; width: 100%; }
-    .form-actions { flex-direction: column; }
+  /* Stack form groups vertically on mobile */
+  .form-row {
+    flex-direction: column;
+    gap: var(--spacing-md);
   }
   
+  .form-group-half {
+    flex: 1 1 100%;
+    margin-bottom: var(--spacing-md);
+  }
+}

@@ -433,11 +433,13 @@ transactionForm.addEventListener('submit', async (e) => {
             if (noActionLocal.length === transactionsArray.length && successCount === 0 && failCount === 0) {
                 submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}. Found in Transactions History tab.`;
                 submissionStatus.className = 'submission-status no-action';
+                submissionStatus.style.display = 'block';
             } else {
                 submissionStatus.innerHTML = summary;
                 submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
                     ? 'submission-status success'
                     : 'submission-status error';
+                submissionStatus.style.display = 'block';
             }
             
             // Reset form

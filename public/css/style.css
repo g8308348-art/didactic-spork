@@ -213,6 +213,54 @@
     box-shadow: inset 0 0 0 2px var(--primary);
   }
   textarea { min-height: 100px; resize: vertical; }
+
+  /* Style CSV file input to match other controls */
+  #csvFileInput {
+    /* Match button padding for consistent height */
+    padding: var(--space-md) var(--space-lg);
+    width: 100%;
+    height: 60px;  
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-sm) var(--space-md);
+    color: var(--fg);
+    cursor: pointer;
+    transition: box-shadow var(--transition), background var(--transition);
+  }
+  #csvFileInput:hover {
+    background: var(--hover);
+  }
+  #csvFileInput:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+  /* Style the inner file upload button */
+  #csvFileInput::-webkit-file-upload-button {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--fg);
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  #csvFileInput::-webkit-file-upload-button:hover {
+    background: var(--hover);
+  }
+  /* For Firefox */
+  #csvFileInput::file-selector-button {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--fg);
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  #csvFileInput::file-selector-button:hover {
+    background: var(--hover);
+  }
   
   .char-count,
   .error-message {
@@ -227,9 +275,18 @@
   .form-row,
   .filter-controls {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--space-md);
     margin-bottom: var(--space-lg);
+  }
+  /* Ensure each filter control spans full width */
+  .filter-controls > * {
+    flex: 0 0 calc(50% - var(--space-md)/2);
+    min-width: 0;
+  }
+  /* Explicit width 100% for search input */
+  #search-transactions {
+    width: 100%;
   }
   .form-group-half { flex: 1 1 calc(50% - var(--space-md)/2); min-width: 0; }
 

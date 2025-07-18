@@ -154,6 +154,22 @@ function hideAllClearButtons() {
     });
 }
 
+// Ensure clear (×) buttons are hidden and comment counter reset when the form is cleared via the
+// native “Clear form” button (type="reset").
+transactionForm.addEventListener('reset', () => {
+    // Hide any visible clear buttons
+    hideAllClearButtons();
+
+    // Reset the comment character counter and its color
+    if (commentCharCount) {
+        commentCharCount.textContent = '0';
+        commentCharCount.style.color = 'var(--text-secondary)';
+    }
+
+    // Optionally hide status message
+    submissionStatus.style.display = 'none';
+});
+
 // Character count for comment
 commentInput.addEventListener('input', () => {
     const currentLength = commentInput.value.length;

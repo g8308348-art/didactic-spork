@@ -166,8 +166,7 @@ transactionForm.addEventListener('reset', () => {
         commentCharCount.style.color = 'var(--text-secondary)';
     }
 
-    // Optionally hide status message
-    submissionStatus.style.display = 'none';
+
 });
 
 // Character count for comment
@@ -434,11 +433,13 @@ transactionForm.addEventListener('submit', async (e) => {
                 submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}. Found in Transactions History tab.`;
                 submissionStatus.className = 'submission-status no-action';
                 submissionStatus.style.display = 'block';
+                submissionStatus.style.display = 'block';
             } else {
                 submissionStatus.innerHTML = summary;
                 submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
                     ? 'submission-status success'
                     : 'submission-status error';
+                submissionStatus.style.display = 'block';
                 submissionStatus.style.display = 'block';
             }
             

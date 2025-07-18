@@ -178,10 +178,17 @@ function validateTransactions(value) {
     }
     
     if (!regex.test(value)) {
-        showError(transactionsError, 'Only alphanumeric characters, commas, and spaces are allowed');
+        // Show the validation error in the submission status area instead of next to the input
+        submissionStatus.innerHTML = '<strong>Error:</strong> Only alphanumeric characters, commas, and spaces are allowed';
+        submissionStatus.className = 'submission-status error';
+        submissionStatus.style.display = 'block';
+        // Ensure the inline error is cleared
+        hideError(transactionsError);
         return false;
     }
-    
+
+    // Hide any previous status error if validation now passes
+    submissionStatus.style.display = 'none';
     hideError(transactionsError);
     return true;
 }

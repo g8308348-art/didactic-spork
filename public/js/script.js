@@ -327,8 +327,17 @@ transactionForm.addEventListener('submit', async (e) => {
                     return tTxn === normalizedTxn || tid === normalizedTxn;
                 });
                 
-                // Skip processing if transaction already exists in history (any status)
+                // Duplicate detected – log attempt but take no action
                 if (saved) {
+                    saveTransaction({
+                        transaction: txn,
+                        comment: commentValue,
+                        action: actionValue,
+                        timestamp: Date.now(),
+                        status: 'No action',
+                        status_detail: 'already_handled',
+                        statusMessage: 'Already handled'
+                    });
                     noActionLocal.push(txn);
                     continue;
                 }

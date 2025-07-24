@@ -319,9 +319,13 @@ transactionForm.addEventListener('submit', async (e) => {
             
             for (const txn of transactionsArray) {
                 // Check if this transaction was previously processed
-                const saved = storedTxns.find(t =>
-                    t.transaction === txn || t.transactionId === txn
-                );
+                // Normalized compare (case-insensitive & trimmed) to detect duplicates reliably
+                const normalizedTxn = txn.trim().toLowerCase();
+                const saved = storedTxns.find(t => {
+                    const tTxn = t.transaction ? t.transaction.trim().toLowerCase() : '';
+                    const tid = t.transactionId ? t.transactionId.trim().toLowerCase() : '';
+                    return tTxn === normalizedTxn || tid === normalizedTxn;
+                });
                 
                 // Always process if transaction failed previously, otherwise skip if found in history/BPM
                 if (saved && saved.status !== 'failed' && saved.status !== 'Failed') {
@@ -433,13 +437,11 @@ transactionForm.addEventListener('submit', async (e) => {
                 submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}. Found in Transactions History tab.`;
                 submissionStatus.className = 'submission-status no-action';
                 submissionStatus.style.display = 'block';
-                submissionStatus.style.display = 'block';
             } else {
                 submissionStatus.innerHTML = summary;
                 submissionStatus.className = (failCount === 0 && !hasNotFoundTransactions)
                     ? 'submission-status success'
                     : 'submission-status error';
-                submissionStatus.style.display = 'block';
                 submissionStatus.style.display = 'block';
             }
             

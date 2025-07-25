@@ -89,12 +89,29 @@ def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
 
 
 # --- Main Script ---
-def map_transaction_type_to_option(transaction_type_str):
-    try:
-        return [Options[transaction_type_str]]
-    except KeyError:
-        logging.warning(f"Unknown transaction type: {transaction_type_str}")
+def map_transaction_type_to_option(transaction_type_str: str):
+    """Map a transaction type string (from UI) to the corresponding Options enum.
+
+    The front-end sends the HTML option `value` – this may match either the
+    Enum *name* (e.g. ``APS_MT``) **or** the Enum *value* (e.g. ``APS-MT``).
+    This helper normalises the input and returns a list with the matching
+    ``Options`` entry so ``check_options`` can click the right item.
+    """
+    if not transaction_type_str:
+        logging.warning("Transaction type string is empty – no options to map.")
         return []
+
+    # 1. Try direct Enum name match (case-sensitive)
+    if transaction_type_str in Options.__members__:
+        return [Options[transaction_type_str]]
+
+    # 2. Fallback: compare against Enum values (case-insensitive)
+    for opt in Options:
+        if opt.value.lower() == transaction_type_str.lower():
+            return [opt]
+
+    logging.warning("Unknown transaction type received from UI: %s", transaction_type_str)
+    return []
 
 
 def main(transaction_type_str=None):

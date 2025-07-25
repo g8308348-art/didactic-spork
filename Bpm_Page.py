@@ -90,12 +90,27 @@ class BPMPage:
             raise
 
     def check_options(self, options: list[Options]) -> None:
+
         try:
+            logging.info("Checking options: %s", options)
             for option in options:
                 option_locator = self.page.locator(
                     f"li span.inf-name:has-text('{option.value}') i.fa-square-o"
                 )
                 self.safe_click(option_locator, f"option '{option.value}'")
+                time.sleep(1)
+
+                # Verify the option is now checked by looking for the selected icon (fa-check-square-o)
+                selected_locator = self.page.locator(
+                    f"li span.inf-name:has-text('{option.value}') i.fa-check-square-o"
+                )
+                if selected_locator.is_visible():
+                    logging.info("✔ Verified option '%s' is selected.", option.value)
+                else:
+                    logging.warning(
+                        "⚠ After clicking, option '%s' does NOT appear selected.",
+                        option.value,
+                    )
         except Exception as e:
             logging.error("Failed to check specified options in the list: %s", e)
             raise
@@ -148,7 +163,9 @@ class BPMPage:
         """Fill the MSG_REF (transaction id) field in the advanced search panel."""
         try:
             # Locate the input associated with MSG_REF label
-            input_field = self.page.locator("div.search-item.advanced label:text('MSG_REF') + input, div.search-item.advanced input[type='text']").first
+            input_field = self.page.locator(
+                "div.search-item.advanced label:text('MSG_REF') + input, div.search-item.advanced input[type='text']"
+            ).first
             input_field.fill(transaction_id)
             logging.info("Filled transaction id %s in MSG_REF field.", transaction_id)
         except Exception as e:
@@ -179,19 +196,21 @@ class BPMPage:
             # Find all cells with the target number
             number_element = self.page.locator(f"div.tcell[title='{number}']")
             count = number_element.count()
-            
+
             if count > 0:
                 if count > 1:
-                    logging.info(f"Found {count} instances of number: {number}. Using the first match.")
+                    logging.info(
+                        f"Found {count} instances of number: {number}. Using the first match."
+                    )
                 else:
                     logging.info(f"Found the number: {number}")
-                    
+
                 # Always use the first element when multiple matches are found
                 first_element = number_element.first
                 first_element.evaluate(
                     "element => element.scrollIntoView({block: 'center', inline: 'center'})"
                 )
-                
+
                 parent_row = first_element.locator(
                     "xpath=ancestor::div[contains(@class, 'trow')]"
                 )
@@ -207,8 +226,12 @@ class BPMPage:
         except Exception as e:
             logging.error("Failed to look for the number %s: %s", number, e)
             # If the error contains information about multiple elements, treat it as success
-            if "resolved to 2 elements" in str(e) or "resolved to multiple elements" in str(e):
-                logging.info(f"Multiple elements found for {number}, treating as success")
+            if "resolved to 2 elements" in str(
+                e
+            ) or "resolved to multiple elements" in str(e):
+                logging.info(
+                    f"Multiple elements found for {number}, treating as success"
+                )
                 # Return placeholder values when we can't determine actual values due to multiple elements
                 return "NotFound", "NotFound"
             raise

@@ -135,6 +135,26 @@ class BPMPage:
             )
             raise
 
+    def click_search_tab(self) -> None:
+        """Navigate to the Search tab in BPM."""
+        try:
+            search_tab = self.page.locator("li.nav-item.nav-link a[href='#search']")
+            self.safe_click(search_tab, "Search tab")
+        except Exception as e:
+            logging.error("Failed to click on the Search tab: %s", e)
+            raise
+
+    def fill_transaction_id(self, transaction_id: str) -> None:
+        """Fill the MSG_REF (transaction id) field in the advanced search panel."""
+        try:
+            # Locate the input associated with MSG_REF label
+            input_field = self.page.locator("div.search-item.advanced label:text('MSG_REF') + input, div.search-item.advanced input[type='text']").first
+            input_field.fill(transaction_id)
+            logging.info("Filled transaction id %s in MSG_REF field.", transaction_id)
+        except Exception as e:
+            logging.error("Failed to fill transaction id %s: %s", transaction_id, e)
+            raise
+
     def select_all_from_dropdown(self) -> None:
         try:
             dropdown = self.page.locator("select")

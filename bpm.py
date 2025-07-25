@@ -65,13 +65,27 @@ def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for
         )
         logging.info(f"4th Column Value: {fourth_column_value}")
         logging.info(f"Last Column Value: {last_column_value}")
-        
+
         # Return the values so they can be unpacked by the calling function
         return fourth_column_value, last_column_value
     except Exception as e:
         logging.error(f"Error in handle_dropdown_and_search: {e}")
         # Return default values when the number is not found
         return "NotFound", "NotFound"
+
+
+# --- Search Actions ---
+
+def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
+    """Navigate to Search tab, enter transaction ID and submit search."""
+    bpm_page.click_search_tab()
+    page.wait_for_timeout(1000)
+    bpm_page.fill_transaction_id(transaction_id)
+    bpm_page.click_submit_button()
+    page.wait_for_timeout(2000)
+
+
+# lets create a function to do proper search
 
 
 # --- Main Script ---

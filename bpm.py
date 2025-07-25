@@ -36,6 +36,10 @@ def setup_logging() -> None:
 
 # --- Modular Actions ---
 def perform_login_and_setup(bpm_page: BPMPage):
+    """Clear browser cookies and perform the initial BPM login/setup steps."""
+    # Ensure a clean session by clearing any existing cookies before login
+    bpm_page.page.context.clear_cookies()
+
     bpm_page.login(TEST_URL, USERNAME, PASSWORD)
     bpm_page.verify_modal_visibility()
     bpm_page.click_tick_box()

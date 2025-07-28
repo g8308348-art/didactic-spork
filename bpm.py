@@ -76,6 +76,7 @@ def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for
 
 # --- Search Actions ---
 
+
 def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
     """Navigate to Search tab, enter transaction ID and submit search."""
     bpm_page.click_search_tab()
@@ -110,7 +111,9 @@ def map_transaction_type_to_option(transaction_type_str: str):
         if opt.value.lower() == transaction_type_str.lower():
             return [opt]
 
-    logging.warning("Unknown transaction type received from UI: %s", transaction_type_str)
+    logging.warning(
+        "Unknown transaction type received from UI: %s", transaction_type_str
+    )
     return []
 
 

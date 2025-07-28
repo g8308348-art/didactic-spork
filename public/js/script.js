@@ -353,7 +353,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     transaction: txn,
                     comment: commentValue,
                     action: actionValue,
-                    transaction_type: transactionTypeValue,
+                    transactionType: transactionTypeValue, // camelCase key expected by backend
                     timestamp: Date.now(),
                     performOnLatest: true
                 };

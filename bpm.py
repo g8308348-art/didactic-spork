@@ -137,7 +137,8 @@ def main(transaction_type_str=None):
         try:
             perform_login_and_setup(bpm_page)
             select_options_and_submit(bpm_page, page, options_to_check)
-            handle_dropdown_and_search(bpm_page, page, number_to_look_for)
+            # handle_dropdown_and_search(bpm_page, page, number_to_look_for)
+            perform_advanced_search(bpm_page, page, number_to_look_for)
 
         except Exception as e:
             logging.error("An error occurred: %s", e)

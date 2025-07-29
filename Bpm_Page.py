@@ -195,8 +195,8 @@ class BPMPage:
         self.click_search_tab()
         self.page.wait_for_timeout(1000)
         # Log all advanced-search labels to help find the correct REFERENCE input
-        self.debug_list_advanced_fields()
-        self.page.wait_for_timeout(1000)
+        # self.debug_list_advanced_fields()
+        # self.page.wait_for_timeout(1000)
         self.fill_transaction_id(transaction_id)
         self.click_submit_button()
         self.page.wait_for_timeout(2000)

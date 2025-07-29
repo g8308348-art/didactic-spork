@@ -1,3 +1,4 @@
+# pylint: disable=import-error,import-outside-toplevel,broad-except
 """Flask-based replacement of the legacy http.server implementation.
 
 Provides the same /api endpoint but benefits from Flask's routing and
@@ -17,21 +18,15 @@ from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
 
 from flask import Flask, jsonify, request, send_from_directory, make_response
-from main_logic import (
-    INCOMING_DIR,
-    process_transaction,
-)
-from server import (
-    create_output_structure,
-    move_screenshots_to_folder,
-)
-from playwright.sync_api import sync_playwright
+from flask_cors import CORS  # third-party
+from playwright.sync_api import sync_playwright  # third-party
+
+from main_logic import INCOMING_DIR, process_transaction  # first-party
+from server import create_output_structure, move_screenshots_to_folder  # first-party
 
 # Create Flask application
 app = Flask(__name__, static_folder="public")
-
 # Enable CORS for all routes (development convenience)
-from flask_cors import CORS
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 
@@ -39,25 +34,28 @@ CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 # Logging Configuration
 # ---------------------------------------------------------------------------
 
+
 def setup_logging():
     """Configure logging to output to both console and transactions.log file."""
-    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    
+    log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(log_formatter)
     root_logger.addHandler(console_handler)
-    
+
     # File handler with rotation (10 MB max size, keep 5 backup files)
-    file_handler = RotatingFileHandler('transactions.log', maxBytes=10*1024*1024, backupCount=5)
+    file_handler = RotatingFileHandler(
+        "transactions.log", maxBytes=10 * 1024 * 1024, backupCount=5
+    )
     file_handler.setFormatter(log_formatter)
     root_logger.addHandler(file_handler)
-    
-    logging.info('Logging configured to console and transactions.log file')
+
+    logging.info("Logging configured to console and transactions.log file")
 
 
 # ---------------------------------------------------------------------------
@@ -88,32 +86,34 @@ def _write_temp_transaction_file(data: Dict[str, str]) -> str:
 
 @app.after_request
 def add_cors_headers(resp):
+    """Inject CORS headers on every response (dev convenience)."""
     resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
     resp.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     return resp
 
 
-
 # Serve the SPA
 @app.route("/")
 def index():
+    """Serve the single-page application entry HTML."""
     return send_from_directory(app.static_folder, "index.html")
 
 
 # Fallback for any other static assets (CSS, JS, images)
 @app.route("/<path:path>")
 def static_proxy(path):
+    """Serve other static assets (CSS, JS, images)."""
     return send_from_directory(app.static_folder, path)
 
 
-@app.route("/api/generate-test-files", methods=["POST","OPTIONS"])
+@app.route("/api/generate-test-files", methods=["POST", "OPTIONS"])
 def generate_test_files():
-    """Generate test files based on template name from the front-end.
+    """Generate XML test files based on a template.
+
     Expected JSON: {testName: str, placeholders: {key: value}}
     Returns JSON {success, files: [relative paths]}
-    For now, this is a thin wrapper that forwards to tests-automation logic if available,
-    or returns a Not Implemented message.
+    Currently forwards to *tests_automation* helper when available.
     """
     if request.method == "OPTIONS":
         # Pre-flight CORS request
@@ -121,20 +121,29 @@ def generate_test_files():
 
     try:
         data = request.get_json(force=True)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         return jsonify(success=False, error="Invalid JSON"), 400
 
     test_name = data.get("testName")
     if not test_name:
         return jsonify(success=False, error="testName is required"), 400
 
-        from tests_automation.xml_processor import XMLTemplateProcessor  # type: ignore
     try:
-        template_file = os.path.join(os.path.dirname(__file__), "tests-automation", "templates", "PCC_TAIWAN_ISO.xml")
+        from tests_automation.xml_processor import (
+            XMLTemplateProcessor,  # type: ignore # pylint: disable=import-error,import-outside-toplevel
+        )
+        template_file = os.path.join(
+            os.path.dirname(__file__),
+            "tests-automation",
+            "templates",
+            "PCC_TAIWAN_ISO.xml",
+        )
         processor = XMLTemplateProcessor(template_path=template_file)
         placeholders = data.get("placeholders", {}) or {}
-        files = processor.generate_test_files("Cuban Filter", extra_placeholders=placeholders)
-    except Exception as exc:
+        files = processor.generate_test_files(
+            "Cuban Filter", extra_placeholders=placeholders
+        )
+    except Exception as exc:  # pylint: disable=broad-except
         logging.exception("Failed to generate XML files")
         return jsonify(success=False, error=str(exc)), 500
 
@@ -143,18 +152,27 @@ def generate_test_files():
 
     # Return relative paths for front-end to link
     rel_files = [os.path.relpath(f, start=app.static_folder) for f in files]
-    return jsonify(success=True, files=rel_files, outputDir=os.path.relpath(os.path.dirname(files[0]), start=app.static_folder)), 200
+    return (
+        jsonify(
+            success=True,
+            files=rel_files,
+            outputDir=os.path.relpath(
+                os.path.dirname(files[0]), start=app.static_folder
+            ),
+        ),
+        200,
+    )
 
 
 @app.route("/api", methods=["POST"])
 def process_api() -> Any:  # noqa: D401
-    """Handle an automation request.
+    """Main automation endpoint consumed by the SPA.
 
     Expects JSON {transaction, action, comment, transactionType?, performOnLatest?}
     """
     try:
         data = request.get_json(force=True)  # will raise on invalid JSON
-    except Exception:
+    except json.JSONDecodeError:
         return jsonify(success=False, message="Invalid JSON"), 400
 
     required = {"transaction", "action", "comment"}
@@ -193,9 +211,9 @@ def process_api() -> Any:  # noqa: D401
             logging.warning("Failed moving screenshots: %s", move_err)
 
         status_code = 200
-    except Exception as e:
-        logging.exception("Error processing transaction: %s", e)
-        response_dict = {"success": False, "message": str(e)}
+    except Exception as err:  # pylint: disable=broad-except
+        logging.exception("Error processing transaction: %s", err)
+        response_dict = {"success": False, "message": str(err)}
         status_code = 500
     finally:
         # Clean up temp file
@@ -209,11 +227,13 @@ def process_api() -> Any:  # noqa: D401
 
 @app.route("/")
 def serve_index():
+    """Alias route for root—serves index.html."""
     return send_from_directory(app.static_folder, "index.html")
 
 
 @app.route("/tests-automation")
 def serve_tests_automation():
+    """Serve the tests-automation HTML page."""
     return send_from_directory(app.static_folder, "tests-automation.html")
 
 

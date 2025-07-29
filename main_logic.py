@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from playwright.sync_api import Page, expect, sync_playwright
 
 # Local application imports
-from FircoPage import FircoPage, TransactionError
+from firco_page import FircoPage, TransactionError
 from utils import (
     parse_txt_file,
     create_output_structure,

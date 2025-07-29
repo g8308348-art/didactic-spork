@@ -162,14 +162,14 @@ class BPMPage:
             raise
 
     def fill_transaction_id(self, transaction_id: str) -> None:
-        """Fill the MSG_REF (transaction id) field in the advanced search panel."""
+        """Fill the REFERENCE (transaction id) field in the advanced search panel."""
         try:
-            # Locate the input associated with MSG_REF label
+            # Locate the input associated with REFERENCE label
             input_field = self.page.locator(
-                "div.search-item.advanced label:text('MSG_REF') + input, div.search-item.advanced input[type='text']"
+                "div.search-item.advanced label:text('REFERENCE') + input, div.search-item.advanced input[type='text']"
             ).first
             input_field.fill(transaction_id)
-            logging.info("Filled transaction id %s in MSG_REF field.", transaction_id)
+            logging.info("Filled transaction id %s in REFERENCE field.", transaction_id)
         except Exception as e:
             logging.error("Failed to fill transaction id %s: %s", transaction_id, e)
             raise

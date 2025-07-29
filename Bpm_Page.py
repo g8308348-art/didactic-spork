@@ -227,26 +227,14 @@ class BPMPage:
     def fill_transaction_id(self, transaction_id: str) -> None:
         """Fill the REFERENCE field in the advanced-search panel with extra diagnostics."""
         try:
-            selector = (
-                "div.search-item.advanced label:text('REFERENCE') + input, "
-                "div.search-item.advanced input[type='text']"
-            )
+            # Target the input directly following the label whose text is exactly 'REFERENCE:'
+            # Using Playwright CSS :has-text() for clarity and robustness.
+            selector = "div.search-item.advanced label:has-text('REFERENCE') + input"
             logging.debug("Looking for REFERENCE input with selector: %s", selector)
-            inputs = self.page.locator(selector)
-            count = inputs.count()
-            logging.debug("Number of elements matching selector: %d", count)
-
-            if count == 0:
-                logging.warning(
-                    "REFERENCE input not found – falling back to MSG_REF for debugging"
-                )
-                fallback = self.page.locator(
-                    "div.search-item.advanced label:text('MSG_REF') + input"
-                )
-                logging.debug("Fallback MSG_REF elements: %d", fallback.count())
-                inputs = fallback
-
-            input_field = inputs.first
+            input_field = self.page.locator(selector).first
+            if not input_field or not input_field.is_visible():
+                logging.error("REFERENCE input not visible – selector used: %s", selector)
+                raise ValueError("REFERENCE input field not found or not visible")
             logging.debug("Using input locator: %s", input_field)
             input_field.fill(transaction_id)
             logging.info("Filled transaction id %s in reference field.", transaction_id)

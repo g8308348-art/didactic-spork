@@ -1,7 +1,5 @@
-import logging
-
-logging.info("FircoPage module loaded from %s", __file__)
 import time
+import logging
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -163,7 +161,7 @@ class FircoPage:
         except (ValueError, RuntimeError) as e:
             logging.error("Error while waiting for loading indicator: %s", e)
 
-    def data_filters(self, transaction: str, amount: str = ""):
+    def data_filters(self, transaction: str):
         self.selectors.menu_opener.click()
         self.selectors.data_filters.click()
         self.page.fill("id=text-input-element-44", transaction)
@@ -175,7 +173,8 @@ class FircoPage:
         Perform BPM search for the transaction and return a result dict.
         """
         logging.info(
-            f"Transaction {transaction} not uniquely found in Live, History. Checking BPM page."
+            "Transaction %s not uniquely found in Live, History. Checking BPM page.",
+            transaction,
         )
 
         # Add retry mechanism for BPM page loading issues
@@ -189,20 +188,23 @@ class FircoPage:
                 options_to_check = map_transaction_type_to_option(transaction_type)
                 if not options_to_check:
                     logging.warning(
-                        f"Unknown or missing BPM option for transaction type: {transaction_type}"
+                        "Unknown or missing BPM option for transaction type: %s",
+                        transaction_type,
                     )
 
                 # Attempt to perform BPM operations
                 perform_login_and_setup(bpm_page)
-                select_options_and_submit(bpm_page, page, options_to_check)
+                # Use BPMPage's methods to select options and perform search
+                bpm_page.check_options_and_submit(options_to_check)
 
                 try:
-                    # Perform BPM search and capture results
-                    fourth_column_value, last_column_value = handle_dropdown_and_search(
-                        bpm_page, page, transaction
-                    )
+                    # Perform BPM search and capture results using BPMPage's method
+                    fourth_column_value, last_column_value = bpm_page.perform_advanced_search(transaction)
                     logging.info(
-                        f"Transaction {transaction} found in BPM: {fourth_column_value}, {last_column_value}"
+                        "Transaction %s found in BPM: %s, %s",
+                        transaction,
+                        fourth_column_value,
+                        last_column_value,
                     )
                     # If not found in BPM, return not_found status
                     if (
@@ -237,7 +239,9 @@ class FircoPage:
                     }
                 except Exception as search_exc:
                     logging.info(
-                        f"Transaction {transaction} not found in BPM: {search_exc}"
+                        "Transaction %s not found in BPM: %s",
+                        transaction,
+                        search_exc,
                     )
                     # Exit retry loop if this is a normal "not found" scenario
                     if "not visible" in str(search_exc).lower():
@@ -246,12 +250,17 @@ class FircoPage:
 
             except Exception as e:
                 error_message = str(e).lower()
-                logging.error(f"Error during BPM search for {transaction}: {e}")
+                logging.error(
+                    "Error during BPM search for %s: %s",
+                    transaction,
+                    e,
+                )
 
                 # If browser or page closed, treat as BPM failure
                 if "target page" in error_message and "closed" in error_message:
                     logging.info(
-                        f"Browser closed during BPM search for {transaction}, treating as BPM failure"
+                        "Browser closed during BPM search for %s, treating as BPM failure",
+                        transaction,
                     )
                     return {
                         "status": "failed_in_bpm",
@@ -267,7 +276,9 @@ class FircoPage:
                 ):
                     retry_count += 1
                     logging.warning(
-                        f"BPM page appears to be in a reload loop or timed out. Retry attempt {retry_count}/{max_retries}"
+                        "BPM page appears to be in a reload loop or timed out. Retry attempt %d/%d",
+                        retry_count,
+                        max_retries,
                     )
 
                     # Close and recreate browser context before retrying
@@ -282,7 +293,7 @@ class FircoPage:
                         self.page = context.new_page()
                         logging.info("Successfully reset browser context for retry")
                     except Exception as browser_error:
-                        logging.error(f"Error resetting browser: {browser_error}")
+                        logging.error("Error resetting browser: %s", browser_error)
 
                     # Wait before retrying
                     time.sleep(3)
@@ -295,7 +306,8 @@ class FircoPage:
             break
 
         logging.info(
-            f"Transaction {transaction} not found in Live Messages, History, or BPM."
+            "Transaction %s not found in Live Messages, History, or BPM.",
+            transaction,
         )
         return {
             "status": "transaction_not_found_in_any_tab",
@@ -346,7 +358,8 @@ class FircoPage:
         # Handle all possible status values and return immediately
         if live_status == SearchStatus.FOUND:
             logging.info(
-                f"Transaction {transaction} found in Live Messages. Preparing for action."
+                "Transaction %s found in Live Messages. Preparing for action.",
+                transaction,
             )
             self.fill_comment_field(comment)
             self.click_all_hits(True)  # Assuming these are preparatory steps
@@ -357,7 +370,8 @@ class FircoPage:
         elif live_status == SearchStatus.MULTIPLE:
             if perform_on_latest:
                 logging.info(
-                    f"Multiple transactions found for ID: {transaction} in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction."
+                    "Multiple transactions found for ID: %s in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction.",
+                    transaction,
                 )
                 # Click filter menu, descending sort, then first row
                 self.selectors.filtered_date_menu_opener.click()
@@ -372,7 +386,8 @@ class FircoPage:
                 }
             else:
                 logging.error(
-                    f"Multiple transactions found for ID: {transaction} in Live Messages."
+                    "Multiple transactions found for ID: %s in Live Messages.",
+                    transaction,
                 )
                 raise TransactionError(
                     f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
@@ -380,7 +395,8 @@ class FircoPage:
                 )
         # 3. Search in History tab (if not uniquely found in Live Messages)
         logging.info(
-            f"Transaction {transaction} not uniquely found in Live Messages. Checking History tab."
+            "Transaction %s not uniquely found in Live Messages. Checking History tab.",
+            transaction,
         )
         self.selectors.history_item.click()
         self.page.wait_for_timeout(
@@ -394,7 +410,7 @@ class FircoPage:
 
         if history_status in (SearchStatus.FOUND, SearchStatus.MULTIPLE):
             logging.info(
-                f"Transaction {transaction} found in History. Already handled."
+                "Transaction %s found in History. Already handled.", transaction
             )
             return {
                 "status": "already_handled",
@@ -403,13 +419,6 @@ class FircoPage:
 
         # 4. Search in BPM page (if not uniquely found in Live, History)
         return self.check_bpm_page(transaction, transaction_type)
-
-    def verify_on_bpm(self, transaction: str) -> SearchStatus:
-        """
-        Placeholder for BPM page search.
-        """
-        # TODO: implement BPM search logic
-        return SearchStatus.NONE
 
     def click_all_hits(self, screenshots: bool):
         """
@@ -489,7 +498,6 @@ class FircoPage:
         logging.info("logged out!")
 
     def perform_action(self, action: str):
-        logging.info("perform_action called with action '%s'", action)
         """
         Perform a specified action on the current transaction.
 

@@ -162,7 +162,7 @@ class BPMPage:
             raise
 
     def fill_transaction_id(self, transaction_id: str) -> None:
-        """Fill the REFERENCE (transaction id) field in the advanced search panel."""
+        """Fill the REFERENCE field in the advanced search panel."""
         try:
             # Locate the input associated with REFERENCE label
             input_field = self.page.locator(

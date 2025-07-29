@@ -3,6 +3,7 @@
 This module defines the `Options` enumeration and the `BPMPage` page-object class
 used by Playwright scripts to automate State Street’s BPM UI.
 """
+
 # pylint: disable=invalid-name,line-too-long,logging-fstring-interpolation,broad-exception-raised,no-else-return,missing-module-docstring,missing-function-docstring
 
 import logging
@@ -13,6 +14,7 @@ from playwright.sync_api import expect, Page
 
 class Options(Enum):
     """Enumeration of BPM market / transaction type options displayed in the UI."""
+
     UNCLASSIFIED = "Unclassified"
     APS_MT = "APS-MT"
     CBPR_MX = "CBPR-MX"
@@ -34,6 +36,7 @@ class Options(Enum):
 
 class BPMPage:
     """Page Object Model encapsulating high-level BPM UI interactions."""
+
     def __init__(self, page: Page):
         self.page = page
         self.menu_item = page.locator("div.modal-content[role='document']")
@@ -183,7 +186,9 @@ class BPMPage:
             logging.debug("Number of elements matching selector: %d", count)
 
             if count == 0:
-                logging.warning("REFERENCE input not found – falling back to MSG_REF for debugging")
+                logging.warning(
+                    "REFERENCE input not found – falling back to MSG_REF for debugging"
+                )
                 fallback = self.page.locator(
                     "div.search-item.advanced label:text('MSG_REF') + input"
                 )

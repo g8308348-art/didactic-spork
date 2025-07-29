@@ -154,4 +154,18 @@ def main(transaction_type_str=None):
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Run BPM automation for a given market/transaction type."
+    )
+    parser.add_argument(
+        "transaction_type",
+        nargs="?",
+        default=None,
+        help="Market/transaction type (e.g. APS_MT or 'APS-MT').",
+    )
+    cli_args = parser.parse_args()
+
+    logging.info("CLI transaction type argument: %s", cli_args.transaction_type)
+    main(cli_args.transaction_type)

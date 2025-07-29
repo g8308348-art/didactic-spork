@@ -199,7 +199,9 @@ class FircoPage:
 
                 try:
                     # Perform BPM search and capture results using BPMPage's method
-                    fourth_column_value, last_column_value = bpm_page.perform_advanced_search(transaction)
+                    fourth_column_value, last_column_value = (
+                        bpm_page.perform_advanced_search(transaction)
+                    )
                     logging.info(
                         "Transaction %s found in BPM: %s, %s",
                         transaction,

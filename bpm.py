@@ -9,7 +9,9 @@ from playwright.sync_api import Page, sync_playwright
 from Bpm_Page import BPMPage, Options
 
 # Add project root so local modules resolve even when executed from elsewhere
-sys.path.append(os.path.dirname(os.path.abspath(".")))  # pylint: disable=wrong-import-position
+sys.path.append(
+    os.path.dirname(os.path.abspath("."))
+)  # pylint: disable=wrong-import-position
 
 # --- Config ---
 
@@ -70,7 +72,7 @@ def search_results(bpm_page: BPMPage, page: Page, number_to_look_for: str):
     ("NotFound", "NotFound") otherwise.
     """
     try:
-        bpm_page.select_all_from_dropdown()
+        # bpm_page.select_all_from_dropdown()
         page.wait_for_timeout(2000)
         bpm_page.wait_for_page_to_load()
 
@@ -99,6 +101,7 @@ def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
     bpm_page.fill_transaction_id(transaction_id)
     bpm_page.click_submit_button()
     page.wait_for_timeout(2000)
+    search_results(bpm_page, page, transaction_id)
 
 
 # lets create a function to do proper search

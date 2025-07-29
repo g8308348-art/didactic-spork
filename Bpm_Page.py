@@ -1,3 +1,10 @@
+"""BPM Page object model and helpers for UI automation flows.
+
+This module defines the `Options` enumeration and the `BPMPage` page-object class
+used by Playwright scripts to automate State Street’s BPM UI.
+"""
+# pylint: disable=invalid-name,line-too-long,logging-fstring-interpolation,broad-exception-raised,no-else-return,missing-module-docstring,missing-function-docstring
+
 import logging
 import time
 from enum import Enum
@@ -5,6 +12,7 @@ from playwright.sync_api import expect, Page
 
 
 class Options(Enum):
+    """Enumeration of BPM market / transaction type options displayed in the UI."""
     UNCLASSIFIED = "Unclassified"
     APS_MT = "APS-MT"
     CBPR_MX = "CBPR-MX"
@@ -25,6 +33,7 @@ class Options(Enum):
 
 
 class BPMPage:
+    """Page Object Model encapsulating high-level BPM UI interactions."""
     def __init__(self, page: Page):
         self.page = page
         self.menu_item = page.locator("div.modal-content[role='document']")
@@ -32,7 +41,7 @@ class BPMPage:
     def safe_click(self, locator, description: str):
         if locator.is_visible():
             locator.click()
-            logging.info(f"Clicked on {description}.")
+            logging.info("Clicked on %s.", description)
         else:
             msg = f"{description} is not visible."
             logging.error(msg)
@@ -162,14 +171,29 @@ class BPMPage:
             raise
 
     def fill_transaction_id(self, transaction_id: str) -> None:
-        """Fill the REFERENCE field in the advanced search panel."""
+        """Fill the REFERENCE field in the advanced-search panel with extra diagnostics."""
         try:
-            # Locate the input associated with REFERENCE label
-            input_field = self.page.locator(
-                "div.search-item.advanced label:text('REFERENCE') + input, div.search-item.advanced input[type='text']"
-            ).first
+            selector = (
+                "div.search-item.advanced label:text('REFERENCE') + input, "
+                "div.search-item.advanced input[type='text']"
+            )
+            logging.debug("Looking for REFERENCE input with selector: %s", selector)
+            inputs = self.page.locator(selector)
+            count = inputs.count()
+            logging.debug("Number of elements matching selector: %d", count)
+
+            if count == 0:
+                logging.warning("REFERENCE input not found – falling back to MSG_REF for debugging")
+                fallback = self.page.locator(
+                    "div.search-item.advanced label:text('MSG_REF') + input"
+                )
+                logging.debug("Fallback MSG_REF elements: %d", fallback.count())
+                inputs = fallback
+
+            input_field = inputs.first
+            logging.debug("Using input locator: %s", input_field)
             input_field.fill(transaction_id)
-            logging.info("Filled transaction id %s in REFERENCE field.", transaction_id)
+            logging.info("Filled transaction id %s in reference field.", transaction_id)
         except Exception as e:
             logging.error("Failed to fill transaction id %s: %s", transaction_id, e)
             raise

@@ -154,6 +154,19 @@ class BPMPage:
         self.page.wait_for_selector("div.dataTables_wrapper table")
 
     # ------------------------------------------------------------------
+    # Debug helpers
+    # ------------------------------------------------------------------
+    def debug_list_advanced_fields(self) -> None:
+        """Log every label text in the Advanced Search panel to aid selector tuning."""
+        labels = self.page.locator("div.search-item.advanced label")
+        count = labels.count()
+        logging.info("Advanced-search labels found: %d", count)
+        for idx in range(count):
+            txt = labels.nth(idx).inner_text().strip()
+            has_input = labels.nth(idx).evaluate("el => !!el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'input'")
+            logging.info("[ADV %02d] label='%s' adjacent-input=%s", idx, txt, has_input)
+
+    # ------------------------------------------------------------------
     # Search helpers
     # ------------------------------------------------------------------
     def search_results(self, number_to_look_for: str) -> tuple:

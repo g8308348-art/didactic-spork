@@ -155,15 +155,15 @@ class BPMPage:
     # ------------------------------------------------------------------
     def debug_list_advanced_fields(self) -> None:
         """Log every label text in the Advanced Search panel to aid selector tuning."""
-        labels = self.page.locator("div.search-item.advanced label")
+        labels = self.page.locator("div.search-item label")
         count = labels.count()
-        logging.info("Advanced-search labels found: %d", count)
+        logging.info("Search-form labels found: %d", count)
         for idx in range(count):
             txt = labels.nth(idx).inner_text().strip()
             has_input = labels.nth(idx).evaluate(
                 "el => !!el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'input'"
             )
-            logging.info("[ADV %02d] label='%s' adjacent-input=%s", idx, txt, has_input)
+            logging.info("[LBL %02d] label='%s' adjacent-input=%s", idx, txt, has_input)
 
     # ------------------------------------------------------------------
     # Search helpers
@@ -193,6 +193,7 @@ class BPMPage:
             transaction_id,
         )
         self.click_search_tab()
+        self.page.wait_for_timeout(1000)
         # Log all advanced-search labels to help find the correct REFERENCE input
         self.debug_list_advanced_fields()
         self.page.wait_for_timeout(1000)
@@ -243,7 +244,7 @@ class BPMPage:
         try:
             # Target the input directly following the label whose text is exactly 'REFERENCE:'
             # Using Playwright CSS :has-text() for clarity and robustness.
-            selector = "div.search-item.advanced label:has-text('REFERENCE') + input"
+            selector = "div.search-item label:has-text('REFERENCE') + input"
             logging.debug("Looking for REFERENCE input with selector: %s", selector)
             input_field = self.page.locator(selector).first
             if not input_field or not input_field.is_visible():

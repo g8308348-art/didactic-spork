@@ -1,13 +1,15 @@
+"""BPM UI-automation entry point for MURDOCK tooling."""
+
 import os
 import sys
 import logging
 
-# Add current directory to path to find local modules
-sys.path.append(os.path.dirname(os.path.abspath(".")))
-
 # Third-party imports
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Page, sync_playwright
 from Bpm_Page import BPMPage, Options
+
+# Add project root so local modules resolve even when executed from elsewhere
+sys.path.append(os.path.dirname(os.path.abspath(".")))  # pylint: disable=wrong-import-position
 
 # --- Config ---
 
@@ -49,7 +51,10 @@ def perform_login_and_setup(bpm_page: BPMPage):
 
 
 def select_options_and_submit(bpm_page: BPMPage, page: Page, options_to_check):
-    logging.info("Selecting market options: %s", [opt.value for opt in options_to_check])
+    """Tick the requested market checkboxes and press Submit."""
+    logging.info(
+        "Selecting market options: %s", [opt.value for opt in options_to_check]
+    )
     bpm_page.check_options(options_to_check)
     bpm_page.click_submit_button()
     logging.info("Submit button clicked, waiting for results page to load.")
@@ -58,7 +63,12 @@ def select_options_and_submit(bpm_page: BPMPage, page: Page, options_to_check):
     # page.wait_for_timeout(2000)
 
 
-def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for: str):
+def search_results(bpm_page: BPMPage, page: Page, number_to_look_for: str):
+    """Select *All* in dropdown, wait for grid, search for a specific transaction number.
+
+    Returns a tuple with values from the 4th and last columns if found, or
+    ("NotFound", "NotFound") otherwise.
+    """
     try:
         bpm_page.select_all_from_dropdown()
         page.wait_for_timeout(2000)
@@ -67,13 +77,13 @@ def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for
         fourth_column_value, last_column_value = bpm_page.look_for_number(
             number_to_look_for
         )
-        logging.info(f"4th Column Value: {fourth_column_value}")
-        logging.info(f"Last Column Value: {last_column_value}")
+        logging.info("4th Column Value: %s", fourth_column_value)
+        logging.info("Last Column Value: %s", last_column_value)
 
         # Return the values so they can be unpacked by the calling function
         return fourth_column_value, last_column_value
-    except Exception as e:
-        logging.error(f"Error in handle_dropdown_and_search: {e}")
+    except Exception as e:  # pylint: disable=broad-except
+        logging.error("Error in search_results: %s", e)
         # Return default values when the number is not found
         return "NotFound", "NotFound"
 
@@ -123,6 +133,13 @@ def map_transaction_type_to_option(transaction_type_str: str):
 
 
 def main(transaction_type_str=None):
+    """Entry point callable; launches Playwright and drives the BPM UI.
+
+    Args:
+        transaction_type_str: Market/transaction type supplied via CLI or API.
+    Returns:
+        dict: status information if transaction type missing, otherwise None.
+    """
     setup_logging()
     if not transaction_type_str:
         logging.info("Transaction type is 'Not defined'; skipping BPM search.")
@@ -145,12 +162,15 @@ def main(transaction_type_str=None):
             # handle_dropdown_and_search(bpm_page, page, number_to_look_for)
             perform_advanced_search(bpm_page, page, number_to_look_for)
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logging.error("An error occurred: %s", e)
 
         finally:
             context.close()
             browser.close()
+
+    # Successful completion path
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":

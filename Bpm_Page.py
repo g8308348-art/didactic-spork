@@ -129,12 +129,63 @@ class BPMPage:
             raise
 
     def click_submit_button(self) -> None:
+        """Click the form's primary Submit button."""
         try:
             self.page.click("button.btn.btn-primary")
             logging.info("Clicked on the Submit button.")
         except Exception as e:
             logging.error("Failed to click on the Submit button: %s", e)
             raise
+
+    # ------------------------------------------------------------------
+    # Composite helpers
+    # ------------------------------------------------------------------
+    def check_options_and_submit(self, options: list[Options]) -> None:
+        """High-level helper: tick given market checkboxes and press Submit.
+
+        Args:
+            options (list[Options]): Markets to select in the left-hand tree.
+        """
+        logging.info("Selecting market options: %s", [opt.value for opt in options])
+        self.check_options(options)
+        self.click_submit_button()
+        logging.info("Submit button clicked; waiting for results grid to load.")
+        # Wait until the table/grid that shows search results is present. Adjust CSS if needed.
+        self.page.wait_for_selector("div.dataTables_wrapper table")
+
+    # ------------------------------------------------------------------
+    # Search helpers
+    # ------------------------------------------------------------------
+    def search_results(self, number_to_look_for: str) -> tuple:
+        """Wait for results grid and return tuple from 4th & last columns.
+
+        Returns ("NotFound", "NotFound") if the number isn’t present or on error.
+        """
+        try:
+            # self.select_all_from_dropdown()  # optional dropdown action
+            self.page.wait_for_timeout(2000)
+            self.wait_for_page_to_load()
+
+            fourth_val, last_val = self.look_for_number(number_to_look_for)
+            logging.info("4th Column Value: %s", fourth_val)
+            logging.info("Last Column Value: %s", last_val)
+            return fourth_val, last_val
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("Error in search_results: %s", e)
+            return "NotFound", "NotFound"
+
+    def perform_advanced_search(self, transaction_id: str) -> tuple:
+        """Navigate to Search tab, fill reference field, submit, then fetch results."""
+        logging.info(
+            "Navigating to Search tab and performing advanced search for transaction ID: %s",
+            transaction_id,
+        )
+        self.click_search_tab()
+        self.page.wait_for_timeout(1000)
+        self.fill_transaction_id(transaction_id)
+        self.click_submit_button()
+        self.page.wait_for_timeout(2000)
+        return self.search_results(transaction_id)
 
     def click_element_with_dynamic_title(self) -> None:
         try:

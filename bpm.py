@@ -5,7 +5,7 @@ import sys
 import logging
 
 # Third-party imports
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import sync_playwright
 from Bpm_Page import BPMPage, Options
 
 # Add project root so local modules resolve even when executed from elsewhere
@@ -52,62 +52,6 @@ def perform_login_and_setup(bpm_page: BPMPage):
     logging.info("Login and initial setup completed.")
 
 
-def select_options_and_submit(bpm_page: BPMPage, page: Page, options_to_check):
-    """Tick the requested market checkboxes and press Submit."""
-    logging.info(
-        "Selecting market options: %s", [opt.value for opt in options_to_check]
-    )
-    bpm_page.check_options(options_to_check)
-    bpm_page.click_submit_button()
-    logging.info("Submit button clicked, waiting for results page to load.")
-    page.wait_for_timeout(2000)  # Consider replacing with wait_for_selector if possible
-    # bpm_page.click_first_row_total_column()
-    # page.wait_for_timeout(2000)
-
-
-def search_results(bpm_page: BPMPage, page: Page, number_to_look_for: str):
-    """Select *All* in dropdown, wait for grid, search for a specific transaction number.
-
-    Returns a tuple with values from the 4th and last columns if found, or
-    ("NotFound", "NotFound") otherwise.
-    """
-    try:
-        # bpm_page.select_all_from_dropdown()
-        page.wait_for_timeout(2000)
-        bpm_page.wait_for_page_to_load()
-
-        fourth_column_value, last_column_value = bpm_page.look_for_number(
-            number_to_look_for
-        )
-        logging.info("4th Column Value: %s", fourth_column_value)
-        logging.info("Last Column Value: %s", last_column_value)
-
-        # Return the values so they can be unpacked by the calling function
-        return fourth_column_value, last_column_value
-    except Exception as e:  # pylint: disable=broad-except
-        logging.error("Error in search_results: %s", e)
-        # Return default values when the number is not found
-        return "NotFound", "NotFound"
-
-
-def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
-    """Navigate to Search tab, enter transaction ID and submit search."""
-    logging.info(
-        "Navigating to Search tab and performing advanced search for transaction ID: %s",
-        transaction_id,
-    )
-    bpm_page.click_search_tab()
-    page.wait_for_timeout(1000)
-    bpm_page.fill_transaction_id(transaction_id)
-    bpm_page.click_submit_button()
-    page.wait_for_timeout(2000)
-    search_results(bpm_page, page, transaction_id)
-
-
-# lets create a function to do proper search
-
-
-# --- Main Script ---
 def map_transaction_type_to_option(transaction_type_str: str):
     """Map a transaction type string (from UI) to the corresponding Options enum.
 
@@ -161,13 +105,10 @@ def main(transaction_type_str=None):
 
         try:
             perform_login_and_setup(bpm_page)
-            select_options_and_submit(bpm_page, page, options_to_check)
-            # handle_dropdown_and_search(bpm_page, page, number_to_look_for)
-            perform_advanced_search(bpm_page, page, number_to_look_for)
-
+            bpm_page.check_options_and_submit(options_to_check)
+            bpm_page.perform_advanced_search(number_to_look_for)
         except Exception as e:  # pylint: disable=broad-except
             logging.error("An error occurred: %s", e)
-
         finally:
             context.close()
             browser.close()
@@ -190,5 +131,7 @@ if __name__ == "__main__":
     )
     cli_args = parser.parse_args()
 
+    # Initialise logging before emitting any log messages
+    setup_logging()
     logging.info("CLI transaction type argument: %s", cli_args.transaction_type)
     main(cli_args.transaction_type)

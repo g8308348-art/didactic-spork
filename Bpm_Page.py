@@ -149,9 +149,6 @@ class BPMPage:
         logging.info("Selecting market options: %s", [opt.value for opt in options])
         self.check_options(options)
         self.click_submit_button()
-        logging.info("Submit button clicked; waiting for results grid to load.")
-        # Wait until the table/grid that shows search results is present. Adjust CSS if needed.
-        self.page.wait_for_selector("div.dataTables_wrapper table")
 
     # ------------------------------------------------------------------
     # Debug helpers
@@ -163,7 +160,9 @@ class BPMPage:
         logging.info("Advanced-search labels found: %d", count)
         for idx in range(count):
             txt = labels.nth(idx).inner_text().strip()
-            has_input = labels.nth(idx).evaluate("el => !!el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'input'")
+            has_input = labels.nth(idx).evaluate(
+                "el => !!el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'input'"
+            )
             logging.info("[ADV %02d] label='%s' adjacent-input=%s", idx, txt, has_input)
 
     # ------------------------------------------------------------------
@@ -194,6 +193,8 @@ class BPMPage:
             transaction_id,
         )
         self.click_search_tab()
+        # Log all advanced-search labels to help find the correct REFERENCE input
+        self.debug_list_advanced_fields()
         self.page.wait_for_timeout(1000)
         self.fill_transaction_id(transaction_id)
         self.click_submit_button()
@@ -246,7 +247,9 @@ class BPMPage:
             logging.debug("Looking for REFERENCE input with selector: %s", selector)
             input_field = self.page.locator(selector).first
             if not input_field or not input_field.is_visible():
-                logging.error("REFERENCE input not visible – selector used: %s", selector)
+                logging.error(
+                    "REFERENCE input not visible – selector used: %s", selector
+                )
                 raise ValueError("REFERENCE input field not found or not visible")
             logging.debug("Using input locator: %s", input_field)
             input_field.fill(transaction_id)

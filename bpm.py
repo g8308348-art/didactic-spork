@@ -37,6 +37,7 @@ def setup_logging() -> None:
 # --- Modular Actions ---
 def perform_login_and_setup(bpm_page: BPMPage):
     """Clear browser cookies and perform the initial BPM login/setup steps."""
+    logging.info("Starting login and setup flow.")
     # Ensure a clean session by clearing any existing cookies before login
     bpm_page.page.context.clear_cookies()
 
@@ -44,14 +45,17 @@ def perform_login_and_setup(bpm_page: BPMPage):
     bpm_page.verify_modal_visibility()
     bpm_page.click_tick_box()
     bpm_page.click_ori_tsf()
+    logging.info("Login and initial setup completed.")
 
 
 def select_options_and_submit(bpm_page: BPMPage, page: Page, options_to_check):
+    logging.info("Selecting market options: %s", [opt.value for opt in options_to_check])
     bpm_page.check_options(options_to_check)
     bpm_page.click_submit_button()
+    logging.info("Submit button clicked, waiting for results page to load.")
     page.wait_for_timeout(2000)  # Consider replacing with wait_for_selector if possible
-    bpm_page.click_first_row_total_column()
-    page.wait_for_timeout(2000)
+    # bpm_page.click_first_row_total_column()
+    # page.wait_for_timeout(2000)
 
 
 def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for: str):
@@ -74,11 +78,12 @@ def handle_dropdown_and_search(bpm_page: BPMPage, page: Page, number_to_look_for
         return "NotFound", "NotFound"
 
 
-# --- Search Actions ---
-
-
 def perform_advanced_search(bpm_page: BPMPage, page: Page, transaction_id: str):
     """Navigate to Search tab, enter transaction ID and submit search."""
+    logging.info(
+        "Navigating to Search tab and performing advanced search for transaction ID: %s",
+        transaction_id,
+    )
     bpm_page.click_search_tab()
     page.wait_for_timeout(1000)
     bpm_page.fill_transaction_id(transaction_id)

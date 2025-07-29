@@ -153,6 +153,7 @@ class BPMPage:
     def click_search_tab(self) -> None:
         """Navigate to the Search tab in BPM."""
         try:
+            logging.info("Navigating to Search.")
             search_tab = self.page.locator("li.nav-item.nav-link a[href='#search']")
             self.safe_click(search_tab, "Search tab")
         except Exception as e:

@@ -742,8 +742,3 @@ function escapeHtml(unsafe) {
 // Filter and search functionality
 filterAction.addEventListener('change', loadTransactions);
 searchTransactions.addEventListener('input', loadTransactions);
-
-
-
-    
-    

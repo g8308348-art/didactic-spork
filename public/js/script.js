@@ -184,8 +184,10 @@ commentInput.addEventListener('input', () => {
 
 // Form validation functions
 function validateTransactions(value) {
-    // Allow alphanumeric characters, commas, and spaces
-    const regex = /^[a-zA-Z0-9, _-]+$/;
+    // Validate transaction identifiers according to the specification
+    // Each identifier may contain letters, digits, and special characters but no whitespace
+    // Identifiers must be separated by a comma with an optional single space after
+    const regex = /^[^,\s]+(?:,\s?[^,\s]+)*$/;
     
     if (!value.trim()) {
         showError(transactionsError, 'Transaction details are required');
@@ -194,7 +196,9 @@ function validateTransactions(value) {
     
     if (!regex.test(value)) {
         // Show the validation error in the submission status area instead of next to the input
-        submissionStatus.innerHTML = '<strong>Error:</strong> Only alphanumeric characters, commas, and spaces are allowed';
+        const errorMessage = "Invalid format. Enter transaction identifiers as comma-separated tokens with no spaces inside each identifier (e.g., ABC123, $45#, XYZ_9). Each identifier may include letters, numbers, and special characters but must not contain whitespace. Inputs like ABC 123,$45#, ABC123 $45#, or ABC123, $45# will not be processed.";
+        
+        submissionStatus.innerHTML = `<strong>Error:</strong> ${errorMessage}`;
         submissionStatus.className = 'submission-status error';
         submissionStatus.style.display = 'block';
         // Ensure the inline error is cleared

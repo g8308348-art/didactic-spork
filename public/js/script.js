@@ -327,19 +327,30 @@ transactionForm.addEventListener('submit', async (e) => {
                     return tTxn === normalizedTxn || tid === normalizedTxn;
                 });
                 
-                // Duplicate detected – log attempt but take no action
+                // Duplicate detected – check if we should still process it
                 if (saved) {
-                    saveTransaction({
-                        transaction: txn,
-                        comment: commentValue,
-                        action: actionValue,
-                        timestamp: Date.now(),
-                        status: 'No action',
-                        status_detail: 'already_handled',
-                        statusMessage: 'Already handled'
-                    });
-                    noActionLocal.push(txn);
-                    continue;
+                    // Check if this is a failed transaction with the specific locator error
+                    // that we want to retry processing
+                    const shouldRetry = saved.status === 'failed' && 
+                                      saved.statusMessage && 
+                                      saved.statusMessage.includes('waiting for locator("tr.even-row.clickable-row")');
+                    
+                    // If it's not a retryable error, skip it
+                    if (!shouldRetry) {
+                        saveTransaction({
+                            transaction: txn,
+                            comment: commentValue,
+                            action: actionValue,
+                            timestamp: Date.now(),
+                            status: 'No action',
+                            status_detail: 'already_handled',
+                            statusMessage: 'Already handled'
+                        });
+                        noActionLocal.push(txn);
+                        continue;
+                    }
+                    // If shouldRetry is true, we'll proceed with processing this transaction
+                    console.log(`Retrying failed transaction with locator error: ${txn}`);
                 }
                 
                 // Validate each transaction again for safety

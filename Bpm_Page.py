@@ -118,10 +118,10 @@ class BPMPage:
                     f"li span.inf-name:has-text('{option.value}') i.fa-check-square-o"
                 )
                 if selected_locator.is_visible():
-                    logging.info("✔ Verified option '%s' is selected.", option.value)
+                    logging.info("Verified option '%s' is selected.", option.value)
                 else:
                     logging.warning(
-                        "⚠ After clicking, option '%s' does NOT appear selected.",
+                        "Warning: After clicking, option '%s' does NOT appear selected.",
                         option.value,
                     )
         except Exception as e:

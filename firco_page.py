@@ -38,8 +38,8 @@ class Selectors:
         self.filtered_date_menu_opener = page.locator(
             "#fmf-table-column-filtered-date-col-menu-opener"
         )
-        # self.ascending_date = page.locator(".sort-desc-menu-item")
         self.ascending_date = page.locator("text=Sort ascending")
+        self.descending_date = page.locator("text=Sort descending")
         self.reset_filter = page.locator(".remove-sort-menu-item")
 
         # Table selectors
@@ -377,7 +377,7 @@ class FircoPage:
                 )
                 # Click filter menu, descending sort, then first row
                 self.selectors.filtered_date_menu_opener.click()
-                self.selectors.ascending_date.click()
+                self.selectors.descending_date.click()
                 # Click the first transaction row (assuming self.sel.table is a Playwright locator for rows)
                 self.selectors.table_rows_first_message_id_cell.click()
                 self.fill_comment_field(comment)

@@ -98,13 +98,18 @@ def process_firco_transaction(
 
     if current_status in TERMINAL_READ_ONLY_STATUSES:
         logging.info(
-            f"Transaction {transaction} status '{current_status}' requires no further action here. Logging out."
+            f"Transaction {transaction} status '{current_status}' requires no further action here."
         )
-        # Safely logout without raising if page already closed
-        try:
-            firco_page.logout()
-        except Exception as e:
-            logging.warning(f"Logout failed for status '{current_status}': {e}")
+        # Only logout from Firco if we're not in BPM (URL doesn't contain 'mtexrt')
+        current_url = page.url
+        if "mtexrt" not in current_url.lower():
+            logging.info(f"Logging out from Firco for transaction {transaction}.")
+            try:
+                firco_page.logout()
+            except Exception as e:
+                logging.warning(f"Logout failed for status '{current_status}': {e}")
+        else:
+            logging.info(f"In BPM page (URL contains 'mtexrt'), skipping Firco logout for transaction {transaction}.")
         return details_result
 
     elif current_status == "found_in_live":

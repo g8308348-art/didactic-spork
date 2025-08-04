@@ -147,7 +147,7 @@ def process_firco_transaction(
 
 
 # --- Error Handling Functions ---
-def cleanup_browser_resources(page: Page = None, browser: object = None) -> None:
+def cleanup_browser_resources(page: Page = None, context: object = None) -> None:
     """
     Safely close browser resources even if there are exceptions.
 
@@ -167,12 +167,6 @@ def cleanup_browser_resources(page: Page = None, browser: object = None) -> None
             context.close()
         except (OSError, ConnectionError, RuntimeError) as e:
             logging.warning("Failed to close context: %s", e)
-    # Close browser if it exists
-    # if browser:
-    #     try:
-    #         browser.close()
-    #     except (OSError, ConnectionError, RuntimeError) as e:
-    #         logging.warning("Failed to close browser: %s", e)
 
 
 def handle_generic_error(transaction: str, error: Exception, result: dict) -> None:
@@ -416,7 +410,7 @@ def process_transaction(
         # Using more specific error types instead of general Exception
         handle_generic_error(transaction, e, result)
     finally:
-        cleanup_browser_resources(page, browser)
+        cleanup_browser_resources(page, context)
 
     # Return the result as JSON string for the server to use
     return json.dumps(result)

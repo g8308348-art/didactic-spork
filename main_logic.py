@@ -81,7 +81,7 @@ def process_firco_transaction(
         transaction, user_comment, transaction_type, perform_on_latest
     )
     logging.info(
-        f"Transaction details result from go_to_transaction_details: {details_result}"
+        "Transaction details result from go_to_transaction_details: %s", details_result
     )
 
     current_status = details_result.get("status")
@@ -98,37 +98,48 @@ def process_firco_transaction(
 
     if current_status in TERMINAL_READ_ONLY_STATUSES:
         logging.info(
-            f"Transaction {transaction} status '{current_status}' requires no further action here."
+            "Transaction %s status '%s' requires no further action here.",
+            transaction,
+            current_status,
         )
         # Only logout from Firco if we're not in BPM (URL doesn't contain 'mtexrt')
         current_url = page.url
         if "mtexrt" not in current_url.lower():
-            logging.info(f"Logging out from Firco for transaction {transaction}.")
+            logging.info("Logging out from Firco for transaction %s.", transaction)
             try:
                 firco_page.logout()
             except Exception as e:
-                logging.warning(f"Logout failed for status '{current_status}': {e}")
+                logging.warning("Logout failed for status '%s': %s", current_status, e)
         else:
             logging.info(
-                f"In BPM page (URL contains 'mtexrt'), skipping Firco logout for transaction {transaction}."
+                "In BPM page (URL contains 'mtexrt'), skipping Firco logout for transaction %s.",
+                transaction,
             )
         return details_result
 
     elif current_status == "found_in_live":
         if needs_escalation:
             logging.info(
-                f"Transaction {transaction} found in Live Messages. Escalating for action '{action}'."
+                "Transaction %s found in Live Messages. Escalating for action '%s'.",
+                transaction,
+                action,
             )
             firco_page.selectors.escalate.click()
             time.sleep(2)  # Consider replacing with an explicit wait
             firco_page.logout()
             return {
                 "status": "escalated",
-                "message": f"Transaction {transaction} found in Live Messages and escalated for action '{action}'.",
+                "message": "Transaction %s found in Live Messages and escalated for action '%s'."
+                % (
+                    transaction,
+                    action,
+                ),
             }
         else:  # Not needs_escalation, perform direct action
             logging.info(
-                f"Transaction {transaction} found in Live Messages. Performing action '{action}'."
+                "Transaction %s found in Live Messages. Performing action '%s'.",
+                transaction,
+                action,
             )
             logging.info("Calling perform_action with '%s'", action)
             firco_page.perform_action(action)
@@ -136,11 +147,14 @@ def process_firco_transaction(
             firco_page.logout()
             return {
                 "status": "action_performed_on_live",
-                "message": f"Action '{action}' performed on transaction {transaction} found in Live Messages.",
+                "message": "Action {} performed on transaction {} found in Live Messages.".format(
+                    action, transaction
+                ),
             }
     else:
         logging.warning(
-            f"Transaction {transaction} not found in Live or History. Attempting BPM search."
+            "Transaction %s not found in Live or History. Attempting BPM search.",
+            transaction,
         )
         bpm_result = firco_page.check_bpm_page(transaction, transaction_type)
         return bpm_result
@@ -209,8 +223,8 @@ def handle_transaction_error(
     result["screenshot_path"] = te.screenshot_path
 
     # Log the error to the transaction history file
-    error_msg = (
-        f"ERROR {te.error_code}: {transaction}, action: {action}, error: {te.message}"
+    error_msg = "ERROR {}:{}: {}, action: {}, error: {}".format(
+        te.error_code, transaction, action, te.message
     )
     with open(os.path.join(OUTPUT_DIR, "error_log.txt"), "a", encoding="utf-8") as log:
         log.write(error_msg + "\n")
@@ -267,10 +281,10 @@ def process_transaction(
 
     try:
         # I would like to log all the transaction info
-        logging.info(f"Processing transaction: {transaction}")
-        logging.info(f"Transaction type: {transaction_type}")
-        logging.info(f"Action: {action}")
-        logging.info(f"User comment: {user_comment}")
+        logging.info("Processing transaction: %s", transaction)
+        logging.info("Transaction type: %s", transaction_type)
+        logging.info("Action: %s", action)
+        logging.info("User comment: %s", user_comment)
 
         # First user login and process
         login_to_firco(page, url=TEST_URL, username=USERNAME, password=PASSWORD)
@@ -307,7 +321,9 @@ def process_transaction(
         # If escalation was performed (or if status indicates manager is needed), do manager processing
         if needs_manager:
             logging.info(
-                f"Manager processing required for transaction {transaction} due to status: {firco_result_user1.get('status')}"
+                "Manager processing required for transaction %s due to status: %s",
+                transaction,
+                firco_result_user1.get("status"),
             )
             login_to_firco(
                 page, url=TEST_URL, username=MANAGER_USERNAME, password=MANAGER_PASSWORD
@@ -343,7 +359,9 @@ def process_transaction(
             result["success"] = True
             result["message"] = final_firco_result.get(
                 "message",
-                f"Transaction {transaction} status: {final_firco_result.get('status')}",
+                "Transaction {} status: {}".format(
+                    transaction, final_firco_result.get("status")
+                ),
             )
             result["status_detail"] = final_firco_result.get(
                 "status"
@@ -353,7 +371,9 @@ def process_transaction(
             result["success"] = False
             result["message"] = final_firco_result.get(
                 "message",
-                f"Transaction {transaction} failed or has an unknown status: {final_firco_result.get('status')}",
+                "Transaction {} failed or has an unknown status: {}".format(
+                    transaction, final_firco_result.get("status")
+                ),
             )
             result["error_code"] = final_firco_result.get(
                 "error_code", 500
@@ -397,7 +417,12 @@ def process_transaction(
             except OSError as e:
                 logging.error("OS error when moving transaction file: %s", e)
 
-            log_msg = f"Transaction {transaction} processing attempt. Final status: {final_firco_result.get('status')}, Action: {action}, User: {user_comment}"
+            log_msg = "Transaction {} processing attempt. Final status: {}, Action: {}, User: {}".format(
+                transaction,
+                final_firco_result.get("status"),
+                action,
+                user_comment,
+            )
             with open(
                 os.path.join(OUTPUT_DIR, "daily_log.txt"), "a", encoding="utf-8"
             ) as log:

@@ -258,7 +258,8 @@ def process_transaction(
             }
         )
 
-    browser = playwright.chromium.connect_over_cdp("http://localhost:9222")
+    # browser = playwright.chromium.connect_over_cdp("http://localhost:9222")
+    browser = playwright.chromium.launch(channel="chrome", headless=True)
     context = browser.new_context()
     page = context.new_page()
 

@@ -40,7 +40,8 @@ def main(test_data_dir_override=None):
 
     with sync_playwright() as p:
         try:
-            browser = p.chromium.connect_over_cdp("http://localhost:9222")
+            # browser = p.chromium.connect_over_cdp("http://localhost:9222")
+            browser = p.chromium.launch(channel="chrome", headless=True)
             context = browser.new_context()
             page = context.new_page()
             mtex_page = MtexPage(page)

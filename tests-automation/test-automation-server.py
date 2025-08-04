@@ -255,7 +255,8 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             screenshot_folder = os.path.join(OUTPUT_DIR, date_folder, upi)
             os.makedirs(screenshot_folder, exist_ok=True)
             with sync_playwright() as pw:
-                browser_bpm = pw.chromium.connect_over_cdp("http://localhost:9222")
+                # browser_bpm = pw.chromium.connect_over_cdp("http://localhost:9222")
+                browser_bpm = pw.chromium.launch(channel="chrome", headless=True)
                 ctx_bpm = browser_bpm.new_context()
                 page_bpm = ctx_bpm.new_page()
                 bpm_page = BPMPage(page_bpm)
@@ -276,7 +277,8 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             # BPM post-check
             with sync_playwright() as pw2:
-                browser_bpm2 = pw2.chromium.connect_over_cdp("http://localhost:9222")
+                # browser_bpm2 = pw2.chromium.connect_over_cdp("http://localhost:9222")
+                browser_bpm2 = pw2.chromium.launch(channel="chrome", headless=True)
                 ctx_bpm2 = browser_bpm2.new_context()
                 page_bpm2 = ctx_bpm2.new_page()
                 bpm_page2 = BPMPage(page_bpm2)

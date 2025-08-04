@@ -98,7 +98,8 @@ def main(transaction_type_str=None):
     options_to_check = map_transaction_type_to_option(transaction_type_str)
 
     with sync_playwright() as p:
-        browser = p.chromium.connect_over_cdp("http://localhost:9222")
+        # browser = p.chromium.connect_over_cdp("http://localhost:9222")
+        browser = p.chromium.launch(channel="chrome", headless=True)
         context = browser.new_context()
         page = context.new_page()
         bpm_page = BPMPage(page)

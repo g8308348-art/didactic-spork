@@ -1,17 +1,16 @@
 """BPM UI-automation entry point for MURDOCK tooling."""
 
 import os
-import sys
 import logging
 
 # Third-party imports
 from playwright.sync_api import sync_playwright
-from Bpm_Page import BPMPage, Options
 
-# Add project root so local modules resolve even when executed from elsewhere
-sys.path.append(
-    os.path.dirname(os.path.abspath("."))
-)  # pylint: disable=wrong-import-position
+from .bpm_page import (
+    BPMPage,
+    perform_login_and_setup,
+    map_transaction_type_to_option,
+)
 
 # --- Config ---
 
@@ -36,47 +35,6 @@ def setup_logging() -> None:
             logging.StreamHandler(),
         ],
     )
-
-
-# --- Modular Actions ---
-def perform_login_and_setup(bpm_page: BPMPage):
-    """Clear browser cookies and perform the initial BPM login/setup steps."""
-    logging.info("Starting login and setup flow.")
-    # Ensure a clean session by clearing any existing cookies before login
-    bpm_page.page.context.clear_cookies()
-
-    bpm_page.login(TEST_URL, USERNAME, PASSWORD)
-    bpm_page.verify_modal_visibility()
-    bpm_page.click_tick_box()
-    bpm_page.click_ori_tsf()
-    logging.info("Login and initial setup completed.")
-
-
-def map_transaction_type_to_option(transaction_type_str: str):
-    """Map a transaction type string (from UI) to the corresponding Options enum.
-
-    The front-end sends the HTML option `value` – this may match either the
-    Enum *name* (e.g. ``APS_MT``) **or** the Enum *value* (e.g. ``APS-MT``).
-    This helper normalises the input and returns a list with the matching
-    ``Options`` entry so ``check_options`` can click the right item.
-    """
-    if not transaction_type_str:
-        logging.warning("Transaction type string is empty – no options to map.")
-        return []
-
-    # 1. Try direct Enum name match (case-sensitive)
-    if transaction_type_str in Options.__members__:
-        return [Options[transaction_type_str]]
-
-    # 2. Fallback: compare against Enum values (case-insensitive)
-    for opt in Options:
-        if opt.value.lower() == transaction_type_str.lower():
-            return [opt]
-
-    logging.warning(
-        "Unknown transaction type received from UI: %s", transaction_type_str
-    )
-    return []
 
 
 def main(transaction_type_str=None):
@@ -104,7 +62,7 @@ def main(transaction_type_str=None):
         bpm_page = BPMPage(page)
 
         try:
-            perform_login_and_setup(bpm_page)
+            perform_login_and_setup(bpm_page, TEST_URL, USERNAME, PASSWORD)
             bpm_page.check_options_and_submit(options_to_check)
             bpm_page.perform_advanced_search(number_to_look_for)
         except Exception as e:  # pylint: disable=broad-except

@@ -109,7 +109,9 @@ def process_firco_transaction(
             except Exception as e:
                 logging.warning(f"Logout failed for status '{current_status}': {e}")
         else:
-            logging.info(f"In BPM page (URL contains 'mtexrt'), skipping Firco logout for transaction {transaction}.")
+            logging.info(
+                f"In BPM page (URL contains 'mtexrt'), skipping Firco logout for transaction {transaction}."
+            )
         return details_result
 
     elif current_status == "found_in_live":
@@ -160,12 +162,17 @@ def cleanup_browser_resources(page: Page = None, browser: object = None) -> None
         except (OSError, ConnectionError, RuntimeError) as e:
             logging.warning("Failed to close page: %s", e)
 
-    # Close browser if it exists
-    if browser:
+    if context:
         try:
-            browser.close()
+            context.close()
         except (OSError, ConnectionError, RuntimeError) as e:
-            logging.warning("Failed to close browser: %s", e)
+            logging.warning("Failed to close context: %s", e)
+    # Close browser if it exists
+    # if browser:
+    #     try:
+    #         browser.close()
+    #     except (OSError, ConnectionError, RuntimeError) as e:
+    #         logging.warning("Failed to close browser: %s", e)
 
 
 def handle_generic_error(transaction: str, error: Exception, result: dict) -> None:
@@ -252,7 +259,8 @@ def process_transaction(
         )
 
     browser = playwright.chromium.connect_over_cdp("http://localhost:9222")
-    page = browser.new_page()
+    context = browser.new_context()
+    page = context.new_page()
 
     result = {
         "success": False,

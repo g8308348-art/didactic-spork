@@ -106,7 +106,7 @@ def main(test_data_dir_override=None):
             logging.exception("Unhandled exception occurred")
         finally:
             context.close()
-            browser.close()
+            # browser.close()
 
 
 if __name__ == "__main__":

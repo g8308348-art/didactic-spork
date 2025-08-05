@@ -36,7 +36,7 @@ def read_requirements() -> List[str]:
         print("⚠️  requirements.txt not found – skipping import checks")
         return packages
 
-    for line in REQ_FILE.read_text().splitlines():
+    for line in REQ_FILE.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -78,14 +78,17 @@ def run_checks(skip_playwright: bool) -> bool:
     if success:
         print("\nAll imports succeeded!")
     else:
-        print("\nSome imports failed – please install missing dependencies and/or check your PYTHONPATH.")
+        print(
+            "\nSome imports failed – please install missing dependencies "
+            "and/or check your PYTHONPATH."
+        )
 
     if skip_playwright:
         return success
 
     # Extra Playwright smoke test
     try:
-        from playwright.sync_api import sync_playwright  # type: ignore
+        from playwright.sync_api import sync_playwright  # type: ignore  # pylint: disable=import-outside-toplevel
 
         print("\n🚀 Launching a headless Chromium instance via Playwright…")
         with sync_playwright() as p:
@@ -105,7 +108,11 @@ def run_checks(skip_playwright: bool) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Verify project environment readiness.")
-    parser.add_argument("--skip-playwright", action="store_true", help="Skip the Playwright browser launch test.")
+    parser.add_argument(
+        "--skip-playwright",
+        action="store_true",
+        help="Skip the Playwright browser launch test.",
+    )
     args = parser.parse_args()
 
     ok = run_checks(skip_playwright=args.skip_playwright)

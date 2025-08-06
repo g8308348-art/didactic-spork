@@ -385,7 +385,7 @@ def process_bmp_search():
         
         # Call the BPM main function with timeout handling
         try:
-            bmp_result = bmp_main(market_type, transaction_id)
+            bmp_result = bpm_main(market_type, transaction_id)
             execution_time = round((time.time() - start_time) * 1000, 2)  # Convert to milliseconds
             
             logging.info("BPM automation completed - ID: %s, Duration: %sms", request_id, execution_time)

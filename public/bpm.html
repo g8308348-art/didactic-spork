@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MURDOCK - BPM Transaction Search</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/bpm.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-mode">
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <h1>MURDOCK</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Transaction Form</a>
+                <a href="/#transaction-history" class="nav-link">Transactions History</a>
+                <a href="/#batch-processing" class="nav-link">Batch Processing</a>
+                <a href="/bpm" class="nav-link active">BPM Search</a>
+            </div>
+            <div class="theme-toggle">
+                <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="bpm-search" class="section">
+            <div class="container">
+                <h2>BPM Transaction Search</h2>
+                <p class="section-description">
+                    Search for transactions in the BPM system by selecting a market type and entering a transaction ID.
+                </p>
+                
+                <form id="bmp-search-form">
+                    <div class="form-group">
+                        <div class="bmp-search-row">
+                            <div class="bmp-transaction-id-col">
+                                <label for="transaction-id" class="bmp-label">Transaction ID:</label>
+                                <input 
+                                    type="text" 
+                                    id="transaction-id" 
+                                    name="transaction-id" 
+                                    placeholder="Enter transaction ID (e.g., 202505140000031)" 
+                                    required
+                                >
+                                <small class="error-message" id="transaction-id-error"></small>
+                            </div>
+                            <div class="bmp-market-type-col">
+                                <label for="market-type" class="bmp-label">Market Type:</label>
+                                <select id="market-type" name="market-type" required>
+                                    <option value="" disabled selected>Select Market Type</option>
+                                    <option value="UNCLASSIFIED">Unclassified</option>
+                                    <option value="APS_MT">APS-MT</option>
+                                    <option value="CBPR_MX">CBPR-MX</option>
+                                    <option value="SEPA_CLASSIC">SEPA-Classic</option>
+                                    <option value="RITS_MX">RITS-MX</option>
+                                    <option value="LYNX_MX">LYNX-MX</option>
+                                    <option value="ENTERPRISE_ISO">EnterpriseISO</option>
+                                    <option value="CHAPS_MX">CHAPS-MX</option>
+                                    <option value="T2S_MX">T2S-MX</option>
+                                    <option value="BESS_MT">BESS-MT</option>
+                                    <option value="CHIPS_MX">CHIPS-MX</option>
+                                    <option value="SEPA_INSTANT">SEPA-Instant</option>
+                                    <option value="FEDWIRE">FEDWIRE</option>
+                                    <option value="TAIWAN_MX">Taiwan-MX</option>
+                                    <option value="CHATS_MX">CHATS-MX</option>
+                                    <option value="PEPPLUS_IAT">PEPPLUS-IAT</option>
+                                    <option value="TSF_TRIGGER">TSF-TRIGGER</option>
+                                </select>
+                                <small class="error-message" id="market-type-error"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="search-btn">
+                            <i class="fas fa-search"></i>
+                            Search Transaction
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Clear Form
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Loading State -->
+                <div id="loading-state" class="loading-state hidden">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Searching BPM system...</p>
+                </div>
+
+                <!-- Results Section -->
+                <div id="results-section" class="results-section hidden">
+                    <h3>Search Results</h3>
+                    <div id="results-content" class="results-content">
+                        <!-- Results will be populated here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="error-section" class="error-section hidden">
+                    <div class="error-content">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Search Error</h3>
+                        <p id="error-message">An error occurred while searching.</p>
+                        <button id="retry-btn" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 MURDOCK - Internal Transaction Processing Tool</p>
+        </div>
+    </footer>
+
+    <script src="js/bpm.js"></script>
+</body>
+</html>

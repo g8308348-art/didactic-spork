@@ -2,3 +2,5 @@ helpers/
 venv/
 *.pyc
 transactions.log
+.kiro/
+.vscode/

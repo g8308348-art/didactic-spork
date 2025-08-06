@@ -3,7 +3,7 @@ import logging
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from bpm import (
+from bpm.bpm_page import (
     map_transaction_type_to_option,
     perform_login_and_setup,
 )

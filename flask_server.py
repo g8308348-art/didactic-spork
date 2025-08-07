@@ -85,6 +85,25 @@ def _write_temp_transaction_file(data: Dict[str, str]) -> str:
 # ---------------------------------------------------------------------------
 
 
+@app.route("/logs")
+def serve_logs():
+    """Return the contents of `transactions.log` as plain text.
+
+    The endpoint is intentionally simple for internal troubleshooting
+    purposes. If the log file grows large we stream it line-by-line to
+    avoid loading the entire file into memory at once.
+    """
+    def generate() -> str:  # pragma: no cover
+        try:
+            with open("transactions.log", "r", encoding="utf-8") as log_file:
+                for line in log_file:
+                    yield line
+        except FileNotFoundError:
+            yield "transactions.log not found."
+
+    return app.response_class(generate(), mimetype="text/plain")
+
+
 @app.after_request
 def add_cors_headers(resp):
     """Inject CORS headers on every response (dev convenience)."""

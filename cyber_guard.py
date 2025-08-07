@@ -1,3 +1,4 @@
+from typing import Optional
 import os
 import json
 import logging
@@ -5,7 +6,7 @@ import subprocess
 import shlex
 
 
-def retrieve_password(username: str) -> str | None:
+def retrieve_password(username: str) -> Optional[str]:
     """Retrieve the password for *username* from CyberArk.
 
     This helper relies on the following environment variables being set:

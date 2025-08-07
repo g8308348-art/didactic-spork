@@ -12,6 +12,7 @@ import time
 import json
 import sys
 from dotenv import load_dotenv
+from cyber_guard import retrieve_password
 
 # Third-party imports
 from playwright.sync_api import Page, expect, sync_playwright
@@ -72,10 +73,10 @@ INCOMING_DIR = os.getenv("INCOMING_DIR", "input")
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
 LOG_FILE = os.getenv("LOG_FILE", "transactions.log")
 TEST_URL = os.getenv("TEST_URL", "https://example.com")
-USERNAME = os.getenv("USERNAME", "user")
-PASSWORD = os.getenv("PASSWORD", "pass")
-MANAGER_USERNAME = os.getenv("MANAGER_USERNAME", "manager")
-MANAGER_PASSWORD = os.getenv("MANAGER_PASSWORD", "pass")
+USERNAME = "506"
+PASSWORD = retrieve_password(USERNAME)
+MANAGER_USERNAME = "507"
+MANAGER_PASSWORD = retrieve_password(MANAGER_USERNAME)
 
 # Define module-level constants for status strings
 TRANSACTION_NOT_FOUND_STATUS = "transaction_not_found_in_any_tab"

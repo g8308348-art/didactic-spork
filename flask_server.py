@@ -93,6 +93,7 @@ def serve_logs():
     purposes. If the log file grows large we stream it line-by-line to
     avoid loading the entire file into memory at once.
     """
+
     def generate() -> str:  # pragma: no cover
         try:
             with open("transactions.log", "r", encoding="utf-8") as log_file:
@@ -111,7 +112,9 @@ def serve_next_steps():
     md_path = os.path.join(os.path.dirname(__file__), "next_steps.md")
     if not os.path.isfile(md_path):
         return make_response("next_steps.md not found", 404)
-    return send_from_directory(os.path.dirname(md_path), os.path.basename(md_path), mimetype="text/markdown")
+    return send_from_directory(
+        os.path.dirname(md_path), os.path.basename(md_path), mimetype="text/markdown"
+    )
 
 
 @app.after_request
@@ -162,6 +165,7 @@ def generate_test_files():
         from tests_automation.xml_processor import (
             XMLTemplateProcessor,  # type: ignore # pylint: disable=import-error,import-outside-toplevel
         )
+
         template_file = os.path.join(
             os.path.dirname(__file__),
             "tests-automation",
@@ -274,9 +278,9 @@ def serve_bpm():
 
 
 @app.route("/api/bpm", methods=["POST", "OPTIONS"])
-def process_bmp_search():
+def process_bpm_search():
     """Handle BPM search requests with comprehensive error handling.
-    
+
     Expected JSON: {transactionId: str, marketType: str}
     Returns JSON response with search results or detailed error information.
     """
@@ -286,37 +290,56 @@ def process_bmp_search():
 
     # Enhanced request logging for debugging
     request_id = f"req_{hash(str(request.data) + str(request.headers))}"
-    logging.info("BPM search request started - ID: %s, IP: %s", request_id, request.remote_addr)
+    logging.info(
+        "BPM search request started - ID: %s, IP: %s", request_id, request.remote_addr
+    )
 
     try:
         data = request.get_json(force=True)
         logging.debug("Request data received - ID: %s, Data: %s", request_id, data)
     except json.JSONDecodeError as e:
         logging.warning("Invalid JSON received - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "Invalid JSON in request body. Please check your request format.",
-            "errorCode": "INVALID_JSON",
-            "requestId": request_id
-        }), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Invalid JSON in request body. Please check your request format.",
+                    "errorCode": "INVALID_JSON",
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
     except Exception as e:
-        logging.error("Unexpected error parsing request - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "Failed to process request body",
-            "errorCode": "REQUEST_PROCESSING_ERROR",
-            "requestId": request_id
-        }), 400
+        logging.error(
+            "Unexpected error parsing request - ID: %s, Error: %s", request_id, e
+        )
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Failed to process request body",
+                    "errorCode": "REQUEST_PROCESSING_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
 
     # Validate request body exists
     if not data:
         logging.warning("Empty request body received - ID: %s", request_id)
-        return jsonify({
-            "status": "error", 
-            "message": "Request body is required. Please provide transactionId and marketType.",
-            "errorCode": "MISSING_REQUEST_BODY",
-            "requestId": request_id
-        }), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Request body is required. Please provide transactionId and marketType.",
+                    "errorCode": "MISSING_REQUEST_BODY",
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
 
     # Extract and sanitize input data
     transaction_id = data.get("transactionId", "").strip()
@@ -324,16 +347,26 @@ def process_bmp_search():
 
     # Enhanced input validation with detailed error messages
     validation_errors = []
-    
+
     if not transaction_id:
         validation_errors.append("Transaction ID is required")
         logging.warning("Missing transaction ID - ID: %s", request_id)
     elif len(transaction_id) < 3:
         validation_errors.append("Transaction ID must be at least 3 characters long")
-        logging.warning("Transaction ID too short - ID: %s, Length: %d", request_id, len(transaction_id))
+        logging.warning(
+            "Transaction ID too short - ID: %s, Length: %d",
+            request_id,
+            len(transaction_id),
+        )
     elif len(transaction_id) > 50:
-        validation_errors.append("Transaction ID must be no more than 50 characters long")
-        logging.warning("Transaction ID too long - ID: %s, Length: %d", request_id, len(transaction_id))
+        validation_errors.append(
+            "Transaction ID must be no more than 50 characters long"
+        )
+        logging.warning(
+            "Transaction ID too long - ID: %s, Length: %d",
+            request_id,
+            len(transaction_id),
+        )
 
     if not market_type:
         validation_errors.append("Market type is required")
@@ -341,103 +374,167 @@ def process_bmp_search():
 
     # Return validation errors if any
     if validation_errors:
-        return jsonify({
-            "status": "error",
-            "message": "; ".join(validation_errors),
-            "errorCode": "VALIDATION_ERROR",
-            "validationErrors": validation_errors,
-            "requestId": request_id
-        }), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "; ".join(validation_errors),
+                    "errorCode": "VALIDATION_ERROR",
+                    "validationErrors": validation_errors,
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
 
     # Validate market type against available options
     try:
         from bpm.bpm_page import Options
-        valid_market_types = [opt.name for opt in Options] + [opt.value for opt in Options]
+
+        valid_market_types = [opt.name for opt in Options] + [
+            opt.value for opt in Options
+        ]
         if market_type not in valid_market_types:
-            logging.warning("Invalid market type - ID: %s, Type: %s", request_id, market_type)
-            return jsonify({
-                "status": "error",
-                "message": f"Invalid market type '{market_type}'. Valid options are: {', '.join([opt.value for opt in Options])}",
-                "errorCode": "INVALID_MARKET_TYPE",
-                "validOptions": [opt.value for opt in Options],
-                "requestId": request_id
-            }), 400
+            logging.warning(
+                "Invalid market type - ID: %s, Type: %s", request_id, market_type
+            )
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": f"Invalid market type '{market_type}'. Valid options are: {', '.join([opt.value for opt in Options])}",
+                        "errorCode": "INVALID_MARKET_TYPE",
+                        "validOptions": [opt.value for opt in Options],
+                        "requestId": request_id,
+                    }
+                ),
+                400,
+            )
     except ImportError as e:
         logging.error("Failed to import BPM Options - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "BPM system configuration is not available. Please contact system administrator.",
-            "errorCode": "SYSTEM_CONFIGURATION_ERROR",
-            "requestId": request_id
-        }), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "BPM system configuration is not available. Please contact system administrator.",
+                    "errorCode": "SYSTEM_CONFIGURATION_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            500,
+        )
     except Exception as e:
-        logging.error("Unexpected error validating market type - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "System error during validation. Please try again later.",
-            "errorCode": "VALIDATION_SYSTEM_ERROR",
-            "requestId": request_id
-        }), 500
+        logging.error(
+            "Unexpected error validating market type - ID: %s, Error: %s", request_id, e
+        )
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "System error during validation. Please try again later.",
+                    "errorCode": "VALIDATION_SYSTEM_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            500,
+        )
 
     # Enhanced input sanitization with detailed validation
     import re
-    if not re.match(r'^[a-zA-Z0-9_-]+$', transaction_id):
-        logging.warning("Invalid transaction ID format - ID: %s, TransactionID: %s", request_id, transaction_id)
-        return jsonify({
-            "status": "error",
-            "message": "Transaction ID contains invalid characters. Only alphanumeric characters, hyphens, and underscores are allowed.",
-            "errorCode": "INVALID_TRANSACTION_ID_FORMAT",
-            "allowedCharacters": "Letters (a-z, A-Z), numbers (0-9), hyphens (-), and underscores (_)",
-            "requestId": request_id
-        }), 400
+
+    if not re.match(r"^[a-zA-Z0-9_-]+$", transaction_id):
+        logging.warning(
+            "Invalid transaction ID format - ID: %s, TransactionID: %s",
+            request_id,
+            transaction_id,
+        )
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Transaction ID contains invalid characters. Only alphanumeric characters, hyphens, and underscores are allowed.",
+                    "errorCode": "INVALID_TRANSACTION_ID_FORMAT",
+                    "allowedCharacters": "Letters (a-z, A-Z), numbers (0-9), hyphens (-), and underscores (_)",
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
 
     # Call BPM automation with comprehensive error handling
     start_time = time.time()
     try:
         from bpm.bpm import main as bpm_main
         from bpm.bpm_page import map_transaction_type_to_option, Options
-        
-        logging.info("Starting BPM automation - ID: %s, Transaction: %s, Market: %s", 
-                    request_id, transaction_id, market_type)
-        
+
+        logging.info(
+            "Starting BPM automation - ID: %s, Transaction: %s, Market: %s",
+            request_id,
+            transaction_id,
+            market_type,
+        )
+
         # Map frontend market type to Options enum
         mapped_options = map_transaction_type_to_option(market_type)
         if not mapped_options:
-            logging.warning("Failed to map market type - ID: %s, Type: %s", request_id, market_type)
-            return jsonify({
-                "status": "error",
-                "message": f"Unable to process market type '{market_type}'. Valid options are: {', '.join([opt.value for opt in Options])}",
-                "errorCode": "MARKET_TYPE_MAPPING_ERROR",
-                "validOptions": [opt.value for opt in Options],
-                "requestId": request_id
-            }), 400
-        
+            logging.warning(
+                "Failed to map market type - ID: %s, Type: %s", request_id, market_type
+            )
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": f"Unable to process market type '{market_type}'. Valid options are: {', '.join([opt.value for opt in Options])}",
+                        "errorCode": "MARKET_TYPE_MAPPING_ERROR",
+                        "validOptions": [opt.value for opt in Options],
+                        "requestId": request_id,
+                    }
+                ),
+                400,
+            )
+
         # Call the BPM main function with timeout handling
         try:
-            bmp_result = bpm_main(market_type, transaction_id)
-            execution_time = round((time.time() - start_time) * 1000, 2)  # Convert to milliseconds
-            
-            logging.info("BPM automation completed - ID: %s, Duration: %sms", request_id, execution_time)
-            
+            bpm_result = bpm_main(market_type, transaction_id)
+            execution_time = round(
+                (time.time() - start_time) * 1000, 2
+            )  # Convert to milliseconds
+
+            logging.info(
+                "BPM automation completed - ID: %s, Duration: %sms",
+                request_id,
+                execution_time,
+            )
+
         except TimeoutError as e:
             logging.error("BPM automation timeout - ID: %s, Error: %s", request_id, e)
-            return jsonify({
-                "status": "error",
-                "message": "BPM search timed out. The system may be busy, please try again later.",
-                "errorCode": "BPM_TIMEOUT_ERROR",
-                "requestId": request_id
-            }), 504
-        
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "BPM search timed out. The system may be busy, please try again later.",
+                        "errorCode": "BPM_TIMEOUT_ERROR",
+                        "requestId": request_id,
+                    }
+                ),
+                504,
+            )
+
         # Handle specific BPM result statuses
-        if bmp_result and bmp_result.get("status") == "transaction_type_not_defined":
+        if bpm_result and bpm_result.get("status") == "transaction_type_not_defined":
             logging.warning("Transaction type not defined - ID: %s", request_id)
-            return jsonify({
-                "status": "error",
-                "message": "Transaction type was not defined in the system. BPM search was skipped.",
-                "errorCode": "TRANSACTION_TYPE_NOT_DEFINED",
-                "requestId": request_id
-            }), 400
-        
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Transaction type was not defined in the system. BPM search was skipped.",
+                        "errorCode": "TRANSACTION_TYPE_NOT_DEFINED",
+                        "requestId": request_id,
+                    }
+                ),
+                400,
+            )
+
         # Format successful response with enhanced metadata
         response_data = {
             "status": "ok",
@@ -445,64 +542,103 @@ def process_bmp_search():
                 "transactionId": transaction_id,
                 "marketType": market_type,
                 "searchCompleted": True,
-                "bmpResult": bmp_result or {"status": "completed"},
-                "mappedOptions": [opt.value for opt in mapped_options] if mapped_options else [],
+                "bpmResult": bpm_result or {"status": "completed"},
+                "mappedOptions": (
+                    [opt.value for opt in mapped_options] if mapped_options else []
+                ),
                 "executionTime": execution_time,
-                "requestId": request_id
-            }
+                "requestId": request_id,
+            },
         }
-        
+
         # Add timestamp
         import datetime
+
         response_data["results"]["searchTime"] = datetime.datetime.now().isoformat()
-        
-        logging.info("BPM search successful - ID: %s, Transaction: %s", request_id, transaction_id)
+
+        logging.info(
+            "BPM search successful - ID: %s, Transaction: %s",
+            request_id,
+            transaction_id,
+        )
         return jsonify(response_data), 200
-        
+
     except ImportError as e:
         logging.error("BPM module import failed - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "BPM automation system is not available. Please ensure the system is properly configured.",
-            "errorCode": "BPM_SYSTEM_UNAVAILABLE",
-            "technicalDetails": "Required BPM modules could not be loaded",
-            "requestId": request_id
-        }), 503
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "BPM automation system is not available. Please ensure the system is properly configured.",
+                    "errorCode": "BPM_SYSTEM_UNAVAILABLE",
+                    "technicalDetails": "Required BPM modules could not be loaded",
+                    "requestId": request_id,
+                }
+            ),
+            503,
+        )
     except PermissionError as e:
         logging.error("BPM permission error - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "Insufficient permissions to access BPM system. Please contact system administrator.",
-            "errorCode": "BPM_PERMISSION_ERROR",
-            "requestId": request_id
-        }), 403
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Insufficient permissions to access BPM system. Please contact system administrator.",
+                    "errorCode": "BPM_PERMISSION_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            403,
+        )
     except ConnectionError as e:
         logging.error("BPM connection error - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": "Unable to connect to BPM system. Please check network connectivity and try again.",
-            "errorCode": "BPM_CONNECTION_ERROR",
-            "requestId": request_id
-        }), 503
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Unable to connect to BPM system. Please check network connectivity and try again.",
+                    "errorCode": "BPM_CONNECTION_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            503,
+        )
     except ValueError as e:
         logging.error("BPM value error - ID: %s, Error: %s", request_id, e)
-        return jsonify({
-            "status": "error",
-            "message": f"Invalid data provided to BPM system: {str(e)}",
-            "errorCode": "BPM_DATA_ERROR",
-            "requestId": request_id
-        }), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Invalid data provided to BPM system: {str(e)}",
+                    "errorCode": "BPM_DATA_ERROR",
+                    "requestId": request_id,
+                }
+            ),
+            400,
+        )
     except Exception as e:
         execution_time = round((time.time() - start_time) * 1000, 2)
-        logging.error("BPM automation unexpected error - ID: %s, Duration: %sms, Error: %s", 
-                     request_id, execution_time, e, exc_info=True)
-        return jsonify({
-            "status": "error",
-            "message": "An unexpected error occurred during BPM search. Please try again or contact support if the problem persists.",
-            "errorCode": "BPM_AUTOMATION_ERROR",
-            "technicalDetails": str(e) if app.debug else "Contact support for technical details",
-            "requestId": request_id
-        }), 500
+        logging.error(
+            "BPM automation unexpected error - ID: %s, Duration: %sms, Error: %s",
+            request_id,
+            execution_time,
+            e,
+            exc_info=True,
+        )
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "An unexpected error occurred during BPM search. Please try again or contact support if the problem persists.",
+                    "errorCode": "BPM_AUTOMATION_ERROR",
+                    "technicalDetails": (
+                        str(e) if app.debug else "Contact support for technical details"
+                    ),
+                    "requestId": request_id,
+                }
+            ),
+            500,
+        )
 
 
 # Flask already serves static files when `static_folder` is configured.

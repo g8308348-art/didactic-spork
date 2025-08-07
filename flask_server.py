@@ -104,6 +104,16 @@ def serve_logs():
     return app.response_class(generate(), mimetype="text/plain")
 
 
+# Serve next_steps.md as Markdown (rendered as text/markdown)
+@app.route("/next_steps")
+def serve_next_steps():
+    """Serve the `next_steps.md` file created in project root."""
+    md_path = os.path.join(os.path.dirname(__file__), "next_steps.md")
+    if not os.path.isfile(md_path):
+        return make_response("next_steps.md not found", 404)
+    return send_from_directory(os.path.dirname(md_path), os.path.basename(md_path), mimetype="text/markdown")
+
+
 @app.after_request
 def add_cors_headers(resp):
     """Inject CORS headers on every response (dev convenience)."""

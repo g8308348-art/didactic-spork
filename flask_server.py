@@ -96,7 +96,7 @@ def serve_logs():
 
     def generate() -> str:  # pragma: no cover
         try:
-            with open("transactions.log", "r", encoding="utf-8") as log_file:
+            with open("transactions.log", "r", encoding="utf-8", errors="replace") as log_file:
                 for line in log_file:
                     yield line
         except FileNotFoundError:
@@ -108,13 +108,17 @@ def serve_logs():
 # Serve next_steps.md as Markdown (rendered as text/markdown)
 @app.route("/next_steps")
 def serve_next_steps():
-    """Serve the `next_steps.md` file created in project root."""
+    """Stream `next_steps.md` so encoding glitches won't crash the endpoint."""
     md_path = os.path.join(os.path.dirname(__file__), "next_steps.md")
     if not os.path.isfile(md_path):
         return make_response("next_steps.md not found", 404)
-    return send_from_directory(
-        os.path.dirname(md_path), os.path.basename(md_path), mimetype="text/markdown"
-    )
+
+    def generate() -> str:  # pragma: no cover
+        with open(md_path, "r", encoding="utf-8", errors="replace") as md_file:
+            for line in md_file:
+                yield line
+
+    return app.response_class(generate(), mimetype="text/markdown")
 
 
 @app.after_request

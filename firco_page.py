@@ -483,13 +483,10 @@ class FircoPage:
         self.page.wait_for_timeout(1000)
 
         # Prefer clickable active row; otherwise handle not-active row
-        logging.info("Is active row (visible)")
         if self.selectors.first_row_active.is_visible(timeout=0):
             logging.info("Clicking first active row (clickable-row)")
             self.selectors.first_row_active.click()
-
-        logging.info("Is not active row (visible)")
-        if self.selectors.first_row_not_active.is_visible(timeout=0):
+        else:
             self.unlock_transaction()
 
         # I want to stop script execution here

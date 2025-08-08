@@ -478,13 +478,15 @@ class FircoPage:
         # one transaction found
         logging.info("One transaction found")
         self.page.screenshot(path="one_transaction.png", full_page=True)
-        time.sleep(1)
+        self.page.wait_for_timeout(1000)
 
         # Prefer clickable active row; otherwise handle not-active row
+        logging.info("Is active row (visible)")
         if self.selectors.first_row_active.is_visible(timeout=0):
             logging.info("Clicking first active row (clickable-row)")
             self.selectors.first_row_active.click()
 
+        logging.info("Is not active row (visible)")
         if self.selectors.first_row_not_active.is_visible(timeout=0):
             self.unlock_transaction()
 

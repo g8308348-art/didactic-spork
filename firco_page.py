@@ -54,7 +54,14 @@ class Selectors:
         self.first_odd_row_td_text = (
             page.locator("tr.odd-row").first.locator("td").first
         )
-        self.first_row = page.locator("tr.even-row.clickable-row")
+        # rows
+        self.first_row_active = page.locator("tr.even-row.clickable-row")
+        self.first_row_not_active = page.locator("tr.even-row.lowloghtedRow")
+
+        self.first_row_state_column = page.locator(
+            "table#table-element-1 tbody tr.clickable-row"
+        ).first.locator("td div.row-click.cell-filler")
+
         self.comment_field = page.locator(
             "textarea.stick.ui-autocomplete-input[name='COMMENT']"
         )
@@ -354,9 +361,6 @@ class FircoPage:
         self.data_filters(transaction)
         live_status = self.verify_search_results(transaction)
 
-        # Return immediately after verify_search_results, regardless of status
-        # logging.info(f"Breaking after verify_search_results with status: {live_status}")
-
         # Handle all possible status values and return immediately
         if live_status == SearchStatus.FOUND:
             logging.info(
@@ -454,6 +458,12 @@ class FircoPage:
         logging.info("Verifying search results for transaction %s.", transaction)
         logging.info("Waiting for 2 seconds.")
         time.sleep(2)
+
+        # here I performed a search and I should have a list of transactions
+        # if there are no transactions, return SearchStatus.NONE
+        # if there are multiple transactions, return SearchStatus.MULTIPLE
+        # if there is one transaction, return SearchStatus.FOUND
+
         if self.selectors.no_data_notice.is_visible():
             self.page.screenshot(path="no_transactions.png", full_page=True)
             return SearchStatus.NONE
@@ -465,16 +475,18 @@ class FircoPage:
         # one transaction found
         logging.info("One transaction found")
         self.page.screenshot(path="one_transaction.png", full_page=True)
-        try:
-            self.selectors.first_row.click()
-        except Exception as e:
-            screenshot_path = "not_active_transaction.png"
-            self.page.screenshot(path=screenshot_path, full_page=True)
-            raise TransactionError(
-                f"Transaction {transaction} found but cannot be selected: {str(e)}",
-                error_code=422,
-                screenshot_path=screenshot_path,
-            ) from e
+
+        # Prefer clickable active row; otherwise handle not-active row
+        if self.selectors.first_row_active.is_visible(timeout=0):
+            logging.info("Clicking first active row (clickable-row)")
+        elif self.selectors.first_row_not_active.is_visible(timeout=0):
+            logging.info("Clicking first not-active row (lowloghtedRow)")
+
+        # I want to stop script execution here
+        raise TransactionError(
+            "Lets finish for now",
+            error_code=422,
+        )
 
         return SearchStatus.FOUND
 

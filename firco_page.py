@@ -56,7 +56,7 @@ class Selectors:
         )
         # rows
         self.first_row_active = page.locator("tr.even-row.clickable-row")
-        self.first_row_not_active = page.locator("tr.even-row.lowloghtedRow")
+        self.first_row_not_active = page.locator("tr.even-row.lowlightedRow")
 
         self.first_row_state_column = page.locator(
             "table#table-element-1 tbody tr.clickable-row"
@@ -475,12 +475,46 @@ class FircoPage:
         # one transaction found
         logging.info("One transaction found")
         self.page.screenshot(path="one_transaction.png", full_page=True)
-
+        time.sleep(1)
+        # Diagnostic logging to understand row availability/visibility
+        try:
+            active_count = self.selectors.first_row_active.count()
+        except Exception:
+            active_count = -1
+        try:
+            not_active_count = self.selectors.first_row_not_active.count()
+        except Exception:
+            not_active_count = -1
+        logging.info(
+            "Row counts — active: %s, not_active: %s",
+            active_count,
+            not_active_count,
+        )
+        try:
+            active_visible = self.selectors.first_row_active.is_visible(timeout=0)
+        except Exception:
+            active_visible = False
+        try:
+            not_active_visible = self.selectors.first_row_not_active.is_visible(
+                timeout=0
+            )
+        except Exception:
+            not_active_visible = False
+        logging.info(
+            "Row visibility — active: %s, not_active: %s",
+            active_visible,
+            not_active_visible,
+        )
         # Prefer clickable active row; otherwise handle not-active row
         if self.selectors.first_row_active.is_visible(timeout=0):
             logging.info("Clicking first active row (clickable-row)")
         elif self.selectors.first_row_not_active.is_visible(timeout=0):
-            logging.info("Clicking first not-active row (lowloghtedRow)")
+            logging.info("Clicking first not-active row (lowlightedRow)")
+        else:
+            logging.warning(
+                "Neither active nor not-active row is visible; selectors may not match current DOM."
+            )
+            self.page.screenshot(path="no_visible_rows.png", full_page=True)
 
         # I want to stop script execution here
         raise TransactionError(

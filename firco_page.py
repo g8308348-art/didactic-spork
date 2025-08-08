@@ -490,12 +490,6 @@ class FircoPage:
         else:
             self.unlock_transaction()
 
-        # I want to stop script execution here
-        raise TransactionError(
-            "Lets finish for now",
-            error_code=422,
-        )
-
         return SearchStatus.FOUND
 
     def unlock_transaction(self):

@@ -61,7 +61,8 @@ class Selectors:
         ).first
         self.padlock_icon = page.locator("div.sprite.table-icon.admin-locked-icon")
         self.unlock_overlay_titlebar = page.locator("div#overlay-titlebar")
-        self.close_overlay_button = page.locator("input#Close Overlay Button")
+        # Button ID contains spaces; use attribute selector to avoid CSS escaping issues
+        self.close_overlay_button = page.locator("input[id='Close Overlay Button']")
 
         self.first_row_state_column = page.locator(
             "table#table-element-1 tbody tr.clickable-row"

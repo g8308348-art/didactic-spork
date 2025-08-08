@@ -56,7 +56,9 @@ class Selectors:
         )
         # rows
         self.first_row_active = page.locator("tr.even-row.clickable-row")
-        self.first_row_not_active = page.locator("tr.even-row.lowlightedRow")
+        self.first_row_not_active = page.locator(
+            "table#table-element-1 tbody tr.lowlightedRow"
+        ).first
         self.padlock_icon = page.locator("div.sprite.table-icon.admin-locked-icon")
         self.unlock_overlay_titlebar = page.locator("div#overlay-titlebar")
         self.close_overlay_button = page.locator("input#Close Overlay Button")

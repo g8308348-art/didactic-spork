@@ -196,12 +196,24 @@ function validateTransactions(value) {
     
     if (!regex.test(value)) {
         // Show the validation error in the submission status area instead of next to the input
-        const errorMessage = "Invalid format. Enter transaction identifiers as comma-separated tokens with no spaces inside each identifier (e.g., ABC123, SDF234, XYZ_9). Each identifier may include letters, numbers, and special characters but must not contain whitespace. Inputs like ABC 123,1453, ABC123 7457 will not be processed.";
+        const errorMessage = 'Invalid format. Use comma-separated identifiers without spaces inside identifiers.';
         
         submissionStatus.innerHTML = `<strong>Error:</strong> ${errorMessage}`;
         submissionStatus.className = 'submission-status error';
         submissionStatus.style.display = 'block';
         // Ensure the inline error is cleared
+        hideError(transactionsError);
+        return false;
+    }
+
+    // Enforce max length per identifier (64 chars)
+    const tokens = value.split(',').map(t => t.trim()).filter(Boolean);
+    const tooLong = tokens.find(t => t.length > 64);
+    if (tooLong) {
+        const errorMessage = `Identifier exceeds 64 characters: ${tooLong.substring(0, 20)}...`;
+        submissionStatus.innerHTML = `<strong>Error:</strong> ${errorMessage}`;
+        submissionStatus.className = 'submission-status error';
+        submissionStatus.style.display = 'block';
         hideError(transactionsError);
         return false;
     }

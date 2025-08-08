@@ -501,8 +501,19 @@ class FircoPage:
     def unlock_transaction(self):
         logging.info("Unlocking transaction")
         self.selectors.padlock_icon.click()
-        self.selectors.unlock_overlay_titlebar.is_visible()
-        self.selectors.close_overlay_button.click()
+        expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=5000)
+        try:
+            expect(self.selectors.close_overlay_button).to_be_visible(timeout=3000)
+            self.selectors.close_overlay_button.click()
+        except Exception as e:
+            logging.warning(
+                "Close Overlay Button by ID not visible/clickable: %s. Using fallback.",
+                e,
+            )
+            # Fallback: button with value OK
+            fallback_btn = self.page.locator("input[type='button'][value='OK']")
+            expect(fallback_btn).to_be_visible(timeout=3000)
+            fallback_btn.click()
 
     def fill_comment_field(self, text: str):
         """

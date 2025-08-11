@@ -489,7 +489,7 @@ class FircoPage:
             logging.warning("Unable to read state column content: %s", e)
 
         # trigger the 422 error now, to stop executions
-        raise TransactionError("422 error", 422)
+        # raise TransactionError("422 error", 422)
 
         # Prefer clickable active row; otherwise handle not-active row
         if self.selectors.first_row_active.is_visible(timeout=0):

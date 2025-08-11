@@ -40,9 +40,7 @@ def run_firco_flow():
         firco = FircoPage(page)
 
         # 1. Login
-        if not firco.login_to_firco(TEST_URL, USERNAME, PASSWORD):
-            logging.error("Login failed, exiting.")
-            return
+        firco.login_to_firco(TEST_URL, USERNAME, PASSWORD)
 
         # 2. Go to Live Messages root
         firco.go_to_live_messages_root()

@@ -162,7 +162,7 @@ def process_firco_transaction(
                 action,
             )
             firco_page.selectors.escalate.click()
-            time.sleep(2)  # Consider replacing with an explicit wait
+            firco_page.page.wait_for_timeout(1000)
             firco_page.logout()
             return {
                 "status": "escalated",

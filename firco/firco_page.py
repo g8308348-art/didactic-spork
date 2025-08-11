@@ -265,6 +265,7 @@ class FircoPage:
             if status == SearchStatus.FOUND:
                 logging.info("FOUND :: We verify first row!")
                 self.first_row_matches_transaction(transaction)
+                self.get_first_row_state()
 
         except PlaywrightTimeoutError as e:
             logging.error("verify_first_row triggered timeout.")
@@ -277,7 +278,9 @@ class FircoPage:
         Logs the outcome and returns True on match, False otherwise.
         """
         try:
-            logging.info("checking if first row matches transaction.")
+            logging.info(
+                "Checking if first row matches transaction number: %s", transaction
+            )
             cell_text = (
                 self.selectors.first_row_second_column_text.text_content() or ""
             ).strip()
@@ -294,3 +297,16 @@ class FircoPage:
             logging.error("first_row_matches_transaction triggered timeout.")
             logging.error("first_row_matches_transaction error: %s", e)
             return False
+
+    def get_first_row_state(self) -> str:
+        """Get the content of the first row's state column."""
+        logging.info("Getting first row state.")
+        try:
+            state_cell_text = (
+                self.selectors.first_row_state_column.text_content() or ""
+            ).strip()
+            logging.info("State column content: %s", state_cell_text)
+            return state_cell_text
+        except Exception as e:
+            logging.warning("Unable to read state column content: %s", e)
+            return ""

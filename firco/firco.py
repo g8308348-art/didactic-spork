@@ -54,6 +54,9 @@ def run_firco_flow():
 
         firco.clear_filtered_column()
         firco.data_filters("202508052025")
+
+        firco.validate_results()
+
         # 3. Logout
         firco.logout()
 

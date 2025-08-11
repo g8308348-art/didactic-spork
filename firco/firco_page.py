@@ -214,6 +214,7 @@ class FircoPage:
     def data_filters(self, transaction: str) -> bool:
         """search for transaction number"""
         try:
+            logging.info("Applying data filters for transaction: %s", transaction)
             self.selectors.menu_opener.click()
             self.selectors.data_filters.click()
             self.page.fill("id=text-input-element-44", transaction)
@@ -221,4 +222,26 @@ class FircoPage:
             self.page.click("id=Confirm Button")
         except PlaywrightTimeoutError:
             logging.error("data_filters triggered timeout.")
+        return True
+
+    def validate_results(self) -> SearchStatus:
+        """validate results of search"""
+        logging.info("Validating search results.")
+        try:
+            if self.selectors.no_data_notice.is_visible():
+                logging.info("No data found.")
+                self.page.screenshot(path="no_transactions.png", full_page=True)
+                return SearchStatus.NONE
+
+            if (self.selectors.first_odd_row_td_text.text_content() or "").strip():
+                logging.info("Multiple transactions found.")
+                self.page.screenshot(path="multiple_transactions.png", full_page=True)
+                return SearchStatus.MULTIPLE
+
+            self.page.screenshot(path="one_transaction.png", full_page=True)
+            logging.info("One transaction found.")
+            return SearchStatus.FOUND
+
+        except PlaywrightTimeoutError:
+            logging.error("validate_results triggered timeout.")
         return True

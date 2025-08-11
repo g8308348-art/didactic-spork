@@ -260,17 +260,37 @@ class FircoPage:
                 logging.info("We go to history tab!")
 
             if status == SearchStatus.MULTIPLE:
-                logging.info("We sort by date!")
+                logging.info("MULTIPLE :: We sort by date!")
 
             if status == SearchStatus.FOUND:
-                logging.info("We verify first row!")
-                # second td should containg the transaction number
-                if first_row_second_column_text.text_content() == transaction:
-                    logging.info("Transaction number matches.")
-                else:
-                    logging.error("Transaction number does not match.")
+                logging.info("FOUND :: We verify first row!")
+                self.first_row_matches_transaction(transaction)
 
         except PlaywrightTimeoutError as e:
             logging.error("verify_first_row triggered timeout.")
             logging.error("verify_first_row error: %s", e)
         return True
+
+    def first_row_matches_transaction(self, transaction: str) -> bool:
+        """Check if the first row's second column equals the given transaction.
+
+        Logs the outcome and returns True on match, False otherwise.
+        """
+        try:
+            logging.info("checking if first row matches transaction.")
+            cell_text = (
+                self.selectors.first_row_second_column_text.text_content() or ""
+            ).strip()
+            if cell_text == transaction:
+                logging.info("Transaction number matches.")
+                return True
+            logging.error(
+                "Transaction number does not match. Expected %s, got %s",
+                transaction,
+                cell_text,
+            )
+            return False
+        except PlaywrightTimeoutError as e:
+            logging.error("first_row_matches_transaction triggered timeout.")
+            logging.error("first_row_matches_transaction error: %s", e)
+            return False

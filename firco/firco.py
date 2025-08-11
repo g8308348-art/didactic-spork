@@ -3,12 +3,13 @@
 import sys
 import os
 import logging
+from playwright.sync_api import sync_playwright
 
 # Ensure parent directory is on path so we can import project-level modules like cyber_guard
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 from cyber_guard import retrieve_CONTRASENA
-from playwright.sync_api import sync_playwright
 from firco_page import FircoPage
+
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)
@@ -37,7 +38,9 @@ def run_firco_flow():
     )
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # Change to True for headless mode
+        browser = p.chromium.launch(
+            channel="chrome", headless=False
+        )  # Change to True for headless mode
         context = browser.new_context()
         page = context.new_page()
 
@@ -49,6 +52,8 @@ def run_firco_flow():
         # 2. Go to Live Messages root
         firco.go_to_live_messages_root()
 
+        firco.clear_filtered_column()
+        firco.data_filters("202508052025")
         # 3. Logout
         firco.logout()
 

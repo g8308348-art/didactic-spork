@@ -142,7 +142,7 @@ class FircoPage:
             expect(self.selectors.logout).to_be_visible()
             logging.info("We are in Firco as %s.", username)
             return True
-        except Exception as e:
+        except PlaywrightTimeoutError as e:
             logging.error("Failed to login to Firco as %s", username)
             logging.error("Login error: %s", e)
             return False
@@ -174,11 +174,51 @@ class FircoPage:
             expect(self.selectors.live_messages_tab).to_have_class(
                 r"tab-center tab-center-selected"
             )
-        except (AssertionError, PlaywrightTimeoutError) as e:
+        except PlaywrightTimeoutError as e:
             logging.info("Live Messages tab not active: %s", e)
             logging.info("Clicking on Live Messages tab.")
             self.selectors.live_messages_tab.click()
             expect(self.selectors.live_messages_tab).to_have_class(
                 r"tab-center tab-center-selected"
             )
+        return True
+
+    def clear_filtered_column(self) -> bool:
+        """
+        Clear any filters that may be applied to the transaction column.
+
+        Checks if a filter icon is visible and clicks it if present. Verifies the action
+        was successful and logs detailed feedback.
+        """
+        try:
+            if self.selectors.filtered_column_icon.is_visible(timeout=5000):
+                logging.info("Filter icon detected. Attempting to clear filter.")
+                self.selectors.filtered_column_icon.click()
+                # Verify if the filter icon is still visible after clicking
+                if self.selectors.filtered_column_icon.is_visible(timeout=2000):
+                    logging.warning(
+                        "Filter icon still visible after click. Filter may not have cleared."
+                    )
+                else:
+                    logging.info("Filter successfully cleared.")
+            else:
+                logging.info(
+                    "No filter icon detected in transaction column. No action needed."
+                )
+        except PlaywrightTimeoutError:
+            logging.error(
+                "Timeout while checking for filter icon. Assuming no filter present."
+            )
+        return True
+
+    def data_filters(self, transaction: str) -> bool:
+        """search for transaction number"""
+        try:
+            self.selectors.menu_opener.click()
+            self.selectors.data_filters.click()
+            self.page.fill("id=text-input-element-44", transaction)
+            self.page.click("id=Add Filter Button")
+            self.page.click("id=Confirm Button")
+        except PlaywrightTimeoutError:
+            logging.error("data_filters triggered timeout.")
         return True

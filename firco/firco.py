@@ -1,7 +1,11 @@
 """ firco page handler """
 
 import sys
+import os
 import logging
+
+# Ensure parent directory is on path so we can import project-level modules like cyber_guard
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 from cyber_guard import retrieve_CONTRASENA
 from playwright.sync_api import sync_playwright
 from .firco_page import FircoPage

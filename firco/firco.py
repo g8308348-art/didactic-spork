@@ -1,0 +1,59 @@
+""" firco page handler """
+
+import sys
+import logging
+from cyber_guard import retrieve_CONTRASENA
+from playwright.sync_api import sync_playwright
+from .firco_page import FircoPage
+
+USERNAME = "506"
+PASSWORD = retrieve_CONTRASENA(USERNAME)
+MANAGER_USERNAME = "507"
+MANAGER_PASSWORD = retrieve_CONTRASENA(MANAGER_USERNAME)
+TEST_URL = "https://example.com"
+
+
+# --- Logging Setup ---
+def setup_logging() -> None:
+    """Set up logging configuration."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler("app.log"),
+        ],
+    )
+
+
+def run_firco_flow():
+    """basic test flow"""
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)  # Change to True for headless mode
+        context = browser.new_context()
+        page = context.new_page()
+
+        firco = FircoPage(page)
+
+        # 1. Login
+        if not firco.login_to_firco(TEST_URL, USERNAME, PASSWORD):
+            logging.error("Login failed, exiting.")
+            return
+
+        # 2. Go to Live Messages root
+        firco.go_to_live_messages_root()
+
+        # 3. Logout
+        firco.logout()
+
+        context.close()
+        # I can not close the browser
+        # browser.close()
+
+
+if __name__ == "__main__":
+    run_firco_flow()

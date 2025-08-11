@@ -105,6 +105,7 @@ class SearchStatus(Enum):
     NONE = auto()
     MULTIPLE = auto()
     FOUND = auto()
+    ALREADY_ESCALATED = auto()
 
 
 class FircoPage:
@@ -313,12 +314,8 @@ class FircoPage:
                     # Wait before retrying
                     time.sleep(3)
                     continue
-                else:
-                    # Not a timeout/reload issue, break the retry loop
-                    break
-
-            # If we got here without errors, break the retry loop
-            break
+                # Not a timeout/reload issue, break the retry loop
+                break
 
         logging.info(
             "Transaction %s not found in Live Messages, History, or BPM.",
@@ -379,7 +376,7 @@ class FircoPage:
                 "status": "found_in_live",
                 "message": f"Transaction {transaction} found in Live Messages and is ready for action.",
             }
-        elif live_status == SearchStatus.MULTIPLE:
+        if live_status == SearchStatus.MULTIPLE:
             if perform_on_latest:
                 logging.info(
                     "Multiple transactions found for ID: %s in Live Messages, but 'perform_on_latest' is set. Selecting the latest transaction.",
@@ -396,15 +393,14 @@ class FircoPage:
                     "status": "found_in_live",
                     "message": f"Latest transaction for ID: {transaction} selected in Live Messages and ready for action.",
                 }
-            else:
-                logging.error(
-                    "Multiple transactions found for ID: %s in Live Messages.",
-                    transaction,
-                )
-                raise TransactionError(
-                    f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
-                    409,
-                )
+            logging.error(
+                "Multiple transactions found for ID: %s in Live Messages.",
+                transaction,
+            )
+            raise TransactionError(
+                f"Multiple transactions found for ID: {transaction} in Live Messages. Please specify a unique transaction.",
+                409,
+            )
         # 3. Search in History tab (if not uniquely found in Live Messages)
         logging.info(
             "Transaction %s not uniquely found in Live Messages. Checking History tab.",

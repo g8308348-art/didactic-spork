@@ -1,0 +1,14 @@
+[DESIGN]
+max-args=10
+max-positional-arguments=10
+max-locals=25
+max-branches=20
+max-statements=80
+
+[BASIC]
+# Regular expression for constant names
+const-naming-style=UPPER_CASE
+const-rgx=(([A-Z][A-Z0-9_]*|__[a-z0-9_]*__)|_?[A-Z][A-Z0-9_]*|_?[a-z][a-z0-9_]*)$
+
+# List of additional names that should be treated as constants
+additional-builtins=TERMINAL_READ_ONLY_STATUSES,SUCCESSFUL_AUTOMATION_STEP_STATUSES

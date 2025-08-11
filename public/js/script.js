@@ -203,6 +203,8 @@ function validateTransactions(value) {
         submissionStatus.style.display = 'block';
         // Ensure the inline error is cleared
         hideError(transactionsError);
+        // Auto-hide after 6 seconds
+        setTimeout(() => { submissionStatus.style.display = 'none'; }, 6000);
         return false;
     }
 
@@ -215,6 +217,8 @@ function validateTransactions(value) {
         submissionStatus.className = 'submission-status error';
         submissionStatus.style.display = 'block';
         hideError(transactionsError);
+        // Auto-hide after 6 seconds
+        setTimeout(() => { submissionStatus.style.display = 'none'; }, 6000);
         return false;
     }
 

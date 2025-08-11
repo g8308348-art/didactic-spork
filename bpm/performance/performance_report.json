@@ -1,0 +1,32 @@
+{
+  "numeric_parsing": {
+    "total_operations": 2500,
+    "total_time": 0.011580983991734684,
+    "operations_per_second": 215871.1212954135,
+    "cache_hit_ratio": 99.0,
+    "numeric_count": 2200
+  },
+  "environment_detection": {
+    "total_operations": 475,
+    "total_time": 0.005122947972267866,
+    "operations_per_second": 92720.05153503898,
+    "result_distribution": {
+      "buat": 250,
+      "uat": 200,
+      "unknown": 25
+    }
+  },
+  "bpm_integration": {
+    "enable_time": 0.0007625609869137406,
+    "parsing_time": 0.014962177956476808,
+    "detection_time": 0.09963378100655973,
+    "parsing_ops_per_sec": 66835.1895632361,
+    "detection_ops_per_sec": 10036.756508660066
+  },
+  "cache_stats": {
+    "numeric_cache_size": 5,
+    "environment_cache_size": 11,
+    "numeric_cache_max": 1000,
+    "environment_cache_max": 500
+  }
+}

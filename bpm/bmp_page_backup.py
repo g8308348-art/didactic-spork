@@ -15,21 +15,6 @@ from enum import Enum
 from functools import lru_cache
 from typing import List, Optional, Tuple
 from playwright.sync_api import expect, Page
-# Performance optimization imports
-try:
-    from performance_optimizations import (
-        PerformanceOptimizer,
-        BatchTextExtractor,
-        OptimizedNumericParser,
-        OptimizedEnvironmentDetector,
-        PerformanceProfiler
-    )
-    from bmp_optimizations_patch import BPMPageOptimizations
-    PERFORMANCE_OPTIMIZATIONS_AVAILABLE = True
-except ImportError:
-    logging.warning("Performance optimizations not available - using standard methods")
-    PERFORMANCE_OPTIMIZATIONS_AVAILABLE = False
-
 
 
 class Options(Enum):
@@ -111,16 +96,6 @@ class BPMPage:
     def __init__(self, page: Page):
         self.page = page
         self.menu_item = page.locator("div.modal-content[role='document']")
-        
-        # Performance optimization components
-        if PERFORMANCE_OPTIMIZATIONS_AVAILABLE:
-            self.performance_optimizer = BPMPageOptimizations()
-            self.profiler = PerformanceProfiler()
-            self._performance_mode_enabled = False
-        else:
-            self.performance_optimizer = None
-            self.profiler = None
-            self._performance_mode_enabled = False
 
     def safe_click(self, locator, description: str):
         if locator.is_visible():
@@ -1476,146 +1451,6 @@ class BPMPage:
             logging.error(f"Error searching columns with pattern '{pattern}': {e}")
             return []
 
-    # Performance-optimized methods
-    def enable_performance_mode(self):
-        """Enable performance optimizations by replacing methods with optimized versions."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE:
-            logging.warning("Performance optimizations not available")
-            return False
-        
-        if self._performance_mode_enabled:
-            logging.info("Performance mode already enabled")
-            return True
-        
-        # Store original methods for restoration
-        self._original_extract_all_columns = self._extract_all_columns
-        self._original_detect_environment = self._detect_environment
-        self._original_parse_numeric_value = self._parse_numeric_value
-        
-        # Replace with optimized versions
-        self._extract_all_columns = self._optimized_extract_all_columns
-        self._detect_environment = self._optimized_detect_environment
-        self._parse_numeric_value = self._optimized_parse_numeric_value
-        
-        self._performance_mode_enabled = True
-        logging.info("Performance mode enabled - using optimized methods")
-        return True
-    
-    def disable_performance_mode(self):
-        """Disable performance optimizations by restoring original methods."""
-        if not self._performance_mode_enabled:
-            logging.info("Performance mode not enabled")
-            return True
-        
-        # Restore original methods
-        if hasattr(self, '_original_extract_all_columns'):
-            self._extract_all_columns = self._original_extract_all_columns
-        if hasattr(self, '_original_detect_environment'):
-            self._detect_environment = self._original_detect_environment
-        if hasattr(self, '_original_parse_numeric_value'):
-            self._parse_numeric_value = self._original_parse_numeric_value
-        
-        self._performance_mode_enabled = False
-        logging.info("Performance mode disabled - using original methods")
-        return True
-    
-    def _optimized_extract_all_columns(self, parent_row):
-        """Optimized column extraction using batch text extraction."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE or not self.performance_optimizer:
-            return self._safe_extract_columns(parent_row)
-        return self.performance_optimizer._optimized_extract_all_columns(parent_row)
-    
-    def _optimized_detect_environment(self, columns):
-        """Optimized environment detection using caching."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE or not self.performance_optimizer:
-            # Fallback to original logic
-            try:
-                if not columns or not isinstance(columns, list):
-                    return "unknown"
-                
-                for column in columns:
-                    if hasattr(column, 'is_numeric') and hasattr(column, 'numeric_value'):
-                        if column.is_numeric and column.numeric_value is not None:
-                            if 25 <= column.numeric_value <= 29:
-                                return "buat"
-                            else:
-                                return "uat"
-                return "unknown"
-            except Exception:
-                return "unknown"
-        
-        return self.performance_optimizer._optimized_detect_environment(columns)
-    
-    def _optimized_parse_numeric_value(self, text: str):
-        """Optimized numeric parsing using caching."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE or not self.performance_optimizer:
-            # Fallback to original method
-            return self._parse_numeric_value_original(text)
-        return self.performance_optimizer._optimized_parse_numeric_value(text)
-    
-    def _parse_numeric_value_original(self, text: str):
-        """Original numeric parsing method as fallback."""
-        try:
-            if not text or not isinstance(text, str):
-                return False, None
-                
-            cleaned_text = text.strip()
-            if not cleaned_text:
-                return False, None
-            
-            if cleaned_text.isdigit():
-                return True, int(cleaned_text)
-            
-            if cleaned_text.startswith('-') and cleaned_text[1:].isdigit():
-                return True, int(cleaned_text)
-            
-            if '.' in cleaned_text and cleaned_text.replace('.', '').replace('-', '').isdigit():
-                try:
-                    float_val = float(cleaned_text)
-                    return True, int(float_val)
-                except ValueError:
-                    pass
-            
-            import re
-            all_matches = []
-            for match in re.finditer(r'(\\d+)', cleaned_text):
-                all_matches.append((match.start(), int(match.group(1))))
-            
-            if all_matches:
-                all_matches.sort(key=lambda x: x[0])
-                numeric_value = all_matches[0][1]
-                return True, numeric_value
-            
-            return False, None
-            
-        except (ValueError, AttributeError, TypeError):
-            return False, None
-    
-    def get_performance_metrics(self) -> dict:
-        """Get performance metrics from operations."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE or not self.performance_optimizer:
-            return {"error": "Performance optimizations not available"}
-        return self.performance_optimizer.get_performance_metrics()
-    
-    def log_performance_metrics(self):
-        """Log performance metrics and cache statistics."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE or not self.performance_optimizer:
-            logging.warning("Performance optimizations not available")
-            return
-        self.performance_optimizer.log_performance_metrics()
-    
-    def clear_performance_caches(self):
-        """Clear all performance caches."""
-        if not PERFORMANCE_OPTIMIZATIONS_AVAILABLE:
-            logging.warning("Performance optimizations not available")
-            return
-        PerformanceOptimizer.clear_caches()
-        logging.info("Performance caches cleared")
-    
-    def is_performance_mode_enabled(self) -> bool:
-        """Check if performance mode is currently enabled."""
-        return getattr(self, '_performance_mode_enabled', False)
-
 
 # --- Modular Actions moved from bpm.py ---
 def perform_login_and_setup(
@@ -1630,7 +1465,6 @@ def perform_login_and_setup(
     bpm_page.click_tick_box()
     bpm_page.click_ori_tsf()
     logging.info("Login and initial setup completed.")
-
 
 
 def map_transaction_type_to_option(transaction_type_str: str):

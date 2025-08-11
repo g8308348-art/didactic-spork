@@ -54,6 +54,12 @@ class Selectors:
             "table#table-element-1 tbody tr.clickable-row"
         ).first.locator("td div.row-click.cell-filler")
 
+        self.first_row_second_column_text = (
+            page.locator("table#table-element-1 tbody tr.clickable-row")
+            .first.locator("td")
+            .nth(1)
+        )
+
         self.comment_field = page.locator(
             "textarea.stick.ui-autocomplete-input[name='COMMENT']"
         )
@@ -93,7 +99,6 @@ class SearchStatus(Enum):
     NONE = auto()
     MULTIPLE = auto()
     FOUND = auto()
-    ALREADY_ESCALATED = auto()
 
 
 class FircoPage:
@@ -220,11 +225,12 @@ class FircoPage:
             self.page.fill("id=text-input-element-44", transaction)
             self.page.click("id=Add Filter Button")
             self.page.click("id=Confirm Button")
+            self.page.wait_for_timeout(2000)
         except PlaywrightTimeoutError:
             logging.error("data_filters triggered timeout.")
         return True
 
-    def validate_results(self) -> SearchStatus:
+    def validate_search_table_results(self) -> SearchStatus:
         """validate results of search"""
         logging.info("Validating search results.")
         try:
@@ -244,4 +250,27 @@ class FircoPage:
 
         except PlaywrightTimeoutError:
             logging.error("validate_results triggered timeout.")
+        return True
+
+    def verify_first_row(self, transaction: str, status: SearchStatus):
+        """verify first row of the table"""
+        logging.info("Verifying first row of the table.")
+        try:
+            if status == SearchStatus.NONE:
+                logging.info("We go to history tab!")
+
+            if status == SearchStatus.MULTIPLE:
+                logging.info("We sort by date!")
+
+            if status == SearchStatus.FOUND:
+                logging.info("We verify first row!")
+                # second td should containg the transaction number
+                if first_row_second_column_text.text_content() == transaction:
+                    logging.info("Transaction number matches.")
+                else:
+                    logging.error("Transaction number does not match.")
+
+        except PlaywrightTimeoutError as e:
+            logging.error("verify_first_row triggered timeout.")
+            logging.error("verify_first_row error: %s", e)
         return True

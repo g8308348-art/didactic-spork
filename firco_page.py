@@ -483,6 +483,15 @@ class FircoPage:
         self.page.screenshot(path="one_transaction.png", full_page=True)
         self.page.wait_for_timeout(1000)
 
+        # Log the content of the first row's state column (div.row-click.cell-filler)
+        try:
+            state_cell_text = (
+                self.selectors.first_row_state_column.text_content() or ""
+            ).strip()
+            logging.info("State column content: %s", state_cell_text)
+        except Exception as e:
+            logging.warning("Unable to read state column content: %s", e)
+
         # Prefer clickable active row; otherwise handle not-active row
         if self.selectors.first_row_active.is_visible(timeout=0):
             logging.info("Clicking first active row (clickable-row)")

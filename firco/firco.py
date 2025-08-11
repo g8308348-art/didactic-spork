@@ -8,7 +8,7 @@ import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 from cyber_guard import retrieve_CONTRASENA
 from playwright.sync_api import sync_playwright
-from .firco_page import FircoPage
+from firco_page import FircoPage
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)

@@ -55,7 +55,7 @@ def run_firco_flow():
         firco.clear_filtered_column()
         firco.data_filters("202508052025")
 
-        firco.validate_search_table_results()
+        firco.verify_first_row("202508052025", firco.validate_search_table_results())
 
         # 3. Logout
         firco.logout()

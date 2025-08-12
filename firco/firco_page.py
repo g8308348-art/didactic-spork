@@ -190,7 +190,7 @@ class FircoPage:
             )
         return True
 
-    def go_to_history_root(self, transaction: str) -> bool:
+    def go_to_history_root(self, transaction: str, action: str, comment: str) -> bool:
         """Go to the History root page."""
         logging.debug("Navigating to history link!")
         try:
@@ -199,7 +199,9 @@ class FircoPage:
             # Clear any existing filters and search for the transaction
             self.clear_filtered_column()
             self.data_filters(transaction)
-            self.verify_first_row(transaction, self.validate_search_table_results())
+            self.verify_first_row(
+                transaction, self.validate_search_table_results(), action, comment
+            )
             self.page.screenshot(path="history_root.png", full_page=True)
             return True
         except PlaywrightTimeoutError as e:
@@ -286,7 +288,9 @@ class FircoPage:
             logging.error("validate_results error: %s", e)
         return SearchStatus.NONE
 
-    def verify_first_row(self, transaction: str, status: SearchStatus):
+    def verify_first_row(
+        self, transaction: str, status: SearchStatus, action: str, comment: str
+    ):
         """verify first row of the table"""
         logging.debug("Verifying first row of the table.")
         try:
@@ -296,7 +300,7 @@ class FircoPage:
                 logging.debug("No records in current tab.")
                 if tab == TabContext.LIVE:
                     logging.debug("Switching to History tab and retrying search.")
-                    self.go_to_history_root(transaction)  # your existing method
+                    self.go_to_history_root(transaction, action, comment)
                 else:
                     logging.debug("Already in History; we go to BPM.")
                 return True
@@ -318,13 +322,18 @@ class FircoPage:
 
                 # Live-specific branching
                 if transaction_status in ("FILTER", "CU_FILTER"):
-                    logging.debug("Actionable FILTER state detected.")
+                    logging.debug("Actionable FILTER or CU_FILTER state detected.")
                     self.go_to_transactions_details()
+                    self.click_all_hits()
+                    self.fill_comment_field(comment)
+                    self.perform_action(action)
+
                 elif transaction_status in ("PendingSanctions", "CU_Pending_Sanct"):
                     logging.debug("Escalating pending sanctions.")
                     # escalate here
                 else:
                     # I want to trigger error here and stop execution
+                    # there is transaction status that is not expected
                     raise Exception(
                         "Unknown transaction status: %s for transcation: %s"
                         % (transaction_status, transaction)
@@ -423,12 +432,91 @@ class FircoPage:
         try:
             logging.debug("Navigating to transactions details.")
             self.selectors.first_row_active.click()
-            expect(self.comment_field).to_be_visible(timeout=2000)
+            expect(self.selectors.comment_field).to_be_visible(timeout=2000)
             return True
         except PlaywrightTimeoutError as e:
             logging.error("go_to_transactions_details triggered timeout.")
             logging.error("go_to_transactions_details error: %s", e)
             return False
+
+    def click_all_hits(self):
+        try:
+            logging.debug("Clicking on all hits.")
+            self.page.screenshot(path="hit_0.png", full_page=True)
+
+            rows = self.selectors.transaction_rows.element_handles()
+
+            for i in range(3, len(rows)):
+                row = rows[i]
+                row.click()
+                self.page.screenshot(path=f"hit{i-2}.png", full_page=True)
+            logging.debug("All hits clicked.")
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("click_all_hits triggered timeout.")
+            logging.error("click_all_hits error: %s", e)
+            return False
+
+    def fill_comment_field(self, text: str):
+        """
+        Fill the transaction comment field with the provided text.
+
+        Args:
+            text: The comment text to enter
+        """
+        try:
+            logging.debug("Filling comment field with text: %s", text)
+            expect(self.selectors.comment_field).to_be_visible()
+            self.selectors.comment_field.fill(text)
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("fill_comment_field triggered timeout.")
+            logging.error("fill_comment_field error: %s", e)
+            return False
+
+    def perform_action(self, action: str):
+        """performing action"""
+        action_button_map = {
+            "STP-Release": self.selectors.stp_release,
+            "Release": self.selectors.release,
+            "Block": self.selectors.block,
+            "Reject": self.selectors.reject,
+        }
+
+        if action in action_button_map:
+            try:
+                # Convert action name to lowercase for screenshot naming
+                action_name = action.lower().replace("-", "_")
+
+                # Take screenshot before action
+                self.page.screenshot(path=f"{action_name}_1.png", full_page=True)
+                logging.debug("Taking screenshot before %s action", action_name)
+
+                # Click the action button
+                logging.debug("Clicking %s button", action_name)
+                action_button_map[action].click()
+
+                # Take screenshot after action button click
+                self.page.screenshot(path=f"{action_name}_2.png", full_page=True)
+                logging.debug("Taking screenshot after %s button click", action_name)
+
+                # Click confirm button
+                logging.debug("Clicking Confirm button")
+                # self.selectors.confirm.click()
+
+                # Take screenshot after confirmation
+                self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
+                logging.debug("%s action confirmed", action_name)
+            except PlaywrightTimeoutError as e:
+                logging.error("perform_action triggered timeout.")
+                logging.error("perform_action error: %s", e)
+                return False
+        else:
+            logging.warning(
+                "Action '%s' not recognized. Available actions: %s",
+                action,
+                ", ".join(action_button_map.keys()),
+            )
 
     def main_flow():
         return True

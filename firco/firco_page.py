@@ -466,6 +466,8 @@ class FircoPage:
         """
         try:
             logging.debug("Filling comment field with text: %s", text)
+            if text == "":
+                text = "No comment provided"
             expect(self.selectors.comment_field).to_be_visible()
             self.selectors.comment_field.fill(text)
             return True

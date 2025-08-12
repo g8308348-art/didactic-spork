@@ -62,7 +62,9 @@ def run_firco_flow():
             firco.clear_filtered_column()
             firco.data_filters(transaction)
 
-            firco.verify_first_row(transaction, firco.validate_search_table_results())
+            firco.verify_first_row(
+                transaction, firco.validate_search_table_results(), "STP-Release", "asd"
+            )
 
             # 3. Logout
             firco.logout()

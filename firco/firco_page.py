@@ -334,7 +334,7 @@ class FircoPage:
 
             if not handler:
                 # Stop execution on unknown state (as requested)
-                raise UnknownTransactionStatus(
+                raise Exception(
                     f"Unknown transaction status: {state} for transaction: {transaction}"
                 )
 
@@ -566,3 +566,9 @@ class FircoPage:
             logging.error("_handle_filter_like triggered timeout.")
             logging.error("_handle_filter_like error: %s", e)
             return False
+
+    def _handle_manager_flow(
+        self, transaction: str, action: str, comment: str, tab: TabContext
+    ) -> bool:
+        """PendingSanctions / CU_Pending_Sanct go straight to manager flow."""
+        return self._manager_followup(transaction, comment, action)

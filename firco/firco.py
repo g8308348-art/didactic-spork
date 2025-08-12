@@ -34,7 +34,7 @@ def setup_logging() -> None:
 def run_firco_flow():
     """basic test flow"""
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
     for transaction in [
@@ -44,7 +44,7 @@ def run_firco_flow():
     ]:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                channel="chrome", headless=False
+                channel="chrome", headless=True
             )  # Change to True for headless mode
             context = browser.new_context()
             page = context.new_page()

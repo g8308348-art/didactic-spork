@@ -311,7 +311,6 @@ class FircoPage:
                 self.first_row_matches_transaction(transaction, column=tx_col_idx)
 
                 transaction_status = self.get_first_row_state(tab)
-                logging.debug("XXX :: Transaction status: %s", transaction_status)
 
                 # If we’re in history, often we just return the decision
                 if tab == TabContext.HISTORY:
@@ -320,7 +319,7 @@ class FircoPage:
                 # Live-specific branching
                 if transaction_status == "FILTER":
                     logging.debug("Actionable FILTER state detected.")
-                    # perform live-specific action here
+                    self.go_to_transactions_details()
                 elif transaction_status in ("PendingSanctions", "CU_Pending_Sanct"):
                     logging.debug("Escalating pending sanctions.")
                     # escalate here
@@ -414,6 +413,21 @@ class FircoPage:
         except PlaywrightTimeoutError as e:
             logging.error("sort_multiple_transactions triggered timeout.")
             logging.error("sort_multiple_transactions error: %s", e)
+            return False
+
+    def go_to_transactions_details(self):
+        """
+        go to transactions details
+        click on a first row
+        """
+        try:
+            logging.debug("Navigating to transactions details.")
+            self.selectors.first_row_active.click()
+            expect(self.comment_field).to_be_visible(timeout=2000)
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("go_to_transactions_details triggered timeout.")
+            logging.error("go_to_transactions_details error: %s", e)
             return False
 
     def main_flow():

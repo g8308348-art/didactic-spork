@@ -278,18 +278,22 @@ class FircoPage:
         try:
             if status == SearchStatus.NONE:
                 logging.debug("We go to history tab!")
-                self.go_to_history_root(transaction)
+                # if we are in history tab, we should not go to history tab
+                if self.live_messages.contains("History Messages"):
+                    logging.debug("We go to BPM!")
+                else:
+                    self.go_to_history_root(transaction)
 
             if status == SearchStatus.MULTIPLE:
                 logging.debug("MULTIPLE :: We sort by date!")
-                self.first_row_matches_transaction(transaction)
                 self.unlock_transaction()
+                self.first_row_matches_transaction(transaction)
                 self.get_first_row_state()
 
             if status == SearchStatus.FOUND:
                 logging.debug("FOUND :: We verify first row!")
-                self.first_row_matches_transaction(transaction)
                 self.unlock_transaction()
+                self.first_row_matches_transaction(transaction)
                 self.get_first_row_state()
 
         except PlaywrightTimeoutError as e:

@@ -188,6 +188,22 @@ class FircoPage:
             )
         return True
 
+    def go_to_history_root(self, transaction: str) -> bool:
+        """Go to the History root page."""
+        logging.debug("Navigating to history link!")
+        try:
+            self.selectors.history_item.click()
+            self.page.wait_for_timeout(2000)
+            # Clear any existing filters and search for the transaction
+            self.clear_filtered_column()
+            self.data_filters(transaction)
+            self.page.screenshot(path="history_root.png", full_page=True)
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("go_to_history_root triggered timeout.")
+            logging.error("go_to_history_root error: %s", e)
+            return False
+
     def clear_filtered_column(self) -> bool:
         """
         Clear any filters that may be applied to the transaction column.
@@ -224,6 +240,7 @@ class FircoPage:
             self.page.fill("id=text-input-element-44", transaction)
             self.page.click("id=Add Filter Button")
             self.page.click("id=Confirm Button")
+            self.page.screenshot(path="data_filters.png", full_page=True)
             self.page.wait_for_timeout(2000)
         except PlaywrightTimeoutError as e:
             logging.error("data_filters triggered timeout.")
@@ -259,6 +276,7 @@ class FircoPage:
         try:
             if status == SearchStatus.NONE:
                 logging.debug("We go to history tab!")
+                self.go_to_history_root(transaction)
 
             if status == SearchStatus.MULTIPLE:
                 logging.debug("MULTIPLE :: We sort by date!")
@@ -344,6 +362,7 @@ class FircoPage:
             logging.debug("Sorting multiple transactions by descending order.")
             self.selectors.filtered_date_menu_opener.click()
             self.selectors.descending_date.click()
+            self.page.screenshot(path="sorted_transactions.png", full_page=True)
             return True
         except PlaywrightTimeoutError as e:
             logging.error("sort_multiple_transactions triggered timeout.")

@@ -1,4 +1,4 @@
-""" firco page handler """
+"""firco page handler"""
 
 import sys
 import os

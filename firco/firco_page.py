@@ -1,4 +1,4 @@
-""" firco page POM"""
+"""firco page POM"""
 
 import logging
 from enum import Enum, auto
@@ -302,16 +302,16 @@ class FircoPage:
                 return True
 
             if status in (SearchStatus.MULTIPLE, SearchStatus.FOUND):
-                # Live often requires unlocking; History usually doesn’t.
+                # Live requires unlocking; History doesn’t.
                 if tab == TabContext.LIVE:
                     self.unlock_transaction()
 
-                # If your table layout differs, pass the right column index per tab:
-                # e.g., LIVE uses column 1, HISTORY uses column 0 (example)
+                # LIVE uses column 1, HISTORY uses column 2 (starting from 0)
                 tx_col_idx = 1 if tab == TabContext.LIVE else 2
                 self.first_row_matches_transaction(transaction, column=tx_col_idx)
 
                 transaction_status = self.get_first_row_state(tab)
+                logging.debug("XXX :: Transaction status: %s", transaction_status)
 
                 # If we’re in history, often we just return the decision
                 if tab == TabContext.HISTORY:
@@ -362,7 +362,7 @@ class FircoPage:
         LIVE  -> read 'State' column
         HISTORY -> read 'Decision type' column
         """
-        logging.debug("Getting first row state for %s.", tab.name)
+        logging.debug("Getting first row state for %s tab.", tab.name)
         try:
             state_cell_text = (
                 self.selectors.first_row_state_column.text_content() or ""
@@ -382,10 +382,10 @@ class FircoPage:
         logging.debug("Unlocking transaction")
         try:
             self.selectors.padlock_icon.click()
-            expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=5000)
-            expect(self.selectors.close_overlay_button).to_be_visible(timeout=3000)
+            expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=2000)
+            expect(self.selectors.close_overlay_button).to_be_visible(timeout=2000)
             self.selectors.close_overlay_button.click()
-            logging.debug("Transaction unlocked")
+            logging.debug("Transaction unlocked!")
             return True
         except PlaywrightTimeoutError as e:
             logging.error("unlock_transaction triggered timeout.")

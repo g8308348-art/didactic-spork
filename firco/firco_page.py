@@ -54,11 +54,9 @@ class Selectors:
             "table#table-element-1 tbody tr.clickable-row"
         ).first.locator("td div.row-click.cell-filler")
 
-        self.first_row_second_column_text = (
-            page.locator("table#table-element-1 tbody tr.clickable-row")
-            .first.locator("td")
-            .nth(1)
-        )
+        self.first_row_column_text = page.locator(
+            "table#table-element-1 tbody tr.clickable-row"
+        ).first.locator("td")
 
         self.comment_field = page.locator(
             "textarea.stick.ui-autocomplete-input[name='COMMENT']"
@@ -71,9 +69,6 @@ class Selectors:
         self.table_rows = self.table.locator("tbody tr")
         # Avoid evaluating locators during initialization; evaluate lazily later
         self.table_rows_first = self.table_rows.first
-        self.table_rows_first_message_id_cell = self.table_rows_first.locator("td").nth(
-            1
-        )
 
         self.data_filters = page.locator("text=Data filters...")
         self.data_filters_input = page.locator("id=text-input-element-44")
@@ -99,6 +94,13 @@ class SearchStatus(Enum):
     NONE = auto()
     MULTIPLE = auto()
     FOUND = auto()
+
+
+class TabContext(Enum):
+    """Enum for tab context."""
+
+    LIVE = auto()
+    HISTORY = auto()
 
 
 class FircoPage:
@@ -248,6 +250,18 @@ class FircoPage:
             logging.error("data_filters error: %s", e)
         return True
 
+    def detect_tab(self) -> TabContext:
+        """Decide which tab we're on once, then reuse."""
+        try:
+            # If a 'History Messages' marker is visible quickly, treat as HISTORY.
+            if self.selectors.live_messages.filter(
+                has_text="History Messages"
+            ).is_visible(timeout=800):
+                return TabContext.HISTORY
+        except PlaywrightTimeoutError:
+            pass
+        return TabContext.LIVE
+
     def validate_search_table_results(self) -> SearchStatus:
         """validate results of search"""
         logging.debug("Validating search results.")
@@ -270,110 +284,96 @@ class FircoPage:
         except PlaywrightTimeoutError as e:
             logging.error("validate_results triggered timeout.")
             logging.error("validate_results error: %s", e)
-        return True
+        return SearchStatus.NONE
 
     def verify_first_row(self, transaction: str, status: SearchStatus):
         """verify first row of the table"""
         logging.debug("Verifying first row of the table.")
         try:
+            tab = detect_tab(self.page, self.selectors)
+
             if status == SearchStatus.NONE:
-                logging.debug("We go to history tab!")
-                # if we are in history tab, we should not go to history tab
-                if self.selectors.live_messages.filter(
-                    has_text="History Messages"
-                ).is_visible(timeout=1000):
-                    logging.debug("but we are in history tab!")
-                    logging.debug("so we go to BPM!")
+                logging.debug("No records in current tab.")
+                if tab == TabContext.LIVE:
+                    logging.debug("Switching to History tab and retrying search.")
+                    self.go_to_history_root(transaction)  # your existing method
                 else:
-                    self.go_to_history_root(transaction)
+                    logging.debug("Already in History; consider navigating to BPM.")
+                return True
 
-            if status == SearchStatus.MULTIPLE:
-                logging.debug("MULTIPLE :: We sort by date!")
-                self.unlock_transaction()
-                self.first_row_matches_transaction(transaction)
-                transaction_status = self.get_first_row_state()
-                if self.selectors.live_messages.filter(
-                    has_text="History Messages"
-                ).is_visible(timeout=1000):
-                    return transaction_status
-                if transaction_status == "FILTER":
-                    logging.debug("MULTIPLE :: We do action now!")
-                elif (
-                    transaction_status == "PendingSanctions"
-                    or transaction_status == "CU_Pending_Sanctions"
-                ):
-                    logging.debug("MULTIPLE :: We escalate!")
+            if status in (SearchStatus.MULTIPLE, SearchStatus.FOUND):
+                # Live often requires unlocking; History usually doesn’t.
+                if tab == TabContext.LIVE:
+                    self.unlock_transaction()
 
-            if status == SearchStatus.FOUND:
-                logging.debug("FOUND :: We verify first row!")
-                self.unlock_transaction()
-                self.first_row_matches_transaction(transaction)
-                transaction_status = self.get_first_row_state()
-                if self.selectors.live_messages.filter(
-                    has_text="History Messages"
-                ).is_visible(timeout=1000):
+                # If your table layout differs, pass the right column index per tab:
+                # e.g., LIVE uses column 1, HISTORY uses column 0 (example)
+                tx_col_idx = 1 if tab == TabContext.LIVE else 2
+                self.first_row_matches_transaction(transaction, column=tx_col_idx)
+
+                transaction_status = self.get_first_row_state(tab)
+
+                # If we’re in history, often we just return the decision
+                if tab == TabContext.HISTORY:
                     return transaction_status
+
+                # Live-specific branching
                 if transaction_status == "FILTER":
-                    logging.debug("MULTIPLE :: We do action now!")
-                elif (
-                    transaction_status == "PendingSanctions"
-                    or transaction_status == "CU_Pending_Sanctions"
-                ):
-                    logging.debug("MULTIPLE :: We escalate!")
+                    logging.debug("Actionable FILTER state detected.")
+                    # perform live-specific action here
+                elif transaction_status in ("PendingSanctions", "CU_Pending_Sanctions"):
+                    logging.debug("Escalating pending sanctions.")
+                    # escalate here
+                return transaction_status
 
         except PlaywrightTimeoutError as e:
             logging.error("verify_first_row triggered timeout.")
             logging.error("verify_first_row error: %s", e)
         return True
 
-    def first_row_matches_transaction(self, transaction: str) -> bool:
-        """Check if the first row's second column equals the given transaction.
-
-        Logs the outcome and returns True on match, False otherwise.
-        """
+    def first_row_matches_transaction(self, transaction: str, column: int) -> bool:
+        """Check if the first row's given column equals the transaction."""
         try:
             logging.debug(
-                "Checking if first row matches transaction number: %s", transaction
+                "Checking first-row column %s for transaction: %s", column, transaction
             )
             cell_text = (
-                self.selectors.first_row_second_column_text.text_content() or ""
+                self.selectors.first_row_column_text.nth(column).text_content() or ""
             ).strip()
             if cell_text == transaction:
                 logging.debug("Transaction number matches.")
                 return True
+
             logging.error(
-                "Transaction number does not match. Expected %s, got %s",
-                transaction,
-                cell_text,
+                "Transaction mismatch. Expected %s, got %s", transaction, cell_text
             )
-            # add screenshot
             self.page.screenshot(
                 path="first_row_matches_transaction.png", full_page=True
             )
-            # lets throw error to stop script execution - it should not be triggered
-            raise Exception(
-                "Transaction number does not match. Expected %s, got %s"
-                % (transaction, cell_text)
+            raise AssertionError(
+                f"Transaction mismatch. Expected {transaction}, got {cell_text}"
             )
         except PlaywrightTimeoutError as e:
-            logging.error("first_row_matches_transaction triggered timeout.")
-            logging.error("first_row_matches_transaction error: %s", e)
+            logging.error("first_row_matches_transaction timeout: %s", e)
             return False
 
-    def get_first_row_state(self) -> str:
-        """Get the content of the first row's state column.
-        In live tab it returns the value of "State" column
-        in history tab it returns the value of "Decision type" column
+    def get_first_row_state(self, tab: TabContext) -> str:
         """
-        logging.debug("Getting first row state.")
+        LIVE  -> read 'State' column
+        HISTORY -> read 'Decision type' column
+        """
+        logging.debug("Getting first row state for %s.", tab.name)
         try:
-            state_cell_text = (
-                self.selectors.first_row_state_column.text_content() or ""
-            ).strip()
-            logging.debug("State column content: %s", state_cell_text)
+            cell = (
+                self.selectors.first_row_state_column_live
+                if tab == TabContext.LIVE
+                else self.selectors.first_row_state_column_history
+            )
+            state_cell_text = (cell.text_content() or "").strip()
+            logging.debug("State/Decision content: %s", state_cell_text)
             return state_cell_text
         except Exception as e:
-            logging.warning("Unable to read state column content: %s", e)
+            logging.warning("Unable to read state/decision column content: %s", e)
             return ""
 
     def unlock_transaction(self):

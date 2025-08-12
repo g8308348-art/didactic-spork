@@ -282,8 +282,8 @@ class FircoPage:
                 if self.selectors.live_messages.filter(
                     has_text="History Messages"
                 ).is_visible(timeout=1000):
-                    logging.debug("We are in history tab!")
-                    logging.debug("We go to BPM!")
+                    logging.debug("but we are in history tab!")
+                    logging.debug("so we go to BPM!")
                 else:
                     self.go_to_history_root(transaction)
 
@@ -324,7 +324,15 @@ class FircoPage:
                 transaction,
                 cell_text,
             )
-            return False
+            # add screenshot
+            self.page.screenshot(
+                path="first_row_matches_transaction.png", full_page=True
+            )
+            # lets throw error to stop script execution
+            raise Exception(
+                "Transaction number does not match. Expected %s, got %s"
+                % (transaction, cell_text)
+            )
         except PlaywrightTimeoutError as e:
             logging.error("first_row_matches_transaction triggered timeout.")
             logging.error("first_row_matches_transaction error: %s", e)
@@ -349,7 +357,7 @@ class FircoPage:
     def unlock_transaction(self):
         """unlock transaction"""
         if self.selectors.first_row_active.is_visible(timeout=0):
-            logging.info("Transaction already unlocked")
+            logging.debug("Transaction already unlocked")
             return True
 
         logging.debug("Unlocking transaction")

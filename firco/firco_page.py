@@ -1,7 +1,10 @@
 """firco page POM"""
 
 import logging
+import shutil
 from enum import Enum, auto
+from pathlib import Path
+from datetime import datetime
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -441,7 +444,11 @@ class FircoPage:
             logging.error("go_to_transactions_details error: %s", e)
             return False
 
-    def click_all_hits(self):
+    def click_all_hits(self) -> None:
+        """
+        Click on all available transaction hit rows and optionally take screenshots.
+
+        """
         try:
             logging.debug("Clicking on all hits.")
             self.page.screenshot(path="hit_0.png", full_page=True)
@@ -514,7 +521,6 @@ class FircoPage:
             except PlaywrightTimeoutError as e:
                 logging.error("perform_action triggered timeout.")
                 logging.error("perform_action error: %s", e)
-                return False
         else:
             logging.warning(
                 "Action '%s' not recognized. Available actions: %s",
@@ -581,6 +587,8 @@ class FircoPage:
         logging.debug("with action: %s", action)
         logging.debug("with comment: %s", comment)
 
+        self._clear_existing_screenshots()
+
         try:
             self.login_to_firco(TEST_URL, USERNAME, PASSWORD)
             self.go_to_live_messages_root()
@@ -592,3 +600,47 @@ class FircoPage:
         except PlaywrightTimeoutError as e:
             logging.error("flow_start triggered timeout.")
             logging.error("flow_start error: %s", e)
+        finally:
+            try:
+                self._archive_screenshots(transaction)
+            except Exception as e:
+                logging.error("_archive_screenshots error: %s", e)
+
+    def _archive_screenshots(self, transaction: str) -> None:
+        """Move all PNG screenshots in CWD to screenshots/{date}_{transaction}.
+
+        The date format is YYYYMMDD_HHMMSS for uniqueness.
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest_dir = Path("screenshots") / f"{timestamp}_{transaction}"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        moved_any = False
+        for png in Path(".").glob("*.png"):
+            try:
+                shutil.move(str(png), dest_dir / png.name)
+                moved_any = True
+            except Exception as e:
+                logging.warning("Could not move %s: %s", png, e)
+
+        if moved_any:
+            logging.debug("Screenshots archived to %s", dest_dir)
+        else:
+            logging.debug("No screenshots found to archive.")
+
+    def _clear_existing_screenshots(self) -> None:
+        """Delete all PNG screenshots in the current working directory."""
+        try:
+            removed_any = False
+            for png in Path(".").glob("*.png"):
+                try:
+                    png.unlink()
+                    removed_any = True
+                except Exception as e:
+                    logging.warning("Could not delete %s: %s", png, e)
+            if removed_any:
+                logging.debug("Cleared existing PNG screenshots before run.")
+            else:
+                logging.debug("No PNG screenshots to clear before run.")
+        except Exception as e:
+            logging.warning("Failed to clear existing screenshots: %s", e)

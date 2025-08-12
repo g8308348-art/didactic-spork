@@ -279,7 +279,7 @@ class FircoPage:
             if status == SearchStatus.NONE:
                 logging.debug("We go to history tab!")
                 # if we are in history tab, we should not go to history tab
-                if self.live_messages.contains("History Messages"):
+                if self.selectors.live_messages.has_text("History Messages"):
                     logging.debug("We are in history tab!")
                     logging.debug("We go to BPM!")
                 else:

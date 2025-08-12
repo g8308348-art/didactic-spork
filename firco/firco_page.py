@@ -117,7 +117,7 @@ class FircoPage:
         Args:
             page: The Playwright Page object to use for interactions
         """
-        logging.info("FircoPage.__init__ called")
+        logging.debug("FircoPage.__init__ called")
         self.page = page
         self.selectors = Selectors(page)  # Group all selectors in a separate object
 
@@ -136,7 +136,7 @@ class FircoPage:
             username: Login username
             password: Login password
         """
-        logging.info("Logging to Firco as %s.", username)
+        logging.debug("Logging to Firco as %s.", username)
         self.page.goto(url)
         expect(self.page).to_have_title("State Street Login")
         self.page.fill("input[name='username']", username)
@@ -145,7 +145,7 @@ class FircoPage:
         self.page.wait_for_load_state("networkidle")
         try:
             expect(self.selectors.logout).to_be_visible()
-            logging.info("We are in Firco as %s.", username)
+            logging.debug("We are in Firco as %s.", username)
             return True
         except PlaywrightTimeoutError as e:
             logging.error("Failed to login to Firco as %s", username)
@@ -161,14 +161,14 @@ class FircoPage:
         """
         self.page.wait_for_timeout(2000)
         self.selectors.logout.click()
-        logging.info("logged out!")
+        logging.debug("logged out!")
         return True
 
     def go_to_live_messages_root(self) -> bool:
         """
         Go to the Live Messages root page.
         """
-        logging.info("Navigating to live messages link!")
+        logging.debug("Navigating to live messages link!")
         # self.sel.menu_item.click()
         self.selectors.live_messages_link.click()
 
@@ -180,8 +180,8 @@ class FircoPage:
                 r"tab-center tab-center-selected"
             )
         except PlaywrightTimeoutError as e:
-            logging.info("Live Messages tab not active: %s", e)
-            logging.info("Clicking on Live Messages tab.")
+            logging.debug("Live Messages tab not active: %s", e)
+            logging.debug("Clicking on Live Messages tab.")
             self.selectors.live_messages_tab.click()
             expect(self.selectors.live_messages_tab).to_have_class(
                 r"tab-center tab-center-selected"
@@ -197,7 +197,7 @@ class FircoPage:
         """
         try:
             if self.selectors.filtered_column_icon.is_visible(timeout=5000):
-                logging.info("Filter icon detected. Attempting to clear filter.")
+                logging.debug("Filter icon detected. Attempting to clear filter.")
                 self.selectors.filtered_column_icon.click()
                 # Verify if the filter icon is still visible after clicking
                 if self.selectors.filtered_column_icon.is_visible(timeout=2000):
@@ -205,47 +205,47 @@ class FircoPage:
                         "Filter icon still visible after click. Filter may not have cleared."
                     )
                 else:
-                    logging.info("Filter successfully cleared.")
+                    logging.debug("Filter successfully cleared.")
             else:
-                logging.info(
+                logging.debug(
                     "No filter icon detected in transaction column. No action needed."
                 )
-        except PlaywrightTimeoutError:
-            logging.error(
-                "Timeout while checking for filter icon. Assuming no filter present."
-            )
+        except PlaywrightTimeoutError as e:
+            logging.error("clear_filtered_column triggered timeout.")
+            logging.error("clear_filtered_column error: %s", e)
         return True
 
     def data_filters(self, transaction: str) -> bool:
         """search for transaction number"""
         try:
-            logging.info("Applying data filters for transaction: %s", transaction)
+            logging.debug("Applying data filters for transaction: %s", transaction)
             self.selectors.menu_opener.click()
             self.selectors.data_filters.click()
             self.page.fill("id=text-input-element-44", transaction)
             self.page.click("id=Add Filter Button")
             self.page.click("id=Confirm Button")
             self.page.wait_for_timeout(2000)
-        except PlaywrightTimeoutError:
+        except PlaywrightTimeoutError as e:
             logging.error("data_filters triggered timeout.")
+            logging.error("data_filters error: %s", e)
         return True
 
     def validate_search_table_results(self) -> SearchStatus:
         """validate results of search"""
-        logging.info("Validating search results.")
+        logging.debug("Validating search results.")
         try:
             if self.selectors.no_data_notice.is_visible():
-                logging.info("No data found.")
+                logging.debug("No data found.")
                 self.page.screenshot(path="no_transactions.png", full_page=True)
                 return SearchStatus.NONE
 
             if (self.selectors.first_odd_row_td_text.text_content() or "").strip():
-                logging.info("Multiple transactions found.")
+                logging.debug("Multiple transactions found.")
                 self.page.screenshot(path="multiple_transactions.png", full_page=True)
                 return SearchStatus.MULTIPLE
 
             self.page.screenshot(path="one_transaction.png", full_page=True)
-            logging.info("One transaction found.")
+            logging.debug("One transaction found.")
             return SearchStatus.FOUND
 
         except PlaywrightTimeoutError:
@@ -254,16 +254,17 @@ class FircoPage:
 
     def verify_first_row(self, transaction: str, status: SearchStatus):
         """verify first row of the table"""
-        logging.info("Verifying first row of the table.")
+        logging.debug("Verifying first row of the table.")
         try:
             if status == SearchStatus.NONE:
-                logging.info("We go to history tab!")
+                logging.debug("We go to history tab!")
 
             if status == SearchStatus.MULTIPLE:
-                logging.info("MULTIPLE :: We sort by date!")
+                logging.debug("MULTIPLE :: We sort by date!")
+                self.sort_multiple_transactions()
 
             if status == SearchStatus.FOUND:
-                logging.info("FOUND :: We verify first row!")
+                logging.debug("FOUND :: We verify first row!")
                 self.first_row_matches_transaction(transaction)
                 self.get_first_row_state()
 
@@ -278,14 +279,14 @@ class FircoPage:
         Logs the outcome and returns True on match, False otherwise.
         """
         try:
-            logging.info(
+            logging.debug(
                 "Checking if first row matches transaction number: %s", transaction
             )
             cell_text = (
                 self.selectors.first_row_second_column_text.text_content() or ""
             ).strip()
             if cell_text == transaction:
-                logging.info("Transaction number matches.")
+                logging.debug("Transaction number matches.")
                 return True
             logging.error(
                 "Transaction number does not match. Expected %s, got %s",
@@ -300,13 +301,56 @@ class FircoPage:
 
     def get_first_row_state(self) -> str:
         """Get the content of the first row's state column."""
-        logging.info("Getting first row state.")
+        logging.debug("Getting first row state.")
         try:
             state_cell_text = (
                 self.selectors.first_row_state_column.text_content() or ""
             ).strip()
-            logging.info("State column content: %s", state_cell_text)
+            logging.debug("State column content: %s", state_cell_text)
             return state_cell_text
         except Exception as e:
             logging.warning("Unable to read state column content: %s", e)
             return ""
+
+    def unlock_transaction(self):
+        logging.debug("Unlocking transaction")
+        self.selectors.padlock_icon.click()
+        expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=5000)
+        try:
+            expect(self.selectors.close_overlay_button).to_be_visible(timeout=3000)
+            self.selectors.close_overlay_button.click()
+        except Exception as e:
+            logging.warning(
+                "Close Overlay Button by ID not visible/clickable: %s. Using fallback.",
+                e,
+            )
+            # Fallback: button with value OK
+            fallback_btn = self.page.locator("input[type='button'][value='OK']")
+            expect(fallback_btn).to_be_visible(timeout=3000)
+            fallback_btn.click()
+
+    def sort_multiple_transactions(self) -> bool:
+        """
+        Sorts the transactions in descending date order.
+
+        Returns:
+            bool: True if sorting was applied successfully.
+        """
+        try:
+            logging.debug("Sorting multiple transactions by descending order.")
+            self.selectors.filtered_date_menu_opener.click()
+            self.selectors.descending_date.click()
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("sort_multiple_transactions triggered timeout.")
+            logging.error("sort_multiple_transactions error: %s", e)
+            return False
+
+    def main_flow():
+        return True
+
+    def analyst_flow():
+        return True
+
+    def manager_flow():
+        return True

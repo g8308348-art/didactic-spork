@@ -22,7 +22,7 @@ TEST_URL = "https://example.com"
 def setup_logging() -> None:
     """Set up logging configuration."""
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(sys.stdout),

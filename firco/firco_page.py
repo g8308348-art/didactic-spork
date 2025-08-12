@@ -136,14 +136,14 @@ class FircoPage:
             username: Login username
             password: Login password
         """
-        logging.debug("Logging to Firco as %s.", username)
-        self.page.goto(url)
-        expect(self.page).to_have_title("State Street Login")
-        self.page.fill("input[name='username']", username)
-        self.page.fill("input[name='PASSWORD']", password)
-        self.page.click("input[type='submit'][value='Submit']")
-        self.page.wait_for_load_state("networkidle")
         try:
+            logging.debug("Logging to Firco as %s.", username)
+            self.page.goto(url)
+            expect(self.page).to_have_title("State Street Login")
+            self.page.fill("input[name='username']", username)
+            self.page.fill("input[name='PASSWORD']", password)
+            self.page.click("input[type='submit'][value='Submit']")
+            self.page.wait_for_load_state("networkidle")
             expect(self.selectors.logout).to_be_visible()
             logging.debug("We are in Firco as %s.", username)
             return True
@@ -248,8 +248,9 @@ class FircoPage:
             logging.debug("One transaction found.")
             return SearchStatus.FOUND
 
-        except PlaywrightTimeoutError:
+        except PlaywrightTimeoutError as e:
             logging.error("validate_results triggered timeout.")
+            logging.error("validate_results error: %s", e)
         return True
 
     def verify_first_row(self, transaction: str, status: SearchStatus):
@@ -266,6 +267,7 @@ class FircoPage:
             if status == SearchStatus.FOUND:
                 logging.debug("FOUND :: We verify first row!")
                 self.first_row_matches_transaction(transaction)
+                self.unlock_transaction()
                 self.get_first_row_state()
 
         except PlaywrightTimeoutError as e:
@@ -313,21 +315,23 @@ class FircoPage:
             return ""
 
     def unlock_transaction(self):
+        """unlock transaction"""
+        if self.selectors.first_row_active.is_visible(timeout=0):
+            logging.info("Transaction already unlocked")
+            return True
+
         logging.debug("Unlocking transaction")
-        self.selectors.padlock_icon.click()
-        expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=5000)
         try:
+            self.selectors.padlock_icon.click()
+            expect(self.selectors.unlock_overlay_titlebar).to_be_visible(timeout=5000)
             expect(self.selectors.close_overlay_button).to_be_visible(timeout=3000)
             self.selectors.close_overlay_button.click()
-        except Exception as e:
-            logging.warning(
-                "Close Overlay Button by ID not visible/clickable: %s. Using fallback.",
-                e,
-            )
-            # Fallback: button with value OK
-            fallback_btn = self.page.locator("input[type='button'][value='OK']")
-            expect(fallback_btn).to_be_visible(timeout=3000)
-            fallback_btn.click()
+            logging.debug("Transaction unlocked")
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("unlock_transaction triggered timeout.")
+            logging.error("unlock_transaction error: %s", e)
+            return False
 
     def sort_multiple_transactions(self) -> bool:
         """

@@ -37,32 +37,37 @@ def run_firco_flow():
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            channel="chrome", headless=False
-        )  # Change to True for headless mode
-        context = browser.new_context()
-        page = context.new_page()
+    for transaction in [
+        "202508052025",
+        "202508052025_202508052025",
+        "2024100700000195",
+    ]:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                channel="chrome", headless=False
+            )  # Change to True for headless mode
+            context = browser.new_context()
+            page = context.new_page()
 
-        firco = FircoPage(page)
+            firco = FircoPage(page)
 
-        # 1. Login
-        firco.login_to_firco(TEST_URL, USERNAME, PASSWORD)
+            # 1. Login
+            firco.login_to_firco(TEST_URL, USERNAME, PASSWORD)
 
-        # 2. Go to Live Messages root
-        firco.go_to_live_messages_root()
+            # 2. Go to Live Messages root
+            firco.go_to_live_messages_root()
 
-        firco.clear_filtered_column()
-        firco.data_filters("202508052025")
+            firco.clear_filtered_column()
+            firco.data_filters(transaction)
 
-        firco.verify_first_row("202508052025", firco.validate_search_table_results())
+            firco.verify_first_row(transaction, firco.validate_search_table_results())
 
-        # 3. Logout
-        firco.logout()
+            # 3. Logout
+            firco.logout()
 
-        context.close()
-        # I can not close the browser
-        # browser.close()
+            context.close()
+            # I can not close the browser
+            # browser.close()
 
 
 if __name__ == "__main__":

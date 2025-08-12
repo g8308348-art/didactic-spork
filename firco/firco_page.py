@@ -321,9 +321,15 @@ class FircoPage:
                 if transaction_status == "FILTER":
                     logging.debug("Actionable FILTER state detected.")
                     # perform live-specific action here
-                elif transaction_status in ("PendingSanctions", "CU_Pending_Sanctions"):
+                elif transaction_status in ("PendingSanctions", "CU_Pending_Sanct"):
                     logging.debug("Escalating pending sanctions.")
                     # escalate here
+                else:
+                    # I want to trigger error here and stop execution
+                    raise Exception(
+                        "Unknown transaction status: %s for transcation: %s"
+                        % (transaction_status, transaction)
+                    )
                 return transaction_status
 
         except PlaywrightTimeoutError as e:

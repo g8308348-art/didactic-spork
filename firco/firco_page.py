@@ -328,8 +328,8 @@ class FircoPage:
             handler = {
                 "FILTER": self._handle_filter,
                 "CU_FILTER": self._handle_filter,
-                "PendingSanctions": self._handle_manager_flow,
-                "CU_Pending_Sanct": self._handle_manager_flow,
+                "PendingSanctions": self._manager_followup,
+                "CU_Pending_Sanct": self._manager_followup,
             }.get(state)
 
             if not handler:
@@ -540,6 +540,8 @@ class FircoPage:
             self.clear_filtered_column()
             self.data_filters(transaction)
             self._prepare_details_and_comment(comment)
+            if action == "STP-Release":
+                action = "Release"
             self.perform_action(action)
             self.logout()
             return True
@@ -566,9 +568,3 @@ class FircoPage:
             logging.error("_handle_filter_like triggered timeout.")
             logging.error("_handle_filter_like error: %s", e)
             return False
-
-    def _handle_manager_flow(
-        self, transaction: str, action: str, comment: str, tab: TabContext
-    ) -> bool:
-        """PendingSanctions / CU_Pending_Sanct go straight to manager flow."""
-        return self._manager_followup(transaction, comment, action)

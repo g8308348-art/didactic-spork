@@ -41,6 +41,8 @@ def run_firco_flow():
         "202508052025",
         "202508052025_202508052025",
         "2024100700000195",
+        "2025071600000026",  # FILTER
+        "20240545677555678",  # cu_filter
     ]:
         with sync_playwright() as p:
             browser = p.chromium.launch(

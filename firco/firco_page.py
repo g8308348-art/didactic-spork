@@ -317,7 +317,7 @@ class FircoPage:
                     return transaction_status
 
                 # Live-specific branching
-                if transaction_status == "FILTER":
+                if transaction_status in ("FILTER", "CU_FILTER"):
                     logging.debug("Actionable FILTER state detected.")
                     self.go_to_transactions_details()
                 elif transaction_status in ("PendingSanctions", "CU_Pending_Sanct"):

@@ -290,7 +290,7 @@ class FircoPage:
         """verify first row of the table"""
         logging.debug("Verifying first row of the table.")
         try:
-            tab = detect_tab(self.page, self.selectors)
+            tab = self.detect_tab()
 
             if status == SearchStatus.NONE:
                 logging.debug("No records in current tab.")

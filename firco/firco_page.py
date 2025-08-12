@@ -163,7 +163,7 @@ class FircoPage:
         """
         self.page.wait_for_timeout(2000)
         self.selectors.logout.click()
-        logging.debug("logged out!")
+        logging.debug("Logged out!")
         return True
 
     def go_to_live_messages_root(self) -> bool:
@@ -298,7 +298,7 @@ class FircoPage:
                     logging.debug("Switching to History tab and retrying search.")
                     self.go_to_history_root(transaction)  # your existing method
                 else:
-                    logging.debug("Already in History; consider navigating to BPM.")
+                    logging.debug("Already in History; we go to BPM.")
                 return True
 
             if status in (SearchStatus.MULTIPLE, SearchStatus.FOUND):
@@ -364,12 +364,9 @@ class FircoPage:
         """
         logging.debug("Getting first row state for %s.", tab.name)
         try:
-            cell = (
-                self.selectors.first_row_state_column_live
-                if tab == TabContext.LIVE
-                else self.selectors.first_row_state_column_history
-            )
-            state_cell_text = (cell.text_content() or "").strip()
+            state_cell_text = (
+                self.selectors.first_row_state_column.text_content() or ""
+            ).strip()
             logging.debug("State/Decision content: %s", state_cell_text)
             return state_cell_text
         except Exception as e:

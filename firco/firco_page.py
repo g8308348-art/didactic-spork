@@ -197,6 +197,7 @@ class FircoPage:
             # Clear any existing filters and search for the transaction
             self.clear_filtered_column()
             self.data_filters(transaction)
+            self.verify_first_row(transaction, self.validate_search_table_results())
             self.page.screenshot(path="history_root.png", full_page=True)
             return True
         except PlaywrightTimeoutError as e:
@@ -258,6 +259,7 @@ class FircoPage:
 
             if (self.selectors.first_odd_row_td_text.text_content() or "").strip():
                 logging.debug("Multiple transactions found.")
+                self.sort_multiple_transactions()
                 self.page.screenshot(path="multiple_transactions.png", full_page=True)
                 return SearchStatus.MULTIPLE
 
@@ -280,7 +282,9 @@ class FircoPage:
 
             if status == SearchStatus.MULTIPLE:
                 logging.debug("MULTIPLE :: We sort by date!")
-                self.sort_multiple_transactions()
+                self.first_row_matches_transaction(transaction)
+                self.unlock_transaction()
+                self.get_first_row_state()
 
             if status == SearchStatus.FOUND:
                 logging.debug("FOUND :: We verify first row!")
@@ -320,7 +324,10 @@ class FircoPage:
             return False
 
     def get_first_row_state(self) -> str:
-        """Get the content of the first row's state column."""
+        """Get the content of the first row's state column.
+        In live tab it returns the value of "State" column
+        in history tab it returns the value of "Decision type" column
+        """
         logging.debug("Getting first row state.")
         try:
             state_cell_text = (

@@ -531,7 +531,7 @@ class FircoPage:
             logging.error("_prepare_details_and_comment error: %s", e)
 
     def _manager_followup(
-        self, transaction: str, comment: str, action: str, tab: TabContext
+        self, transaction: str, action: str, comment: str, tab: TabContext
     ) -> bool:
         """Single place for the manager flow."""
         try:

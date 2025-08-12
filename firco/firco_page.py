@@ -291,13 +291,35 @@ class FircoPage:
                 logging.debug("MULTIPLE :: We sort by date!")
                 self.unlock_transaction()
                 self.first_row_matches_transaction(transaction)
-                self.get_first_row_state()
+                transaction_status = self.get_first_row_state()
+                if self.selectors.live_messages.filter(
+                    has_text="History Messages"
+                ).is_visible(timeout=1000):
+                    return transaction_status
+                if transaction_status == "FILTER":
+                    logging.debug("MULTIPLE :: We do action now!")
+                elif (
+                    transaction_status == "PendingSanctions"
+                    or transaction_status == "CU_Pending_Sanctions"
+                ):
+                    logging.debug("MULTIPLE :: We escalate!")
 
             if status == SearchStatus.FOUND:
                 logging.debug("FOUND :: We verify first row!")
                 self.unlock_transaction()
                 self.first_row_matches_transaction(transaction)
-                self.get_first_row_state()
+                transaction_status = self.get_first_row_state()
+                if self.selectors.live_messages.filter(
+                    has_text="History Messages"
+                ).is_visible(timeout=1000):
+                    return transaction_status
+                if transaction_status == "FILTER":
+                    logging.debug("MULTIPLE :: We do action now!")
+                elif (
+                    transaction_status == "PendingSanctions"
+                    or transaction_status == "CU_Pending_Sanctions"
+                ):
+                    logging.debug("MULTIPLE :: We escalate!")
 
         except PlaywrightTimeoutError as e:
             logging.error("verify_first_row triggered timeout.")
@@ -328,7 +350,7 @@ class FircoPage:
             self.page.screenshot(
                 path="first_row_matches_transaction.png", full_page=True
             )
-            # lets throw error to stop script execution
+            # lets throw error to stop script execution - it should not be triggered
             raise Exception(
                 "Transaction number does not match. Expected %s, got %s"
                 % (transaction, cell_text)

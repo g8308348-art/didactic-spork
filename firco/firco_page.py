@@ -324,6 +324,9 @@ class FircoPage:
             state = self.get_first_row_state(tab)
             logging.debug("Detected transaction state: %s", state)
 
+            if tab == TabContext.HISTORY:
+                return state
+
             # Map states to handlers
             handler = {
                 "FILTER": self._handle_filter,

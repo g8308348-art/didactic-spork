@@ -530,7 +530,9 @@ class FircoPage:
             logging.error("_prepare_details_and_comment triggered timeout.")
             logging.error("_prepare_details_and_comment error: %s", e)
 
-    def _manager_followup(self, transaction: str, comment: str, action: str) -> bool:
+    def _manager_followup(
+        self, transaction: str, comment: str, action: str, tab: TabContext
+    ) -> bool:
         """Single place for the manager flow."""
         try:
             logging.debug("Running manager flow.")

@@ -573,3 +573,22 @@ class FircoPage:
             logging.error("_handle_filter_like triggered timeout.")
             logging.error("_handle_filter_like error: %s", e)
             return False
+
+    def flow_start(self, transaction: str, action: str, comment: str) -> None:
+        """Start the flow."""
+        logging.debug("Starting flow")
+        logging.debug("for transaction: %s", transaction)
+        logging.debug("with action: %s", action)
+        logging.debug("with comment: %s", comment)
+
+        try:
+            self.login_to_firco(TEST_URL, USERNAME, PASSWORD)
+            self.go_to_live_messages_root()
+            self.clear_filtered_column()
+            self.data_filters(transaction)
+            self.verify_first_row(
+                transaction, self.validate_search_table_results(), action, comment
+            )
+        except PlaywrightTimeoutError as e:
+            logging.error("flow_start triggered timeout.")
+            logging.error("flow_start error: %s", e)

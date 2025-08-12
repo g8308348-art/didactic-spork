@@ -53,18 +53,7 @@ def run_firco_flow():
 
             firco = FircoPage(page)
 
-            # 1. Login
-            firco.login_to_firco(TEST_URL, USERNAME, PASSWORD)
-
-            # 2. Go to Live Messages root
-            firco.go_to_live_messages_root()
-
-            firco.clear_filtered_column()
-            firco.data_filters(transaction)
-
-            firco.verify_first_row(
-                transaction, firco.validate_search_table_results(), "STP-Release", "asd"
-            )
+            firco.flow_start(transaction, "Block", "rtps")
 
             context.close()
             # I can not close the browser

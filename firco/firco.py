@@ -66,9 +66,6 @@ def run_firco_flow():
                 transaction, firco.validate_search_table_results(), "STP-Release", "asd"
             )
 
-            # 3. Logout
-            firco.logout()
-
             context.close()
             # I can not close the browser
             # browser.close()

@@ -5,6 +5,14 @@ from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from cyber_guard import retrieve_CONTRASENA
+
+USERNAME = "506"
+PASSWORD = retrieve_CONTRASENA(USERNAME)
+MANAGER_USERNAME = "507"
+MANAGER_PASSWORD = retrieve_CONTRASENA(MANAGER_USERNAME)
+TEST_URL = "https://example.com"
+
 
 class Selectors:
     """Container for page selectors to reduce attribute count in the main class."""
@@ -290,60 +298,51 @@ class FircoPage:
 
     def verify_first_row(
         self, transaction: str, status: SearchStatus, action: str, comment: str
-    ):
-        """verify first row of the table"""
-        logging.debug("Verifying first row of the table.")
+    ) -> bool:
+        """Verify the first row and execute the appropriate flow based on status."""
         try:
             tab = self.detect_tab()
 
+            # No results: hop from LIVE → HISTORY, otherwise nothing to do
             if status == SearchStatus.NONE:
                 logging.debug("No records in current tab.")
                 if tab == TabContext.LIVE:
                     logging.debug("Switching to History tab and retrying search.")
-                    self.go_to_history_root(transaction, action, comment)
-                else:
-                    logging.debug("Already in History; we go to BPM.")
+                    return self.go_to_history_root(transaction, action, comment)
+                logging.debug("Already in History; we go to BPM.")
+
                 return True
 
-            if status in (SearchStatus.MULTIPLE, SearchStatus.FOUND):
-                # Live requires unlocking; History doesn’t.
-                if tab == TabContext.LIVE:
-                    self.unlock_transaction()
+            # LIVE requires unlocking; HISTORY doesn’t
+            if tab == TabContext.LIVE:
+                self.unlock_transaction()
 
-                # LIVE uses column 1, HISTORY uses column 2 (starting from 0)
-                tx_col_idx = 1 if tab == TabContext.LIVE else 2
-                self.first_row_matches_transaction(transaction, column=tx_col_idx)
+            # LIVE uses column 1, HISTORY uses column 2 (0-based)
+            tx_col_idx = 1 if tab == TabContext.LIVE else 2
+            self.first_row_matches_transaction(transaction, column=tx_col_idx)
 
-                transaction_status = self.get_first_row_state(tab)
+            state = self.get_first_row_state(tab)
+            logging.debug("Detected transaction state: %s", state)
 
-                # If we’re in history, often we just return the decision
-                if tab == TabContext.HISTORY:
-                    return transaction_status
+            # Map states to handlers
+            handler = {
+                "FILTER": self._handle_filter,
+                "CU_FILTER": self._handle_filter,
+                "PendingSanctions": self._handle_manager_flow,
+                "CU_Pending_Sanct": self._handle_manager_flow,
+            }.get(state)
 
-                # Live-specific branching
-                if transaction_status in ("FILTER", "CU_FILTER"):
-                    logging.debug("Actionable FILTER or CU_FILTER state detected.")
-                    self.go_to_transactions_details()
-                    self.click_all_hits()
-                    self.fill_comment_field(comment)
-                    self.perform_action(action)
+            if not handler:
+                # Stop execution on unknown state (as requested)
+                raise UnknownTransactionStatus(
+                    f"Unknown transaction status: {state} for transaction: {transaction}"
+                )
 
-                elif transaction_status in ("PendingSanctions", "CU_Pending_Sanct"):
-                    logging.debug("Escalating pending sanctions.")
-                    # escalate here
-                else:
-                    # I want to trigger error here and stop execution
-                    # there is transaction status that is not expected
-                    raise Exception(
-                        "Unknown transaction status: %s for transcation: %s"
-                        % (transaction_status, transaction)
-                    )
-                return transaction_status
+            return handler(transaction, action, comment, tab)
 
         except PlaywrightTimeoutError as e:
-            logging.error("verify_first_row triggered timeout.")
-            logging.error("verify_first_row error: %s", e)
-        return True
+            logging.error("verify_first_row timed out: %s", e)
+            return False
 
     def first_row_matches_transaction(self, transaction: str, column: int) -> bool:
         """Check if the first row's given column equals the transaction."""
@@ -504,7 +503,7 @@ class FircoPage:
 
                 # Click confirm button
                 logging.debug("Clicking Confirm button")
-                # self.selectors.confirm.click()
+                self.selectors.confirm.click()
 
                 # Take screenshot after confirmation
                 self.page.screenshot(path=f"{action_name}_3.png", full_page=True)
@@ -520,11 +519,50 @@ class FircoPage:
                 ", ".join(action_button_map.keys()),
             )
 
-    def main_flow():
-        return True
+    def _prepare_details_and_comment(self, comment: str) -> None:
+        """Open details, select all hits, and fill the comment."""
+        try:
+            logging.debug("Preparing details and comment.")
+            self.go_to_transactions_details()
+            self.click_all_hits()
+            self.fill_comment_field(comment)
+        except PlaywrightTimeoutError as e:
+            logging.error("_prepare_details_and_comment triggered timeout.")
+            logging.error("_prepare_details_and_comment error: %s", e)
 
-    def analyst_flow():
-        return True
+    def _manager_followup(self, transaction: str, comment: str, action: str) -> bool:
+        """Single place for the manager flow."""
+        try:
+            logging.debug("Running manager flow.")
+            self.logout()
+            self.login_to_firco(TEST_URL, MANAGER_USERNAME, MANAGER_PASSWORD)
+            self.go_to_live_messages_root()
+            self.clear_filtered_column()
+            self.data_filters(transaction)
+            self._prepare_details_and_comment(comment)
+            self.perform_action(action)
+            self.logout()
+            return True
+        except PlaywrightTimeoutError as e:
+            logging.error("_manager_followup triggered timeout.")
+            logging.error("_manager_followup error: %s", e)
+            return False
 
-    def manager_flow():
-        return True
+    def _handle_filter(
+        self, transaction: str, action: str, comment: str, tab: TabContext
+    ) -> bool:
+        """FILTER / CU_FILTER."""
+        try:
+            logging.debug("Running filter flow.")
+            self._prepare_details_and_comment(comment)
+            if action == "STP-Release":
+                self.perform_action(action)
+                self.logout()
+                return True
+            # escalate then manager flow
+            self.selectors.escalate.click()
+            return self._manager_followup(transaction, comment, action)
+        except PlaywrightTimeoutError as e:
+            logging.error("_handle_filter_like triggered timeout.")
+            logging.error("_handle_filter_like error: %s", e)
+            return False

@@ -280,6 +280,7 @@ class FircoPage:
                 logging.debug("We go to history tab!")
                 # if we are in history tab, we should not go to history tab
                 if self.live_messages.contains("History Messages"):
+                    logging.debug("We are in history tab!")
                     logging.debug("We go to BPM!")
                 else:
                     self.go_to_history_root(transaction)

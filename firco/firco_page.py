@@ -568,7 +568,7 @@ class FircoPage:
                 return True
             # escalate then manager flow
             self.selectors.escalate.click()
-            return self._manager_followup(transaction, comment, action)
+            return self._manager_followup(transaction, action, comment, tab)
         except PlaywrightTimeoutError as e:
             logging.error("_handle_filter_like triggered timeout.")
             logging.error("_handle_filter_like error: %s", e)

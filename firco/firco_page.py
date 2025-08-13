@@ -314,8 +314,6 @@ class FircoPage:
                     return self.go_to_history_root(transaction, action, comment)
                 logging.debug("Already in History; we go to BPM.")
 
-                return True
-
             # LIVE requires unlocking; HISTORY doesn’t
             if tab == TabContext.LIVE:
                 self.unlock_transaction()
@@ -348,7 +346,6 @@ class FircoPage:
 
         except PlaywrightTimeoutError as e:
             logging.error("verify_first_row timed out: %s", e)
-            return False
 
     def first_row_matches_transaction(self, transaction: str, column: int) -> bool:
         """Check if the first row's given column equals the transaction."""
@@ -580,8 +577,8 @@ class FircoPage:
             logging.error("_handle_filter_like error: %s", e)
             return False
 
-    def flow_start(self, transaction: str, action: str, comment: str) -> None:
-        """Start the flow."""
+    def flow_start(self, transaction: str, action: str, comment: str) -> dict:
+        """Start the flow and return a structured result dict."""
         logging.debug("Starting flow")
         logging.debug("for transaction: %s", transaction)
         logging.debug("with action: %s", action)
@@ -589,25 +586,65 @@ class FircoPage:
 
         self._clear_existing_screenshots()
 
+        result: dict = {
+            "transaction": transaction,
+            "action": action,
+            "success": False,
+            "status": "processing_error",
+            "message": "",
+            "error_code": 500,
+            "screenshot_path": None,
+        }
+
         try:
             self.login_to_firco(TEST_URL, USERNAME, PASSWORD)
             self.go_to_live_messages_root()
             self.clear_filtered_column()
             self.data_filters(transaction)
-            self.verify_first_row(
-                transaction, self.validate_search_table_results(), action, comment
-            )
+            status = self.validate_search_table_results()
+            handled = self.verify_first_row(transaction, status, action, comment)
+
+            # Build success message based on outcome
+            if handled is True:
+                result["success"] = True
+                result["status"] = (
+                    "action_performed_on_live"
+                    if self.detect_tab() == TabContext.LIVE
+                    else "already_handled"
+                )
+                result["message"] = (
+                    f"Transaction {transaction} processed successfully (status: {result['status']})."
+                )
+                result["error_code"] = 0
+            elif isinstance(handled, str):
+                # When verify_first_row returns a state string (e.g., FILTER/CU_FILTER/HISTORY state)
+                result["success"] = True
+                result["status"] = handled
+                result["message"] = (
+                    f"Transaction {transaction} processed with state: {handled}."
+                )
+                result["error_code"] = 0
+            else:
+                result["success"] = False
+                result["status"] = "processing_error"
+                result["message"] = f"Transaction {transaction} failed to process."
+                result["error_code"] = 500
         except PlaywrightTimeoutError as e:
             logging.error("flow_start triggered timeout.")
             logging.error("flow_start error: %s", e)
+            result["success"] = False
+            result["message"] = str(e)
+            result["error_code"] = 504
         finally:
             try:
-                self._archive_screenshots(transaction)
+                archived = self._archive_screenshots(transaction)
+                result["screenshot_path"] = str(archived) if archived else None
             except Exception as e:
                 logging.error("_archive_screenshots error: %s", e)
+        return result
 
-    def _archive_screenshots(self, transaction: str) -> None:
-        """Move all PNG screenshots in CWD to screenshots/{date}_{transaction}.
+    def _archive_screenshots(self, transaction: str) -> Path | None:
+        """Move all PNG screenshots in CWD to screenshots/{date}_{transaction} and return the folder path.
 
         The date format is YYYYMMDD_HHMMSS for uniqueness.
         """
@@ -625,8 +662,10 @@ class FircoPage:
 
         if moved_any:
             logging.debug("Screenshots archived to %s", dest_dir)
+            return dest_dir
         else:
             logging.debug("No screenshots found to archive.")
+            return dest_dir
 
     def _clear_existing_screenshots(self) -> None:
         """Delete all PNG screenshots in the current working directory."""

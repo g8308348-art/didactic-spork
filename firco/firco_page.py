@@ -4,6 +4,7 @@ import logging
 import shutil
 from enum import Enum, auto
 from pathlib import Path
+from typing import Optional
 from datetime import datetime
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -643,7 +644,7 @@ class FircoPage:
                 logging.error("_archive_screenshots error: %s", e)
         return result
 
-    def _archive_screenshots(self, transaction: str) -> Path | None:
+    def _archive_screenshots(self, transaction: str) -> Optional[Path]:
         """Move all PNG screenshots in CWD to screenshots/{date}_{transaction} and return the folder path.
 
         The date format is YYYYMMDD_HHMMSS for uniqueness.

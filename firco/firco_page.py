@@ -578,12 +578,15 @@ class FircoPage:
             logging.error("_handle_filter_like error: %s", e)
             return False
 
-    def flow_start(self, transaction: str, action: str, comment: str) -> dict:
+    def flow_start(
+        self, transaction: str, action: str, comment: str, transaction_type: str = ""
+    ) -> dict:
         """Start the flow and return a structured result dict."""
         logging.debug("Starting flow")
         logging.debug("for transaction: %s", transaction)
         logging.debug("with action: %s", action)
         logging.debug("with comment: %s", comment)
+        logging.debug("with transactionType: %s", transaction_type)
 
         self._clear_existing_screenshots()
 
@@ -595,6 +598,7 @@ class FircoPage:
             "message": "",
             "error_code": 500,
             "screenshot_path": None,
+            "transactionType": transaction_type,
         }
 
         try:

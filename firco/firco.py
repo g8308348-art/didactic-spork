@@ -53,7 +53,8 @@ def run_firco_flow():
 
             firco = FircoPage(page)
 
-            firco.flow_start(transaction, "Block", "rtps")
+            result = firco.flow_start(transaction, "Block", "rtps")
+            logging.debug("Result: %s", result)
 
             context.close()
             # I can not close the browser

@@ -1,11 +1,7 @@
 """firco page POM"""
 
 import logging
-import shutil
 from enum import Enum, auto
-from pathlib import Path
-from typing import Optional
-from datetime import datetime
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -562,7 +558,7 @@ class FircoPage:
         logging.debug("with comment: %s", comment)
         logging.debug("with transactionType: %s", transaction_type)
 
-        self._clear_existing_screenshots()
+        clear_existing_screenshots()
 
         result: dict = {
             "transaction": transaction,
@@ -616,16 +612,8 @@ class FircoPage:
             result["error_code"] = 504
         finally:
             try:
-                archived = self._archive_screenshots(transaction)
+                archived = archive_screenshots(transaction)
                 result["screenshot_path"] = str(archived) if archived else None
             except Exception as e:
                 logging.error("_archive_screenshots error: %s", e)
         return result
-
-    def _archive_screenshots(self, transaction: str) -> Optional[Path]:
-        """Delegate to shared utility to archive screenshots for the transaction."""
-        return archive_screenshots(transaction)
-
-    def _clear_existing_screenshots(self) -> None:
-        """Delegate to shared utility to clear screenshots in CWD."""
-        clear_existing_screenshots()

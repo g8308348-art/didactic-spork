@@ -1,7 +1,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import argparse
 
 """Ensure repo root is importable when running this file directly.
@@ -22,7 +22,7 @@ def bpm_search(
     username: str,
     password: str,
     transaction_id: str,
-    selected_options: List[Options] | None = None,
+    selected_options: Optional[List[Options]] = None,
 ) -> List[str]:
     """Open BPM, log in, perform search, and return all column values for the row.
 
@@ -102,7 +102,7 @@ def main() -> int:
     )
 
     # Parse selected options if provided
-    selected: List[Options] | None = None
+    selected: Optional[List[Options]] = None
     if args.options:
         raw_values = [s.strip() for s in args.options.split(",") if s.strip()]
         # Match by enum value (shown in UI)

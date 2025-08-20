@@ -6,11 +6,15 @@ import argparse
 from playwright.sync_api import sync_playwright
 
 from utils import login_to
-from bpm.bpm_page import BPMPage
+from bpm.bpm_page import BPMPage, Options
 
 
 def bpm_search(
-    url: str, username: str, password: str, transaction_id: str
+    url: str,
+    username: str,
+    password: str,
+    transaction_id: str,
+    selected_options: List[Options] | None = None,
 ) -> List[str]:
     """Open BPM, log in, perform search, and return all column values for the row.
 
@@ -26,6 +30,11 @@ def bpm_search(
                 return []
 
             bpm = BPMPage(page)
+
+            # Optionally select market/transaction-type filters before search
+            if selected_options:
+                bpm.check_options_and_submit(selected_options)
+
             bpm.click_search_tab()
             page.wait_for_timeout(1000)
             bpm.fill_transaction_id(transaction_id)
@@ -62,14 +71,51 @@ def main() -> int:
         default="INFO",
         help="Logging level (DEBUG, INFO, WARNING, ERROR)",
     )
+    parser.add_argument(
+        "--options",
+        help="Comma-separated list of BPM options to select (by value, e.g., 'CBPR-MX,SEPA-Classic').",
+    )
+    parser.add_argument(
+        "--list-options",
+        action="store_true",
+        help="List available BPM Options and exit",
+    )
     args = parser.parse_args()
+
+    if args.list_options:
+        print("Available BPM Options (name = value):")
+        for opt in Options:
+            print(f"- {opt.name} = {opt.value}")
+        return 0
 
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    columns = bpm_search(args.url, args.username, args.password, args.transaction)
+    # Parse selected options if provided
+    selected: List[Options] | None = None
+    if args.options:
+        raw_values = [s.strip() for s in args.options.split(",") if s.strip()]
+        # Match by enum value (shown in UI)
+        valid_map = {opt.value: opt for opt in Options}
+        selected = []
+        for val in raw_values:
+            if val in valid_map:
+                selected.append(valid_map[val])
+            else:
+                logging.warning(
+                    "Unknown option '%s' ignored. Use --list-options to see valid values.",
+                    val,
+                )
+
+    columns = bpm_search(
+        args.url,
+        args.username,
+        args.password,
+        args.transaction,
+        selected_options=selected,
+    )
     if not columns:
         print("[]")
         return 1

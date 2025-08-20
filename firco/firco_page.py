@@ -10,6 +10,11 @@ from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from cyber_guard import retrieve_CONTRASENA
+from utils.utils import (
+    login_to,
+    archive_screenshots,
+    clear_existing_screenshots,
+)
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)
@@ -134,37 +139,6 @@ class FircoPage:
         logging.debug("FircoPage.__init__ called")
         self.page = page
         self.selectors = Selectors(page)  # Group all selectors in a separate object
-
-    def login_to_firco(
-        self,
-        url: str,
-        username: str,
-        password: str,
-    ) -> bool:
-        """
-        Login to the Firco system.
-
-        Args:
-            page: The Playwright page object
-            url: The URL of the Firco system
-            username: Login username
-            password: Login password
-        """
-        try:
-            logging.debug("Logging to Firco as %s.", username)
-            self.page.goto(url)
-            expect(self.page).to_have_title("State Street Login")
-            self.page.fill("input[name='username']", username)
-            self.page.fill("input[name='PASSWORD']", password)
-            self.page.click("input[type='submit'][value='Submit']")
-            self.page.wait_for_load_state("networkidle")
-            expect(self.selectors.logout).to_be_visible()
-            logging.debug("We are in Firco as %s.", username)
-            return True
-        except PlaywrightTimeoutError as e:
-            logging.error("Failed to login to Firco as %s", username)
-            logging.error("Login error: %s", e)
-            return False
 
     def logout(self) -> bool:
         """
@@ -544,7 +518,7 @@ class FircoPage:
         try:
             logging.debug("Running manager flow.")
             self.logout()
-            self.login_to_firco(TEST_URL, MANAGER_USERNAME, MANAGER_PASSWORD)
+            login_to(self.page, TEST_URL, MANAGER_USERNAME, MANAGER_PASSWORD)
             self.go_to_live_messages_root()
             self.clear_filtered_column()
             self.data_filters(transaction)
@@ -602,7 +576,7 @@ class FircoPage:
         }
 
         try:
-            self.login_to_firco(TEST_URL, USERNAME, PASSWORD)
+            login_to(self.page, TEST_URL, USERNAME, PASSWORD)
             self.go_to_live_messages_root()
             self.clear_filtered_column()
             self.data_filters(transaction)
@@ -649,42 +623,9 @@ class FircoPage:
         return result
 
     def _archive_screenshots(self, transaction: str) -> Optional[Path]:
-        """Move all PNG screenshots in CWD to screenshots/{date}_{transaction} and return the folder path.
-
-        The date format is YYYYMMDD_HHMMSS for uniqueness.
-        """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        dest_dir = Path("screenshots") / f"{timestamp}_{transaction}"
-        dest_dir.mkdir(parents=True, exist_ok=True)
-
-        moved_any = False
-        for png in Path(".").glob("*.png"):
-            try:
-                shutil.move(str(png), dest_dir / png.name)
-                moved_any = True
-            except Exception as e:
-                logging.warning("Could not move %s: %s", png, e)
-
-        if moved_any:
-            logging.debug("Screenshots archived to %s", dest_dir)
-            return dest_dir
-        else:
-            logging.debug("No screenshots found to archive.")
-            return dest_dir
+        """Delegate to shared utility to archive screenshots for the transaction."""
+        return archive_screenshots(transaction)
 
     def _clear_existing_screenshots(self) -> None:
-        """Delete all PNG screenshots in the current working directory."""
-        try:
-            removed_any = False
-            for png in Path(".").glob("*.png"):
-                try:
-                    png.unlink()
-                    removed_any = True
-                except Exception as e:
-                    logging.warning("Could not delete %s: %s", png, e)
-            if removed_any:
-                logging.debug("Cleared existing PNG screenshots before run.")
-            else:
-                logging.debug("No PNG screenshots to clear before run.")
-        except Exception as e:
-            logging.warning("Failed to clear existing screenshots: %s", e)
+        """Delegate to shared utility to clear screenshots in CWD."""
+        clear_existing_screenshots()

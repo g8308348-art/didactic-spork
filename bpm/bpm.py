@@ -1,7 +1,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 import argparse
 
 """Ensure repo root is importable when running this file directly.
@@ -22,7 +22,7 @@ def bpm_search(
     username: str,
     password: str,
     transaction_id: str,
-    selected_options: Optional[List[Options]] = None,
+    selected_options: List[Options],
 ) -> List[str]:
     """Open BPM, log in, perform search, and return all column values for the row.
 
@@ -40,8 +40,7 @@ def bpm_search(
             bpm = BPMPage(page)
 
             # Optionally select market/transaction-type filters before search
-            if selected_options:
-                bpm.check_options_and_submit(selected_options)
+            bpm.check_options_and_submit(selected_options)
 
             bpm.click_search_tab()
             page.wait_for_timeout(1000)
@@ -101,21 +100,30 @@ def main() -> int:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    # Parse selected options if provided
-    selected: Optional[List[Options]] = None
-    if args.options:
-        raw_values = [s.strip() for s in args.options.split(",") if s.strip()]
-        # Match by enum value (shown in UI)
-        valid_map = {opt.value: opt for opt in Options}
-        selected = []
-        for val in raw_values:
-            if val in valid_map:
-                selected.append(valid_map[val])
-            else:
-                logging.warning(
-                    "Unknown option '%s' ignored. Use --list-options to see valid values.",
-                    val,
-                )
+    # Require --options unless --list-options was used
+    if not args.options:
+        parser.error("--options is required unless --list-options is provided")
+
+    # Parse selected options (must be non-empty and valid)
+    raw_values = [s.strip() for s in args.options.split(",") if s.strip()]
+    if not raw_values:
+        parser.error(
+            "--options must contain at least one value. Use --list-options to see valid values."
+        )
+
+    valid_map = {opt.value: opt for opt in Options}
+    selected: List[Options] = []
+    invalids: List[str] = []
+    for val in raw_values:
+        if val in valid_map:
+            selected.append(valid_map[val])
+        else:
+            invalids.append(val)
+    if invalids:
+        parser.error(
+            "Unknown option(s): %s. Use --list-options to see valid values."
+            % ", ".join(invalids)
+        )
 
     columns = bpm_search(
         args.url,

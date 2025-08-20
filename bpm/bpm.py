@@ -1,11 +1,19 @@
 import logging
 import sys
+from pathlib import Path
 from typing import List
 import argparse
 
+"""Ensure repo root is importable when running this file directly.
+This allows `import utils...` to resolve even if CWD is bpm/.
+"""
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from playwright.sync_api import sync_playwright
 
-from utils import login_to
+from utils.utils import login_to
 from bpm.bpm_page import BPMPage, Options
 
 

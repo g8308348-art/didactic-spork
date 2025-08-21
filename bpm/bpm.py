@@ -49,7 +49,10 @@ def bpm_search(
             # page.wait_for_timeout(1000)
             bpm.fill_transaction_id(transaction_id)
             bpm.click_submit_button()
-            # page.wait_for_timeout(2000)
+            # Wait for page reload outcome: either no-results banner or rows
+            if bpm.wait_for_no_results(timeout=15000):
+                logging.info("No results banner detected; returning empty result set.")
+                return []
 
             # Ask for all columns from the results row
             columns = bpm.search_results(transaction_id, return_all=True)

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 import argparse
 import time
+import json
 
 """Ensure repo root is importable when running this file directly.
 This allows `import utils...` to resolve even if CWD is bpm/.
@@ -24,10 +25,10 @@ def bpm_search(
     password: str,
     transaction_id: str,
     selected_options: List[Options],
-) -> List[str]:
-    """Open BPM, log in, perform search, and return all column values for the row.
+) -> dict:
+    """Open BPM, log in, perform search, and return validated JSON result.
 
-    Returns an empty list on failure.
+    Returns a JSON-serializable dict with keys like success/status/message.
     """
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chrome", headless=True)
@@ -36,24 +37,12 @@ def bpm_search(
         try:
             if not login_to(page, url, username, password):
                 logging.error("Login failed, aborting BPM search.")
-                return []
+                return {}
 
             bpm = BPMPage(page)
-            bpm.verify_modal_visibility()
-            bpm.click_tick_box()
-            bpm.click_ori_tsf()
-            # Optionally select market/transaction-type filters before search
-            bpm.check_options_and_submit(selected_options)
-
-            bpm.click_search_tab()
-            bpm.fill_transaction_id(transaction_id)
-            bpm.click_submit_button()
-            page.wait_for_timeout(1000)
-
-            # Ask for all columns from the results row
-            columns = bpm.search_results(transaction_id, return_all=True)
-            logging.info("Search results (all columns): %s", columns)
-            return columns if isinstance(columns, list) else []
+            result = bpm.run_full_search(transaction_id, selected_options)
+            logging.info("BPM Search result (JSON): %s", result)
+            return result
         finally:
             try:
                 context.close()
@@ -140,7 +129,7 @@ def main() -> int:
 
     # Measure bpm_search duration
     t_search_start = time.perf_counter()
-    columns = bpm_search(
+    result = bpm_search(
         args.url,
         args.username,
         args.password,
@@ -154,13 +143,13 @@ def main() -> int:
         (t_search_end - t_search_start),
         (time.perf_counter() - t_total_start),
     )
-    if not columns:
-        print("[]")
+    if not result or not isinstance(result, dict):
+        print("{}")
         return 1
 
-    # Print as a simple JSON-like list for easy consumption
-    print(columns)
-    return 0
+    # Print JSON
+    print(json.dumps(result))
+    return 0 if result.get("success") else 1
 
 
 if __name__ == "__main__":

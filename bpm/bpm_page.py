@@ -337,6 +337,37 @@ class BPMPage:
             )
             raise
 
+    # ------------------------------------------------------------------
+    # High-level flow helper (post-login)
+    # ------------------------------------------------------------------
+    def run_full_search(self, transaction_id: str, selected_options: list[Options]) -> dict:
+        """Run the full post-login BPM flow and return validated JSON result.
+
+        This mirrors the actions in bpm/bpm.py after login:
+        - verify modal, tick 'ORI', click 'ORI-TSF'
+        - select provided options and submit
+        - go to Search tab, fill transaction id, submit
+        - fetch results via search_results(as_json=True, validate=True)
+        """
+        logging.debug("Starting full BPM search flow for transaction: %s", transaction_id)
+        self.verify_modal_visibility()
+        self.click_tick_box()
+        self.click_ori_tsf()
+        self.check_options_and_submit(selected_options)
+
+        self.click_search_tab()
+        self.fill_transaction_id(transaction_id)
+        self.click_submit_button()
+        # Small wait to allow grid to render
+        try:
+            self.page.wait_for_timeout(1000)
+        except Exception:  # noqa: BLE001
+            pass
+
+        result = self.search_results(transaction_id, as_json=True, validate=True)
+        logging.debug("Full BPM search result: %s", result)
+        return result
+
     def get_row_columns_for_number(self, number: str) -> list[str]:
         """Return all column values for the first row containing the given number.
 

@@ -148,31 +148,52 @@ class BPMPage:
     # ------------------------------------------------------------------
     # Search helpers
     # ------------------------------------------------------------------
-    def search_results(self, number_to_look_for: str, return_all: bool = True):
-        """Wait for results grid and return results.
+    def search_results(
+        self,
+        number_to_look_for: str,
+        return_all: bool = True,  # kept for compatibility; ignored
+        as_json: bool = True,  # default JSON always
+        validate: bool = True,
+    ):
+        """Wait for results grid and return results as JSON.
 
-        By default returns a tuple of (4th_column, last_column).
-        If return_all=True, returns a list[str] with all column values for the row.
+        Returns a JSON-serializable dict. If validate is True, uses
+        validate_result_columns() with the provided transaction id; otherwise
+        returns {"columns": [...]}.
 
-        Returns ("NotFound", "NotFound") or [] on error/missing.
+        On error/missing row, returns a structured JSON like:
+        {"transaction": ..., "success": False, "status": "not_found"|"error", "message": ...}
         """
         try:
-            # self.select_all_from_dropdown()  # optional dropdown action
-            # self.page.wait_for_timeout(2000)
             self.wait_for_page_to_load()
 
-            if return_all:
-                columns = self.get_row_columns_for_number(number_to_look_for)
-                logging.debug("All column values: %s", columns)
-                return columns
-            else:
-                fourth_val, last_val = self.look_for_number(number_to_look_for)
-                logging.debug("4th Column Value: %s", fourth_val)
-                logging.debug("Last Column Value: %s", last_val)
-                return fourth_val, last_val
+            columns = self.get_row_columns_for_number(number_to_look_for)
+            logging.debug("All column values: %s", columns)
+
+            if not as_json:
+                # Forcing JSON output per new requirement, but keep a minimal safeguard
+                as_json = True
+
+            if not columns:
+                return {
+                    "transaction": number_to_look_for,
+                    "success": False,
+                    "status": "not_found",
+                    "message": "No results",
+                }
+
+            if validate:
+                return self.validate_result_columns(columns, number_to_look_for)
+            return {"columns": columns}
+
         except Exception as e:  # pylint: disable=broad-except
             logging.error("Error in search_results: %s", e)
-            return [] if return_all else ("NotFound", "NotFound")
+            return {
+                "transaction": number_to_look_for,
+                "success": False,
+                "status": "error",
+                "message": str(e),
+            }
 
     def perform_advanced_search(self, transaction_id: str) -> tuple:
         """Navigate to Search tab, fill reference field, submit, then fetch results."""
@@ -340,3 +361,141 @@ class BPMPage:
         except Exception as e:
             logging.error("Failed to get all columns for number %s: %s", number, e)
             return []
+
+    """
+    I need to write a function that validates the results of the search
+    I start counting columns from 1
+    * second column is a "transaction_id" column, called in the bpm REFERENCE
+    * transaction_id should match text in the second column
+
+    * fourth column is a status  column, called in the bpm "CURRENT STATUS"
+    four possibilities are here:
+    *  Contains "SendResponseTo" which means "NO HIT Transaction"
+    *  Contains "BusinessResponseProcessed" which means "Response from Firco received"
+    *  Contains "PostedTxnToFirco" which means "Transaction posted to Firco"
+    *  Contains "UNDEFINED" there is an error
+
+    tentht column is a holding_qm column, called in the bpm "HOLDING QM"
+    *  if starts with numbers 25 to 30 it means it's a BUAT Envirement
+    *  else UAT Envirement
+
+    eleventh column is a status column, called in the bpm "STATUS"
+    * if contains SUCCESS and fourth column contains "SendResponseTo" it's a success
+    * if contains SUCCESS and fourth column contains "BusinessResponseProcessed" it's a success
+    * if contains SUCCESS and fourth column contains "PostedTxnToFirco" it's a success
+    
+    * if contains FAILURE it's a failure
+    * if contains WARNING it's a failure
+
+    """
+
+    def classify_environment(self, holding_qm: str) -> str:
+        """Classify environment from HOLDING QM (10th column, 1-based).
+
+        BUAT if starts with numbers 25..30, else UAT.
+        """
+        try:
+            s = (holding_qm or "").strip()
+            prefix = s[:2]
+            if prefix.isdigit():
+                val = int(prefix)
+                if 25 <= val <= 30:
+                    return "BUAT"
+        except Exception:
+            pass
+        return "UAT"
+
+    def validate_result_columns(self, columns: list[str], transaction_id: str) -> dict:
+        """Validate a full row returned by search_results(return_all=True).
+
+        Columns (1-based):
+        - 2: REFERENCE (must equal transaction_id)
+        - 4: CURRENT STATUS
+        - 10: HOLDING QM (env detection)
+        - 11: STATUS
+
+        Returns dict with: success, status, message, environment, details
+        """
+        out = {
+            "transaction": transaction_id,
+            "success": False,
+            "status": "invalid",
+            "message": "",
+            "environment": None,
+            "details": {},
+        }
+
+        if not columns or len(columns) < 11:
+            out["message"] = "Insufficient columns returned from BPM."
+            return out
+
+        # 1-based -> 0-based indices
+        reference = (columns[1] or "").strip()  # 2nd
+        current_status = (columns[3] or "").strip()  # 4th
+        holding_qm = (columns[9] or "").strip()  # 10th
+        bpm_status = (columns[10] or "").strip()  # 11th
+
+        out["details"] = {
+            "reference": reference,
+            "current_status": current_status,
+            "holding_qm": holding_qm,
+            "bpm_status": bpm_status,
+            "columns_len": len(columns),
+        }
+
+        # 1) REFERENCE must match
+        if reference != transaction_id:
+            out["status"] = "reference_mismatch"
+            out["message"] = (
+                f"REFERENCE mismatch: expected {transaction_id}, got {reference}"
+            )
+            return out
+
+        # 2) Environment
+        env = self.classify_environment(holding_qm)
+        out["environment"] = env
+
+        # 3) CURRENT STATUS interpretation
+        cs_map = {
+            "SendResponseTo": "NO HIT Transaction",
+            "BusinessResponseProcessed": "Response from Firco received",
+            "PostedTxnToFirco": "Transaction posted to Firco",
+            "UNDEFINED": "UNDEFINED",
+        }
+        cs_label = None
+        for key, label in cs_map.items():
+            if key in current_status:
+                cs_label = label
+                break
+
+        # 4) STATUS interpretation
+        is_success = "SUCCESS" in bpm_status
+        is_failure = ("FAILURE" in bpm_status) or ("WARNING" in bpm_status)
+
+        if cs_label == "UNDEFINED":
+            out["status"] = "error"
+            out["message"] = "CURRENT STATUS is UNDEFINED"
+            return out
+
+        if is_failure:
+            out["status"] = "failure"
+            out["message"] = f"BPM STATUS indicates failure/warning: {bpm_status}"
+            return out
+
+        if is_success and cs_label in (
+            "NO HIT Transaction",
+            "Response from Firco received",
+            "Transaction posted to Firco",
+        ):
+            out["success"] = True
+            out["status"] = "success"
+            out["message"] = (
+                f"Success: CURRENT STATUS='{cs_label}', BPM STATUS='{bpm_status}', ENV='{env}'"
+            )
+            return out
+
+        out["status"] = "unknown"
+        out["message"] = (
+            f"Unrecognized combination: CURRENT STATUS='{current_status}', BPM STATUS='{bpm_status}'"
+        )
+        return out

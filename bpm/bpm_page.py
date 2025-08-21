@@ -159,7 +159,7 @@ class BPMPage:
         """
         try:
             # self.select_all_from_dropdown()  # optional dropdown action
-            self.page.wait_for_timeout(2000)
+            # self.page.wait_for_timeout(2000)
             self.wait_for_page_to_load()
 
             if return_all:
@@ -182,13 +182,13 @@ class BPMPage:
             transaction_id,
         )
         self.click_search_tab()
-        self.page.wait_for_timeout(1000)
+        # self.page.wait_for_timeout(1000)
         # Log all advanced-search labels to help find the correct REFERENCE input
         # self.debug_list_advanced_fields()
         # self.page.wait_for_timeout(1000)
         self.fill_transaction_id(transaction_id)
         self.click_submit_button()
-        self.page.wait_for_timeout(2000)
+        # self.page.wait_for_timeout(2000)
         return self.search_results(transaction_id)
 
     def click_element_with_dynamic_title(self) -> None:
@@ -235,6 +235,8 @@ class BPMPage:
             # Using Playwright CSS :has-text() for clarity and robustness.
             selector = "div.search-item label:has-text('REFERENCE') + input"
             logging.debug("Looking for REFERENCE input with selector: %s", selector)
+            # lets make sure the selector is visible
+            self.page.wait_for_selector(selector)
             input_field = self.page.locator(selector).first
             if not input_field or not input_field.is_visible():
                 logging.error(

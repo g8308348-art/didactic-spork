@@ -4,3 +4,4 @@ venv/
 .kiro/
 .vscode/
 transactions.log
+unused-code/

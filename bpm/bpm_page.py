@@ -151,8 +151,7 @@ class BPMPage:
     def search_results(
         self,
         number_to_look_for: str,
-        return_all: bool = True,  # kept for compatibility; ignored
-        as_json: bool = True,  # default JSON always
+        as_json: bool = True,
         validate: bool = True,
     ):
         """Wait for results grid and return results as JSON.
@@ -455,22 +454,23 @@ class BPMPage:
         env = self.classify_environment(holding_qm)
         out["environment"] = env
 
-        # 3) CURRENT STATUS interpretation
-        cs_map = {
-            "SendResponseTo": "NO HIT Transaction",
-            "BusinessResponseProcessed": "Response from Firco received",
-            "PostedTxnToFirco": "Transaction posted to Firco",
-            "UNDEFINED": "UNDEFINED",
-        }
+        # 3) CURRENT STATUS interpretation (case-insensitive, partial)
+        cs_lower = current_status.lower()
         cs_label = None
-        for key, label in cs_map.items():
-            if key in current_status:
-                cs_label = label
-                break
+        if "undefined" in cs_lower:
+            cs_label = "UNDEFINED"
+        elif "businessresponseprocessed" in cs_lower:
+            cs_label = "Response from Firco received"
+        elif "postedtxntofirco" in cs_lower:
+            cs_label = "Transaction posted to Firco"
+        elif ("sendresponseto" in cs_lower) or ("sentresponseto" in cs_lower):
+            # Accept variants like SentResponseToRTPS, SentResponseToDEH, etc.
+            cs_label = "NO HIT Transaction"
 
-        # 4) STATUS interpretation
-        is_success = "SUCCESS" in bpm_status
-        is_failure = ("FAILURE" in bpm_status) or ("WARNING" in bpm_status)
+        # 4) STATUS interpretation (case-insensitive)
+        bpm_lower = bpm_status.lower()
+        is_success = "success" in bpm_lower
+        is_failure = ("failure" in bpm_lower) or ("warning" in bpm_lower)
 
         if cs_label == "UNDEFINED":
             out["status"] = "error"

@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from typing import List
 import argparse
+import time
 
 """Ensure repo root is importable when running this file directly.
 This allows `import utils...` to resolve even if CWD is bpm/.
@@ -45,10 +46,10 @@ def bpm_search(
             bpm.check_options_and_submit(selected_options)
 
             bpm.click_search_tab()
-            page.wait_for_timeout(1000)
+            # page.wait_for_timeout(1000)
             bpm.fill_transaction_id(transaction_id)
             bpm.click_submit_button()
-            page.wait_for_timeout(2000)
+            # page.wait_for_timeout(2000)
 
             # Ask for all columns from the results row
             columns = bpm.search_results(transaction_id, return_all=True)
@@ -66,6 +67,8 @@ def bpm_search(
 
 
 def main() -> int:
+    # Measure total script duration
+    t_total_start = time.perf_counter()
     # Phase 1: lightweight parser only for --list-options and --log-level
     pre = argparse.ArgumentParser(
         add_help=True,
@@ -136,12 +139,21 @@ def main() -> int:
             else "--options must contain at least one valid value."
         )
 
+    # Measure bpm_search duration
+    t_search_start = time.perf_counter()
     columns = bpm_search(
         args.url,
         args.username,
         args.password,
         args.transaction,
         selected_options=selected,
+    )
+    t_search_end = time.perf_counter()
+    # Log timings
+    logging.info(
+        "Timing: bpm_search=%.3fs total=%.3fs",
+        (t_search_end - t_search_start),
+        (time.perf_counter() - t_total_start),
     )
     if not columns:
         print("[]")

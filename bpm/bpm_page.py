@@ -104,31 +104,7 @@ class BPMPage:
                     )
         except Exception as e:
             logging.error("Failed to check specified options in the list: %s", e)
-            time.sleep(5)
             raise
-
-    # I need to create a function that waits for the class="mtex-datagrid-blank"
-    # this class is visible when no search results are found if not the table with results is visible
-    def wait_for_no_results(self, timeout: int = 10000) -> bool:
-        """Return True if the "no results" banner is shown, False if rows appear.
-
-        Waits until either `.mtex-datagrid-blank` becomes visible or at least one
-        results row `.mtex-datagrid-tbody .trow` appears, up to `timeout` ms.
-        """
-        try:
-            self.page.wait_for_selector(
-                ".mtex-datagrid-blank, .mtex-datagrid-tbody .trow",
-                timeout=timeout,
-            )
-            if self.page.locator(".mtex-datagrid-blank").is_visible():
-                logging.debug("No results banner visible.")
-                return True
-            has_rows = self.page.locator(".mtex-datagrid-tbody .trow").count() > 0
-            logging.debug("Results rows present: %s", has_rows)
-            return not (not has_rows)
-        except Exception as e:
-            logging.error("Failed during wait_for_no_results check: %s", e)
-            return False
 
     def click_submit_button(self) -> None:
         """Click the form's primary Submit button."""

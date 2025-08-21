@@ -38,7 +38,9 @@ def bpm_search(
                 return []
 
             bpm = BPMPage(page)
-
+            bpm.verify_modal_visibility()
+            bpm.click_tick_box()
+            bpm.click_ori_tsf()
             # Optionally select market/transaction-type filters before search
             bpm.check_options_and_submit(selected_options)
 
@@ -64,6 +66,30 @@ def bpm_search(
 
 
 def main() -> int:
+    # Phase 1: lightweight parser only for --list-options and --log-level
+    pre = argparse.ArgumentParser(
+        add_help=True,
+        description="Run a BPM search and print all columns for a transaction.",
+    )
+    pre.add_argument(
+        "--list-options",
+        action="store_true",
+        help="List available BPM Options and exit",
+    )
+    pre.add_argument(
+        "--log-level",
+        default="INFO",
+        help="Logging level (DEBUG, INFO, WARNING, ERROR)",
+    )
+    pre_args, _ = pre.parse_known_args()
+
+    if pre_args.list_options:
+        print("Available BPM Options (name = value):")
+        for opt in Options:
+            print(f"- {opt.name} = {opt.value}")
+        return 0
+
+    # Phase 2: full parser with required args (including --options)
     parser = argparse.ArgumentParser(
         description="Run a BPM search and print all columns for a transaction."
     )
@@ -74,43 +100,24 @@ def main() -> int:
         "--transaction", required=True, help="Transaction/reference ID to search for"
     )
     parser.add_argument(
-        "--log-level",
-        default="INFO",
-        help="Logging level (DEBUG, INFO, WARNING, ERROR)",
-    )
-    parser.add_argument(
         "--options",
+        required=True,
         help="Comma-separated list of BPM options to select (by value, e.g., 'CBPR-MX,SEPA-Classic').",
     )
     parser.add_argument(
-        "--list-options",
-        action="store_true",
-        help="List available BPM Options and exit",
+        "--log-level",
+        default=pre_args.log_level,
+        help="Logging level (DEBUG, INFO, WARNING, ERROR)",
     )
     args = parser.parse_args()
-
-    if args.list_options:
-        print("Available BPM Options (name = value):")
-        for opt in Options:
-            print(f"- {opt.name} = {opt.value}")
-        return 0
 
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    # Require --options unless --list-options was used
-    if not args.options:
-        parser.error("--options is required unless --list-options is provided")
-
     # Parse selected options (must be non-empty and valid)
     raw_values = [s.strip() for s in args.options.split(",") if s.strip()]
-    if not raw_values:
-        parser.error(
-            "--options must contain at least one value. Use --list-options to see valid values."
-        )
-
     valid_map = {opt.value: opt for opt in Options}
     selected: List[Options] = []
     invalids: List[str] = []
@@ -119,10 +126,14 @@ def main() -> int:
             selected.append(valid_map[val])
         else:
             invalids.append(val)
-    if invalids:
+    if invalids or not selected:
         parser.error(
-            "Unknown option(s): %s. Use --list-options to see valid values."
-            % ", ".join(invalids)
+            (
+                "Unknown option(s): %s. Use --list-options to see valid values."
+                % ", ".join(invalids)
+            )
+            if invalids
+            else "--options must contain at least one valid value."
         )
 
     columns = bpm_search(

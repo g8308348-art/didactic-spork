@@ -181,11 +181,11 @@ class FircoPage:
             # Clear any existing filters and search for the transaction
             self.clear_filtered_column()
             self.data_filters(transaction)
-            self.verify_first_row(
+            handled = self.verify_first_row(
                 transaction, self.validate_search_table_results(), action, comment
             )
             self.page.screenshot(path="history_root.png", full_page=True)
-            return True
+            return handled
         except PlaywrightTimeoutError as e:
             logging.error("go_to_history_root triggered timeout.")
             logging.error("go_to_history_root error: %s", e)
@@ -279,11 +279,12 @@ class FircoPage:
 
             # No results: hop from LIVE → HISTORY, otherwise nothing to do
             if status == SearchStatus.NONE:
-                logging.debug("No records in current tab.")
+                logging.debug("No records in %s tab.", tab.name)
                 if tab == TabContext.LIVE:
                     logging.debug("Switching to History tab and retrying search.")
                     return self.go_to_history_root(transaction, action, comment)
                 logging.debug("Already in History; we go to BPM.")
+                return False
 
             # LIVE requires unlocking; HISTORY doesn’t
             if tab == TabContext.LIVE:
@@ -599,6 +600,11 @@ class FircoPage:
                     f"Transaction {transaction} processed with state: {handled}."
                 )
                 result["error_code"] = 0
+            elif handled is False:
+                result["success"] = False
+                result["status"] = "not_found"
+                result["message"] = f"Transaction {transaction} not found."
+                result["error_code"] = 404
             else:
                 result["success"] = False
                 result["status"] = "processing_error"

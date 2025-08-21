@@ -104,6 +104,7 @@ class BPMPage:
                     )
         except Exception as e:
             logging.error("Failed to check specified options in the list: %s", e)
+            time.sleep(5)
             raise
 
     def click_submit_button(self) -> None:

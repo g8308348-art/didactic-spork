@@ -9,7 +9,8 @@ used by Playwright scripts to automate State Street’s BPM UI.
 import logging
 import time
 from enum import Enum
-from playwright.sync_api import expect, Page
+from playwright.sync_api import expect, Page, sync_playwright
+from utils.utils import login_to
 
 
 class Options(Enum):
@@ -458,6 +459,41 @@ class BPMPage:
         if not columns or len(columns) < 11:
             out["message"] = "Insufficient columns returned from BPM."
             return out
+
+
+# ----------------------------------------------------------------------
+# High-level convenience function: full flow including browser lifecycle
+# ----------------------------------------------------------------------
+def run_bpm_search(
+    url: str,
+    username: str,
+    password: str,
+    transaction_id: str,
+    selected_options: list[Options],
+) -> dict:
+    """Open browser, login to BPM, run full search, and return validated JSON.
+
+    This mirrors the logic from bpm/bpm.py around context creation and cleanup
+    and delegates the UI interactions to BPMPage.run_full_search().
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="chrome", headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        try:
+            if not login_to(page, url, username, password):
+                logging.error("Login failed, aborting BPM search.")
+                return {}
+
+            bpm = BPMPage(page)
+            result = bpm.run_full_search(transaction_id, selected_options)
+            logging.info("BPM Search result (JSON): %s", result)
+            return result
+        finally:
+            try:
+                context.close()
+            except Exception:  # noqa: BLE001
+                pass
 
         # 1-based -> 0-based indices
         reference = (columns[1] or "").strip()  # 2nd

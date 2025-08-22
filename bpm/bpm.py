@@ -13,10 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from playwright.sync_api import sync_playwright
-
-from utils.utils import login_to
-from bpm.bpm_page import BPMPage, Options
+from bpm.bpm_page import Options, run_bpm_search
 
 
 def bpm_search(
@@ -30,28 +27,9 @@ def bpm_search(
 
     Returns a JSON-serializable dict with keys like success/status/message.
     """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome", headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        try:
-            if not login_to(page, url, username, password):
-                logging.error("Login failed, aborting BPM search.")
-                return {}
-
-            bpm = BPMPage(page)
-            result = bpm.run_full_search(transaction_id, selected_options)
-            logging.info("BPM Search result (JSON): %s", result)
-            return result
-        finally:
-            try:
-                context.close()
-            except Exception:  # noqa: BLE001
-                pass
-            try:
-                browser.close()
-            except Exception:  # noqa: BLE001
-                pass
+    result = run_bpm_search(url, username, password, transaction_id, selected_options)
+    logging.info("BPM Search result (JSON): %s", result)
+    return result
 
 
 def main() -> int:

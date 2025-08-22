@@ -287,24 +287,23 @@ class FircoPage:
                 logging.debug("Already in History; we go to BPM.")
 
                 self.logout()
-                # Close current Playwright context/browser before invoking a new
-                # sync_playwright() in run_bpm_search to avoid nested usage.
+                # Use the same browser context for BPM; close only this page.
                 try:
                     ctx = self.page.context
-                    br = ctx.browser
-                    ctx.close()
-                    try:
-                        br.close()
-                    except Exception:  # noqa: BLE001
-                        pass
+                    self.page.close()
                 except Exception as e:  # noqa: BLE001
-                    logging.debug("Context/browser close before BPM call failed: %s", e)
+                    logging.debug("Page close before BPM call failed: %s", e)
 
                 # Run BPM search using known credentials and the same transaction id.
                 # Choose a conservative default market option; adjust as needed.
                 try:
                     bpm_result = run_bpm_search(
-                        TEST_URL, USERNAME, PASSWORD, transaction, [Options.UNCLASSIFIED]
+                        TEST_URL,
+                        USERNAME,
+                        PASSWORD,
+                        transaction,
+                        [Options.UNCLASSIFIED],
+                        context=ctx,
                     )
                     logging.info("BPM search invoked from Firco; result: %s", bpm_result)
                     # Map BPM outcome to this method's expected return types.

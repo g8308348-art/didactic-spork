@@ -394,26 +394,52 @@ def run_bpm_search(
     password: str,
     transaction_id: str,
     selected_options: list[Options],
+    *,
+    context=None,
+    page: Page | None = None,
 ) -> dict:
     """Open browser, login to BPM, run full search, and return validated JSON.
 
     Lifecycle: start Playwright, create context/page, login, run flow, cleanup.
     """
+    from contextlib import suppress
+
+    # If a Page is provided, use it directly (no new pages/contexts opened)
+    if page is not None:
+        try:
+            if not login_to(page, url, username, password):
+                logging.error("Login failed, aborting BPM search.")
+                return {}
+            bpm = BPMPage(page)
+            return bpm.run_full_search(transaction_id, selected_options)
+        except Exception as e:  # noqa: BLE001
+            logging.error("BPM search error using provided page: %s", e)
+            return {"success": False, "status": "error", "message": str(e)}
+
+    # If a Context is provided, open a fresh page in it
+    if context is not None:
+        page = context.new_page()
+        try:
+            if not login_to(page, url, username, password):
+                logging.error("Login failed, aborting BPM search.")
+                return {}
+            bpm = BPMPage(page)
+            return bpm.run_full_search(transaction_id, selected_options)
+        finally:
+            with suppress(Exception):
+                page.close()
+
+    # Fallback: create and own the lifecycle (CLI usage)
     with sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome", headless=True)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
         try:
             if not login_to(page, url, username, password):
                 logging.error("Login failed, aborting BPM search.")
                 return {}
-
             bpm = BPMPage(page)
-            result = bpm.run_full_search(transaction_id, selected_options)
-            logging.info("BPM Search result (JSON): %s", result)
-            return result
+            return bpm.run_full_search(transaction_id, selected_options)
         finally:
-            try:
+            with suppress(Exception):
                 context.close()
-            except Exception:  # noqa: BLE001
-                pass

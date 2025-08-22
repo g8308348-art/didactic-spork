@@ -7,10 +7,9 @@ used by Playwright scripts to automate State Street’s BPM UI.
 # pylint: disable=invalid-name,line-too-long,logging-fstring-interpolation,broad-exception-raised,no-else-return,missing-module-docstring,missing-function-docstring
 
 import logging
-import time
 from enum import Enum
 from typing import Optional
-from playwright.sync_api import expect, Page, sync_playwright
+from playwright.sync_api import Page, sync_playwright
 from utils.utils import login_to
 from bpm.bpm_page_simple import (
     safe_click as simple_safe_click,
@@ -429,18 +428,3 @@ def run_bpm_search(
         finally:
             with suppress(Exception):
                 page.close()
-
-    # Fallback: create and own the lifecycle (CLI usage)
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        try:
-            if not login_to(page, url, username, password):
-                logging.error("Login failed, aborting BPM search.")
-                return {}
-            bpm = BPMPage(page)
-            return bpm.run_full_search(transaction_id, selected_options)
-        finally:
-            with suppress(Exception):
-                context.close()

@@ -11,7 +11,7 @@ from utils.utils import (
     archive_screenshots,
     clear_existing_screenshots,
 )
-from bpm.bpm_page import BPMPage, Options, run_bpm_search
+from bpm.bpm_page import Options, run_bpm_search
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)
@@ -287,16 +287,11 @@ class FircoPage:
                 logging.debug("Already in History; we go to BPM.")
 
                 self.logout()
-                # Use the same browser context for BPM; close only this page.
-                try:
-                    ctx = self.page.context
-                    self.page.close()
-                except Exception as e:  # noqa: BLE001
-                    logging.debug("Page close before BPM call failed: %s", e)
 
                 # Run BPM search using known credentials and the same transaction id.
                 # Choose a conservative default market option; adjust as needed.
                 try:
+                    ctx = self.page.context
                     bpm_result = run_bpm_search(
                         TEST_URL,
                         USERNAME,
@@ -305,7 +300,9 @@ class FircoPage:
                         [Options.UNCLASSIFIED],
                         context=ctx,
                     )
-                    logging.info("BPM search invoked from Firco; result: %s", bpm_result)
+                    logging.info(
+                        "BPM search invoked from Firco; result: %s", bpm_result
+                    )
                     # Map BPM outcome to this method's expected return types.
                     if isinstance(bpm_result, dict) and bpm_result.get("success"):
                         # Return a string status so flow_start() uses it directly

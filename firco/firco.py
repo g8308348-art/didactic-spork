@@ -6,6 +6,8 @@ import json
 import time
 import argparse
 import logging
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
 from playwright.sync_api import sync_playwright
 
@@ -14,10 +16,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardi
 from firco_page import FircoPage  # noqa: E402
 
 
-def firco_run(transaction: str, action: str, comment: str = "", transaction_type: str = "") -> Dict:
-    """Open Firco, perform flow_start, and return structured result dict."""
+def _firco_run_sync(transaction: str, action: str, comment: str = "", transaction_type: str = "") -> Dict:
+    """Run Firco flow using the sync Playwright API (meant for non-async threads)."""
     with sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome", headless=True)
+        # Use bundled Chromium to avoid Chrome dependency
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
         try:
@@ -30,6 +33,20 @@ def firco_run(transaction: str, action: str, comment: str = "", transaction_type
                 context.close()
             except Exception:  # noqa: BLE001
                 pass
+
+
+def firco_run(transaction: str, action: str, comment: str = "", transaction_type: str = "") -> Dict:
+    """Dispatch to sync Playwright normally, but if an asyncio loop is active, run in a thread."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Run the sync Playwright flow in a background thread to avoid the 'Sync API inside the asyncio loop' error.
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(_firco_run_sync, transaction, action, comment, transaction_type).result()
+    except RuntimeError:
+        # No event loop set; fall back to direct sync call
+        pass
+    return _firco_run_sync(transaction, action, comment, transaction_type)
 
 
 def main() -> int:
@@ -85,6 +102,7 @@ def main() -> int:
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(message)s",
+        force=True,
     )
 
     # Run

@@ -11,7 +11,7 @@ from utils.utils import (
     archive_screenshots,
     clear_existing_screenshots,
 )
-from bpm.bpm_page import BPMPage, Options
+from bpm.bpm_page import BPMPage, Options, run_bpm_search
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)
@@ -144,7 +144,7 @@ class FircoPage:
         Waits for a brief timeout to ensure all actions are complete,
         then clicks the logout button and logs the action.
         """
-        self.page.wait_for_timeout(2000)
+        self.page.wait_for_timeout(1000)
         self.selectors.logout.click()
         logging.debug("Logged out!")
         return True
@@ -289,22 +289,23 @@ class FircoPage:
                 self.logout()
                 self.page.close()
 
-                context = browser.new_context()
-                page = context.new_page()
+                # Run BPM search using known credentials and the same transaction id.
+                # Choose a conservative default market option; adjust as needed.
                 try:
-                    if not login_to(page, url, username, password):
-                        logging.error("Login failed, aborting BPM search.")
-                        return {}
-
-                    bpm = BPMPage(page)
-                    result = bpm.run_full_search(transaction_id, selected_options)
-                    logging.info("BPM Search result (JSON): %s", result)
-                    return result
-                finally:
-                    try:
-                        context.close()
-                    except Exception:  # noqa: BLE001
-                        pass
+                    bpm_result = run_bpm_search(
+                        TEST_URL, USERNAME, PASSWORD, transaction, [Options.UNCLASSIFIED]
+                    )
+                    logging.info("BPM search invoked from Firco; result: %s", bpm_result)
+                    # Map BPM outcome to this method's expected return types.
+                    if isinstance(bpm_result, dict) and bpm_result.get("success"):
+                        # Return a string status so flow_start() uses it directly
+                        # without re-checking the Firco tab context.
+                        return str(bpm_result.get("status") or "handled_in_bpm")
+                    # If BPM didn’t find or failed, propagate not-found to caller.
+                    return False
+                except Exception as e:  # noqa: BLE001
+                    logging.error("Failed to run BPM search from Firco flow: %s", e)
+                    return False
 
             # LIVE requires unlocking; HISTORY doesn’t
             if tab == TabContext.LIVE:

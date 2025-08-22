@@ -385,36 +385,35 @@ class BPMPage:
             out["message"] = "Insufficient columns returned from BPM."
             return out
 
-    # ----------------------------------------------------------------------
-    # High-level convenience function: full flow including browser lifecycle
-    # ----------------------------------------------------------------------
-    def run_bpm_search(
-        url: str,
-        username: str,
-        password: str,
-        transaction_id: str,
-        selected_options: list[Options],
-    ) -> dict:
-        """Open browser, login to BPM, run full search, and return validated JSON.
+    # (class methods end)
 
-        This mirrors the logic from bpm/bpm.py around context creation and cleanup
-        and delegates the UI interactions to BPMPage.run_full_search().
-        """
-        with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome", headless=True)
-            context = browser.new_context()
-            page = context.new_page()
+
+def run_bpm_search(
+    url: str,
+    username: str,
+    password: str,
+    transaction_id: str,
+    selected_options: list[Options],
+) -> dict:
+    """Open browser, login to BPM, run full search, and return validated JSON.
+
+    Lifecycle: start Playwright, create context/page, login, run flow, cleanup.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="chrome", headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        try:
+            if not login_to(page, url, username, password):
+                logging.error("Login failed, aborting BPM search.")
+                return {}
+
+            bpm = BPMPage(page)
+            result = bpm.run_full_search(transaction_id, selected_options)
+            logging.info("BPM Search result (JSON): %s", result)
+            return result
+        finally:
             try:
-                if not login_to(page, url, username, password):
-                    logging.error("Login failed, aborting BPM search.")
-                    return {}
-
-                bpm = BPMPage(page)
-                result = bpm.run_full_search(transaction_id, selected_options)
-                logging.info("BPM Search result (JSON): %s", result)
-                return result
-            finally:
-                try:
-                    context.close()
-                except Exception:  # noqa: BLE001
-                    pass
+                context.close()
+            except Exception:  # noqa: BLE001
+                pass

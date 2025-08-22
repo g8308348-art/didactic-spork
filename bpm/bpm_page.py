@@ -9,6 +9,7 @@ used by Playwright scripts to automate State Street’s BPM UI.
 import logging
 import time
 from enum import Enum
+from typing import Optional
 from playwright.sync_api import expect, Page, sync_playwright
 from utils.utils import login_to
 from bpm.bpm_page_simple import (
@@ -396,7 +397,7 @@ def run_bpm_search(
     selected_options: list[Options],
     *,
     context=None,
-    page: Page | None = None,
+    page: Optional[Page] = None,
 ) -> dict:
     """Open browser, login to BPM, run full search, and return validated JSON.
 

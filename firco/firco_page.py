@@ -11,6 +11,7 @@ from utils.utils import (
     archive_screenshots,
     clear_existing_screenshots,
 )
+from bpm.bpm_page import BPMPage, Options
 
 USERNAME = "506"
 PASSWORD = retrieve_CONTRASENA(USERNAME)
@@ -284,7 +285,26 @@ class FircoPage:
                     logging.debug("Switching to History tab and retrying search.")
                     return self.go_to_history_root(transaction, action, comment)
                 logging.debug("Already in History; we go to BPM.")
-                return False
+
+                self.logout()
+                self.page.close()
+
+                context = browser.new_context()
+                page = context.new_page()
+                try:
+                    if not login_to(page, url, username, password):
+                        logging.error("Login failed, aborting BPM search.")
+                        return {}
+
+                    bpm = BPMPage(page)
+                    result = bpm.run_full_search(transaction_id, selected_options)
+                    logging.info("BPM Search result (JSON): %s", result)
+                    return result
+                finally:
+                    try:
+                        context.close()
+                    except Exception:  # noqa: BLE001
+                        pass
 
             # LIVE requires unlocking; HISTORY doesn’t
             if tab == TabContext.LIVE:

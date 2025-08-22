@@ -11,6 +11,17 @@ import time
 from enum import Enum
 from playwright.sync_api import expect, Page, sync_playwright
 from utils.utils import login_to
+from bpm.bpm_page_simple import (
+    safe_click as simple_safe_click,
+    verify_modal_visibility as simple_verify_modal_visibility,
+    click_tick_box as simple_click_tick_box,
+    click_ori_tsf as simple_click_ori_tsf,
+    check_options as simple_check_options,
+    click_submit_button as simple_click_submit_button,
+    click_search_tab as simple_click_search_tab,
+    wait_for_page_to_load as simple_wait_for_page_to_load,
+    get_row_columns_for_number as simple_get_row_columns_for_number,
+)
 
 
 class Options(Enum):
@@ -40,81 +51,26 @@ class BPMPage:
 
     def __init__(self, page: Page):
         self.page = page
-        self.menu_item = page.locator("div.modal-content[role='document']")
+        # Basic interactions are delegated to bpm_page_simple helpers
 
     def safe_click(self, locator, description: str):
-        if locator.is_visible():
-            locator.click()
-            logging.debug("Clicked on %s.", description)
-        else:
-            msg = f"{description} is not visible."
-            logging.error(msg)
-            raise Exception(msg)
+        return simple_safe_click(self.page, locator, description)
 
     def verify_modal_visibility(self) -> None:
-        try:
-            if self.menu_item.is_visible():
-                logging.debug("<div class='modal-content' role='document'> is visible.")
-            else:
-                raise Exception(
-                    "<div class='modal-content' role='document'> is not visible."
-                )
-        except Exception as e:
-            logging.error("Failed to verify modal visibility: %s", e)
-            raise
+        return simple_verify_modal_visibility(self.page)
 
     def click_tick_box(self) -> None:
-        try:
-            tick_box = self.page.locator("li:has-text('ORI') i.fa-square-o")
-            self.safe_click(tick_box, "tick box with text 'ORI'")
-        except Exception as e:
-            logging.error("Failed to click on the tick box with text 'ORI': %s", e)
-            raise
+        return simple_click_tick_box(self.page)
 
     def click_ori_tsf(self) -> None:
-        try:
-            self.safe_click(
-                self.page.locator("div i:has-text('ORI-TSF')"),
-                "element with text 'ORI-TSF'",
-            )
-        except Exception as e:
-            logging.error("Failed to click on the element with text 'ORI-TSF': %s", e)
-            raise
+        return simple_click_ori_tsf(self.page)
 
     def check_options(self, options: list[Options]) -> None:
-
-        try:
-            logging.debug("Checking options: %s", options)
-            for option in options:
-                option_locator = self.page.locator(
-                    f"li span.inf-name:has-text('{option.value}') i.fa-square-o"
-                )
-                self.safe_click(option_locator, f"option '{option.value}'")
-                time.sleep(1)
-
-                # Verify the option is now checked by looking for the selected icon (fa-check-square-o)
-                selected_locator = self.page.locator(
-                    f"li span.inf-name:has-text('{option.value}') i.fa-check-square-o"
-                )
-                if selected_locator.is_visible():
-                    logging.debug("Verified option '%s' is selected.", option.value)
-                else:
-                    logging.warning(
-                        "Warning: After clicking, option '%s' does NOT appear selected.",
-                        option.value,
-                    )
-        except Exception as e:
-            logging.error("Failed to check specified options in the list: %s", e)
-            raise
+        return simple_check_options(self.page, options)
 
     def click_submit_button(self) -> None:
         """Click the form's primary Submit button."""
-        try:
-            self.page.click("button.btn.btn-primary")
-            logging.debug("Clicked on the Submit button.")
-        except Exception as e:
-            logging.error("Failed to click on the Submit button: %s", e)
-            raise
+        return simple_click_submit_button(self.page)
 
     # ------------------------------------------------------------------
     # Composite helpers
@@ -202,13 +158,9 @@ class BPMPage:
             transaction_id,
         )
         self.click_search_tab()
-        # self.page.wait_for_timeout(1000)
-        # Log all advanced-search labels to help find the correct REFERENCE input
-        # self.debug_list_advanced_fields()
-        # self.page.wait_for_timeout(1000)
         self.fill_transaction_id(transaction_id)
         self.click_submit_button()
-        # self.page.wait_for_timeout(2000)
+
         return self.search_results(transaction_id)
 
     def click_element_with_dynamic_title(self) -> None:
@@ -240,13 +192,7 @@ class BPMPage:
 
     def click_search_tab(self) -> None:
         """Navigate to the Search tab in BPM.."""
-        try:
-            logging.debug("Navigating to Search.")
-            search_tab = self.page.locator("li.nav-item.nav-link a[href='#search']")
-            self.safe_click(search_tab, "Search tab")
-        except Exception as e:
-            logging.error("Failed to click on the Search tab: %s", e)
-            raise
+        return simple_click_search_tab(self.page)
 
     def fill_transaction_id(self, transaction_id: str) -> None:
         """Fill the REFERENCE field in the advanced-search panel with extra diagnostics."""
@@ -273,12 +219,7 @@ class BPMPage:
             raise
 
     def wait_for_page_to_load(self) -> None:
-        try:
-            self.page.wait_for_load_state("networkidle")
-            logging.debug("Page has finished loading.")
-        except Exception as e:
-            logging.error("Failed to wait for the page to finish loading: %s", e)
-            raise
+        return simple_wait_for_page_to_load(self.page)
 
     def look_for_number(self, number: str) -> tuple:
         try:
@@ -341,7 +282,9 @@ class BPMPage:
     # ------------------------------------------------------------------
     # High-level flow helper (post-login)
     # ------------------------------------------------------------------
-    def run_full_search(self, transaction_id: str, selected_options: list[Options]) -> dict:
+    def run_full_search(
+        self, transaction_id: str, selected_options: list[Options]
+    ) -> dict:
         """Run the full post-login BPM flow and return validated JSON result.
 
         This mirrors the actions in bpm/bpm.py after login:
@@ -350,7 +293,9 @@ class BPMPage:
         - go to Search tab, fill transaction id, submit
         - fetch results via search_results(as_json=True, validate=True)
         """
-        logging.debug("Starting full BPM search flow for transaction: %s", transaction_id)
+        logging.debug(
+            "Starting full BPM search flow for transaction: %s", transaction_id
+        )
         self.verify_modal_visibility()
         self.click_tick_box()
         self.click_ori_tsf()
@@ -370,28 +315,8 @@ class BPMPage:
         return result
 
     def get_row_columns_for_number(self, number: str) -> list[str]:
-        """Return all column values for the first row containing the given number.
-
-        Raises on selector failures; returns list[str].
-        """
-        try:
-            number_element = self.page.locator(f"div.tcell[title='{number}']")
-            if number_element.count() == 0:
-                raise Exception(f"Number {number} is not visible.")
-
-            first_element = number_element.first
-            first_element.evaluate(
-                "element => element.scrollIntoView({block: 'center', inline: 'center'})"
-            )
-            parent_row = first_element.locator(
-                "xpath=ancestor::div[contains(@class, 'trow')]"
-            )
-            # Collect all cell texts in the row
-            columns = parent_row.locator("div.tcell").all_inner_texts()
-            return [c.strip() for c in columns]
-        except Exception as e:
-            logging.error("Failed to get all columns for number %s: %s", number, e)
-            return []
+        """Return all column values for the first row containing the given number."""
+        return simple_get_row_columns_for_number(self.page, number)
 
     """
     I need to write a function that validates the results of the search
@@ -460,109 +385,36 @@ class BPMPage:
             out["message"] = "Insufficient columns returned from BPM."
             return out
 
+    # ----------------------------------------------------------------------
+    # High-level convenience function: full flow including browser lifecycle
+    # ----------------------------------------------------------------------
+    def run_bpm_search(
+        url: str,
+        username: str,
+        password: str,
+        transaction_id: str,
+        selected_options: list[Options],
+    ) -> dict:
+        """Open browser, login to BPM, run full search, and return validated JSON.
 
-# ----------------------------------------------------------------------
-# High-level convenience function: full flow including browser lifecycle
-# ----------------------------------------------------------------------
-def run_bpm_search(
-    url: str,
-    username: str,
-    password: str,
-    transaction_id: str,
-    selected_options: list[Options],
-) -> dict:
-    """Open browser, login to BPM, run full search, and return validated JSON.
-
-    This mirrors the logic from bpm/bpm.py around context creation and cleanup
-    and delegates the UI interactions to BPMPage.run_full_search().
-    """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome", headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        try:
-            if not login_to(page, url, username, password):
-                logging.error("Login failed, aborting BPM search.")
-                return {}
-
-            bpm = BPMPage(page)
-            result = bpm.run_full_search(transaction_id, selected_options)
-            logging.info("BPM Search result (JSON): %s", result)
-            return result
-        finally:
+        This mirrors the logic from bpm/bpm.py around context creation and cleanup
+        and delegates the UI interactions to BPMPage.run_full_search().
+        """
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            context = browser.new_context()
+            page = context.new_page()
             try:
-                context.close()
-            except Exception:  # noqa: BLE001
-                pass
+                if not login_to(page, url, username, password):
+                    logging.error("Login failed, aborting BPM search.")
+                    return {}
 
-        # 1-based -> 0-based indices
-        reference = (columns[1] or "").strip()  # 2nd
-        current_status = (columns[3] or "").strip()  # 4th
-        holding_qm = (columns[9] or "").strip()  # 10th
-        bpm_status = (columns[10] or "").strip()  # 11th
-
-        out["details"] = {
-            "reference": reference,
-            "current_status": current_status,
-            "holding_qm": holding_qm,
-            "bpm_status": bpm_status,
-            "columns_len": len(columns),
-        }
-
-        # 1) REFERENCE must match
-        if reference != transaction_id:
-            out["status"] = "reference_mismatch"
-            out["message"] = (
-                f"REFERENCE mismatch: expected {transaction_id}, got {reference}"
-            )
-            return out
-
-        # 2) Environment
-        env = self.classify_environment(holding_qm)
-        out["environment"] = env
-
-        # 3) CURRENT STATUS interpretation (case-insensitive, partial)
-        cs_lower = current_status.lower()
-        cs_label = None
-        if "undefined" in cs_lower:
-            cs_label = "UNDEFINED"
-        elif "businessresponseprocessed" in cs_lower:
-            cs_label = "Response from Firco received"
-        elif "postedtxntofirco" in cs_lower:
-            cs_label = "Transaction posted to Firco"
-        elif ("sendresponseto" in cs_lower) or ("sentresponseto" in cs_lower):
-            # Accept variants like SentResponseToRTPS, SentResponseToDEH, etc.
-            cs_label = "NO HIT Transaction"
-
-        # 4) STATUS interpretation (case-insensitive)
-        bpm_lower = bpm_status.lower()
-        is_success = "success" in bpm_lower
-        is_failure = ("failure" in bpm_lower) or ("warning" in bpm_lower)
-
-        if cs_label == "UNDEFINED":
-            out["status"] = "error"
-            out["message"] = "CURRENT STATUS is UNDEFINED"
-            return out
-
-        if is_failure:
-            out["status"] = "failure"
-            out["message"] = f"BPM STATUS indicates failure/warning: {bpm_status}"
-            return out
-
-        if is_success and cs_label in (
-            "NO HIT Transaction",
-            "Response from Firco received",
-            "Transaction posted to Firco",
-        ):
-            out["success"] = True
-            out["status"] = "success"
-            out["message"] = (
-                f"Success: CURRENT STATUS='{cs_label}', BPM STATUS='{bpm_status}', ENV='{env}'"
-            )
-            return out
-
-        out["status"] = "unknown"
-        out["message"] = (
-            f"Unrecognized combination: CURRENT STATUS='{current_status}', BPM STATUS='{bpm_status}'"
-        )
-        return out
+                bpm = BPMPage(page)
+                result = bpm.run_full_search(transaction_id, selected_options)
+                logging.info("BPM Search result (JSON): %s", result)
+                return result
+            finally:
+                try:
+                    context.close()
+                except Exception:  # noqa: BLE001
+                    pass

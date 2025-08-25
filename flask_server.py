@@ -22,7 +22,7 @@ from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask_cors import CORS  # third-party
 from playwright.sync_api import sync_playwright  # third-party
 
-from main_logic import INCOMING_DIR, process_transaction  # first-party
+from firco.firco_page import FircoPage  # first-party
 from server import create_output_structure, move_screenshots_to_folder  # first-party
 
 # Create Flask application
@@ -96,7 +96,9 @@ def serve_logs():
 
     def generate() -> str:  # pragma: no cover
         try:
-            with open("transactions.log", "r", encoding="utf-8", errors="replace") as log_file:
+            with open(
+                "transactions.log", "r", encoding="utf-8", errors="replace"
+            ) as log_file:
                 for line in log_file:
                     yield line
         except FileNotFoundError:
@@ -227,19 +229,31 @@ def process_api() -> Any:  # noqa: D401
     transaction_type = data.get("transactionType", "")
     perform_on_latest = bool(data.get("performOnLatest", False))
 
-    # Write temp file and process via existing logic
-    temp_path = _write_temp_transaction_file(data)
-
     try:
+        # Run Playwright and use FircoPage directly
         with sync_playwright() as p:
-            response_dict = json.loads(
-                process_transaction(
-                    playwright=p,
-                    txt_path=temp_path,
-                    transaction_type=transaction_type,
-                    perform_on_latest=perform_on_latest,
+            browser = p.chromium.launch(channel="chrome", headless=True)
+            context = browser.new_context()
+            page = context.new_page()
+
+            try:
+                firco = FircoPage(page)
+                response_dict = firco.flow_start(
+                    data["transaction"],
+                    data["action"],
+                    data["comment"],
+                    transaction_type,
                 )
-            )
+            finally:
+                # Ensure resources are closed
+                try:
+                    context.close()
+                except Exception:
+                    pass
+                try:
+                    browser.close()
+                except Exception:
+                    pass
 
         # Move screenshots if successful (or containing hits)
         transaction_folder, _ = create_output_structure(data["transaction"])
@@ -253,12 +267,6 @@ def process_api() -> Any:  # noqa: D401
         logging.exception("Error processing transaction: %s", err)
         response_dict = {"success": False, "message": str(err)}
         status_code = 500
-    finally:
-        # Clean up temp file
-        try:
-            os.remove(temp_path)
-        except OSError:
-            pass
 
     return jsonify(response_dict), status_code
 

@@ -385,7 +385,77 @@ class BPMPage:
             out["message"] = "Insufficient columns returned from BPM."
             return out
 
-    # (class methods end)
+        # 1-based -> 0-based indices
+        reference = (columns[1] or "").strip()  # 2nd
+        current_status = (columns[3] or "").strip()  # 4th
+        holding_qm = (columns[9] or "").strip()  # 10th
+        bpm_status = (columns[10] or "").strip()  # 11th
+
+        out["details"] = {
+            "reference": reference,
+            "current_status": current_status,
+            "holding_qm": holding_qm,
+            "bpm_status": bpm_status,
+            "columns_len": len(columns),
+        }
+
+        # 1) REFERENCE must match
+        if reference != transaction_id:
+            out["status"] = "reference_mismatch"
+            out["message"] = (
+                f"REFERENCE mismatch: expected {transaction_id}, got {reference}"
+            )
+            return out
+
+        # 2) Environment
+        env = self.classify_environment(holding_qm)
+        out["environment"] = env
+
+        # 3) CURRENT STATUS interpretation (case-insensitive, partial)
+        cs_lower = current_status.lower()
+        cs_label = None
+        if "undefined" in cs_lower:
+            cs_label = "UNDEFINED"
+        elif "businessresponseprocessed" in cs_lower:
+            cs_label = "Response from Firco received"
+        elif "postedtxntofirco" in cs_lower:
+            cs_label = "Transaction posted to Firco"
+        elif ("sendresponseto" in cs_lower) or ("sentresponseto" in cs_lower):
+            # Accept variants like SentResponseToRTPS, SentResponseToDEH, etc.
+            cs_label = "NO HIT Transaction"
+
+        # 4) STATUS interpretation (case-insensitive)
+        bpm_lower = bpm_status.lower()
+        is_success = "success" in bpm_lower
+        is_failure = ("failure" in bpm_lower) or ("warning" in bpm_lower)
+
+        if cs_label == "UNDEFINED":
+            out["status"] = "error"
+            out["message"] = "CURRENT STATUS is UNDEFINED"
+            return out
+
+        if is_failure:
+            out["status"] = "failure"
+            out["message"] = f"BPM STATUS indicates failure/warning: {bpm_status}"
+            return out
+
+        if is_success and cs_label in (
+            "NO HIT Transaction",
+            "Response from Firco received",
+            "Transaction posted to Firco",
+        ):
+            out["success"] = True
+            out["status"] = "success"
+            out["message"] = (
+                f"Success: CURRENT STATUS='{cs_label}', BPM STATUS='{bpm_status}', ENV='{env}'"
+            )
+            return out
+
+        out["status"] = "unknown"
+        out["message"] = (
+            f"Unrecognized combination: CURRENT STATUS='{current_status}', BPM STATUS='{bpm_status}'"
+        )
+        return out
 
 
 def run_bpm_search(

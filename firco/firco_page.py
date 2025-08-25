@@ -291,12 +291,28 @@ class FircoPage:
                 self.logout()
                 # Run BPM search reusing the same tab (page)
                 try:
+                    # Map self.transaction_type (string) to BPM Options enum
+                    tx_type = (getattr(self, "transaction_type", "") or "").strip()
+                    selected_type = []
+                    if tx_type:
+                        try:
+                            selected_type = [
+                                next(o for o in Options if o.value == tx_type)
+                            ]
+                        except StopIteration:
+                            logging.warning(
+                                "Unknown transaction_type '%s' for BPM; defaulting to UNCLASSIFIED",
+                                tx_type,
+                            )
+                    if not selected_type:
+                        selected_type = [Options.UNCLASSIFIED]
+
                     bpm_result = run_bpm_search(
                         BPM_URL,
                         BPM_USERNAME,
                         BPM_PASSWORD,
                         transaction,
-                        [Options.UNCLASSIFIED],
+                        selected_type,
                         page=self.page,
                     )
                     logging.info(
@@ -583,6 +599,8 @@ class FircoPage:
         logging.debug("with transactionType: %s", transaction_type)
 
         clear_existing_screenshots()
+        # Remember transaction_type for downstream calls (e.g., BPM search)
+        self.transaction_type = transaction_type
 
         result: dict = {
             "transaction": transaction,

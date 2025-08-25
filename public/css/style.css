@@ -10,7 +10,7 @@
   --bg-secondary: #d3d3d3;
   --text-color: #333333;
   --text-secondary: #666666;
-  --primary-color: #3498DB;
+  --primary-color: #6495ed;
   --secondary-color: #2ECC71;
   --error-color: #E74C3C;
   --border-color: #dee2e6;
@@ -101,13 +101,14 @@ a:hover {
 
 .logo h1 {
   margin: 0;
+  padding: 0;
   color: #ffffff; /* logo text color on dark top bar */
 }
 
 /* Optional logo image support */
 .logo img.logo-img {
   display: block;
-  height: 36px;
+  height: 71px;
   width: auto;
 }
 

@@ -42,7 +42,7 @@ def setup_logging():
 
     # Configure root logger
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.DEBUG)
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)

@@ -12,6 +12,10 @@ from filelock import FileLock
 # Add the parent directory to sys.path to allow importing from helpers
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Directories (set from env or fall back to defaults) so helpers can be reused
+INCOMING_DIR = os.getenv("INCOMING_DIR", "input")
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
+
 
 # Helper functions that are missing in main_logic.py
 def parse_txt_file(txt_path):

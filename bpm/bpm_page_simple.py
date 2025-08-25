@@ -131,5 +131,6 @@ def get_row_columns_for_number(page, number: str) -> list[str]:
         columns = parent_row.locator("div.tcell").all_inner_texts()
         return [c.strip() for c in columns]
     except Exception as e:
+
         logging.error("Failed to get all columns for number %s: %s", number, e)
         return []

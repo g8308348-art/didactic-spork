@@ -134,3 +134,29 @@ def get_row_columns_for_number(page, number: str) -> list[str]:
 
         logging.error("Failed to get all columns for number %s: %s", number, e)
         return []
+
+
+def map_transaction_type_to_option(tx_type: str, Options: Enum):
+    """Map incoming transaction_type string to BPM Options enum.
+
+    Accepts either:
+    - the display value (e.g., 'EnterpriseISO', 'CBPR-MX'), or
+    - the enum name (e.g., 'ENTERPRISE_ISO', 'CBPR_MX').
+    Returns the matching Options member or None if not found.
+    """
+    try:
+        if not tx_type:
+            return None
+        s = (tx_type or "").strip()
+        # 1) Exact match on display value
+        for o in Options:
+            if o.value == s:
+                return o
+        # 2) Match on enum name (case-insensitive, allow hyphen/space vs underscore)
+        normalized = s.upper().replace("-", "_").replace(" ", "_")
+        try:
+            return Options[normalized]
+        except KeyError:
+            return None
+    except Exception:
+        return None

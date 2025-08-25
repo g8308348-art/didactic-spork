@@ -8,6 +8,7 @@ These are thin wrappers around Playwright operations, extracted from
 
 import logging
 import time
+from enum import Enum
 
 
 def safe_click(page, locator, description: str):

@@ -16,6 +16,9 @@
   --border-color: #dee2e6;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --hover-color: #f1f1f1;
+  /* Branding */
+  --topbar-color: #000063; /* deep navy for top bar */
+  --privacy-panel-bg: #6495ed; /* cornflower blue */
   
   /* Common Variables */
   --border-radius: 4px;
@@ -92,13 +95,20 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--bg-secondary);
+  background-color: var(--topbar-color);
   box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .logo h1 {
   margin: 0;
-  color: var(--primary-color);
+  color: #ffffff; /* logo text color on dark top bar */
+}
+
+/* Optional logo image support */
+.logo img.logo-img {
+  display: block;
+  height: 36px;
+  width: auto;
 }
 
 .nav-links {
@@ -107,7 +117,7 @@ a:hover {
 }
 
 .nav-link {
-  color: var(--text-secondary);
+  color: #e6e6e6; /* lighter text on dark top bar */
   font-weight: 500;
   padding: var(--spacing-sm);
   border-radius: var(--border-radius);
@@ -115,8 +125,8 @@ a:hover {
 }
 
 .nav-link:hover, .nav-link.active {
-  color: var(--primary-color);
-  background-color: var(--hover-color);
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Theme Toggle */
@@ -128,7 +138,7 @@ a:hover {
 #theme-toggle-btn {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: #e6e6e6;
   font-size: 1.2rem;
   cursor: pointer;
   padding: var(--spacing-sm);
@@ -327,6 +337,18 @@ textarea {
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-md);
+}
+
+/* Privacy/Password Information panel styling */
+.privacy-info {
+  background-color: var(--privacy-panel-bg);
+  color: #000; /* black text like reference screenshot */
+  border: 2px solid var(--topbar-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+}
+.privacy-info h3 {
+  margin-bottom: var(--spacing-sm);
 }
 
 .hidden {

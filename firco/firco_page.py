@@ -286,7 +286,7 @@ class FircoPage:
                 logging.debug("Already in History; we go to BPM.")
 
                 self.logout()
-                # Reuse the existing BrowserContext to run BPM search
+                # Run BPM search reusing the same tab (page)
                 try:
                     bpm_result = run_bpm_search(
                         TEST_URL,
@@ -294,6 +294,7 @@ class FircoPage:
                         PASSWORD,
                         transaction,
                         [Options.UNCLASSIFIED],
+                        page=self.page,
                     )
                     logging.info(
                         "BPM search invoked from Firco; result: %s", bpm_result

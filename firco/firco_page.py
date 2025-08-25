@@ -4,7 +4,6 @@ import logging
 from enum import Enum, auto
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-
 from cyber_guard import retrieve_CONTRASENA
 from utils.utils import (
     login_to,
@@ -287,28 +286,20 @@ class FircoPage:
                 logging.debug("Already in History; we go to BPM.")
 
                 self.logout()
-
-                # Run BPM search using known credentials and the same transaction id.
-                # Choose a conservative default market option; adjust as needed.
+                # Reuse the existing BrowserContext to run BPM search
                 try:
-                    ctx = self.page.context
                     bpm_result = run_bpm_search(
                         TEST_URL,
                         USERNAME,
                         PASSWORD,
                         transaction,
                         [Options.UNCLASSIFIED],
-                        context=ctx,
                     )
                     logging.info(
                         "BPM search invoked from Firco; result: %s", bpm_result
                     )
-                    # Map BPM outcome to this method's expected return types.
                     if isinstance(bpm_result, dict) and bpm_result.get("success"):
-                        # Return a string status so flow_start() uses it directly
-                        # without re-checking the Firco tab context.
                         return str(bpm_result.get("status") or "handled_in_bpm")
-                    # If BPM didn’t find or failed, propagate not-found to caller.
                     return False
                 except Exception as e:  # noqa: BLE001
                     logging.error("Failed to run BPM search from Firco flow: %s", e)

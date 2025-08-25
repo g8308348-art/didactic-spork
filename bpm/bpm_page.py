@@ -394,37 +394,18 @@ def run_bpm_search(
     password: str,
     transaction_id: str,
     selected_options: list[Options],
-    *,
-    context=None,
-    page: Optional[Page] = None,
+    page: Page,
 ) -> dict:
     """Open browser, login to BPM, run full search, and return validated JSON.
 
     Lifecycle: start Playwright, create context/page, login, run flow, cleanup.
     """
-    from contextlib import suppress
-
-    # If a Page is provided, use it directly (no new pages/contexts opened)
-    if page is not None:
-        try:
-            if not login_to(page, url, username, password):
-                logging.error("Login failed, aborting BPM search.")
-                return {}
-            bpm = BPMPage(page)
-            return bpm.run_full_search(transaction_id, selected_options)
-        except Exception as e:  # noqa: BLE001
-            logging.error("BPM search error using provided page: %s", e)
-            return {"success": False, "status": "error", "message": str(e)}
-
-    # If a Context is provided, open a fresh page in it
-    if context is not None:
-        page = context.new_page()
-        try:
-            if not login_to(page, url, username, password):
-                logging.error("Login failed, aborting BPM search.")
-                return {}
-            bpm = BPMPage(page)
-            return bpm.run_full_search(transaction_id, selected_options)
-        finally:
-            with suppress(Exception):
-                page.close()
+    try:
+        if not login_to(page, url, username, password):
+            logging.error("Login failed, aborting BPM search.")
+            return {}
+        bpm = BPMPage(page)
+        return bpm.run_full_search(transaction_id, selected_options)
+    except Exception as e:  # noqa: BLE001
+        logging.error("BPM search error using provided page: %s", e)
+        return {"success": False, "status": "error", "message": str(e)}

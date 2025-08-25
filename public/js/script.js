@@ -22,6 +22,42 @@ const transactionsError = document.getElementById('transactions-error');
 const commentError = document.getElementById('comment-error');
 const actionError = document.getElementById('action-error');
 
+// UI helpers to disable/enable all buttons while processing
+function setUIBusy(isBusy) {
+    // Disable all native buttons
+    document.querySelectorAll('button').forEach(btn => {
+        btn.disabled = isBusy;
+    });
+    // Also handle anchor elements styled as buttons
+    document.querySelectorAll('a.btn').forEach(a => {
+        if (isBusy) {
+            a.setAttribute('aria-disabled', 'true');
+            // Preserve original tabindex if any
+            if (a.getAttribute('tabindex') !== null) {
+                a.dataset.prevTabindex = a.getAttribute('tabindex');
+            }
+            a.setAttribute('tabindex', '-1');
+            a.style.pointerEvents = 'none';
+            a.style.opacity = '0.6';
+        } else {
+            a.removeAttribute('aria-disabled');
+            // Restore tabindex if it was set
+            if (a.dataset && a.dataset.prevTabindex !== undefined) {
+                if (a.dataset.prevTabindex === '') {
+                    a.removeAttribute('tabindex');
+                } else {
+                    a.setAttribute('tabindex', a.dataset.prevTabindex);
+                }
+                delete a.dataset.prevTabindex;
+            } else {
+                a.removeAttribute('tabindex');
+            }
+            a.style.pointerEvents = '';
+            a.style.opacity = '';
+        }
+    });
+}
+
 // Theme toggle functionality
 themeToggleBtn.addEventListener('click', () => {
     // Toggle dark mode class and capture result
@@ -317,6 +353,7 @@ transactionForm.addEventListener('submit', async (e) => {
         try {
             // Disable submit button and show loading state
             const submitButton = transactionForm.querySelector('button[type="submit"]');
+            setUIBusy(true);
             submitButton.disabled = true;
             submitButton.textContent = 'Processing...';
             
@@ -485,6 +522,7 @@ transactionForm.addEventListener('submit', async (e) => {
             loadTransactions();
             
             // Re-enable submit button
+            setUIBusy(false);
             submitButton.disabled = false;
             submitButton.textContent = 'Process Transaction';
             
@@ -501,6 +539,7 @@ transactionForm.addEventListener('submit', async (e) => {
             
             // Re-enable submit button
             const submitButton = transactionForm.querySelector('button[type="submit"]');
+            setUIBusy(false);
             submitButton.disabled = false;
             submitButton.textContent = 'Process Transaction';
         }

@@ -17,6 +17,9 @@ PASSWORD = retrieve_CONTRASENA(USERNAME)
 MANAGER_USERNAME = "507"
 MANAGER_PASSWORD = retrieve_CONTRASENA(MANAGER_USERNAME)
 TEST_URL = "https://example.com"
+BPM_URL = "https://example.com"
+BPM_USERNAME = "506"
+BPM_PASSWORD = retrieve_CONTRASENA(BPM_USERNAME)
 
 
 class Selectors:
@@ -289,9 +292,9 @@ class FircoPage:
                 # Run BPM search reusing the same tab (page)
                 try:
                     bpm_result = run_bpm_search(
-                        TEST_URL,
-                        USERNAME,
-                        PASSWORD,
+                        BPM_URL,
+                        BPM_USERNAME,
+                        BPM_PASSWORD,
                         transaction,
                         [Options.UNCLASSIFIED],
                         page=self.page,

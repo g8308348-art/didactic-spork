@@ -122,6 +122,7 @@ a:hover {
   font-weight: 500;
   padding: var(--spacing-sm);
   border-radius: var(--border-radius);
+  border: 1px solid #ffffff; /* white border around nav button */
   transition: color var(--transition-speed), background-color var(--transition-speed);
 }
 

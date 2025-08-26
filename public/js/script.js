@@ -478,7 +478,7 @@ transactionForm.addEventListener('submit', async (e) => {
                         status: 'failed',
                         status_detail: 'network_error',
                         statusMessage: errorMessage,
-                        errorCode: 'NETWORK_ERROR'
+                        errorCode: '404'
                     });
                     failCount++;
                     failedTransactions.push({txn, error: errorMessage});

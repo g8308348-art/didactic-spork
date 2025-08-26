@@ -292,6 +292,11 @@ class FircoPage:
                 self.logout()
                 # Run BPM search reusing the same tab (page)
                 try:
+                    # Mark that we are about to invoke BPM (used for result shaping later)
+                    try:
+                        self._bpm_invoked = True
+                    except Exception:  # noqa: BLE001
+                        pass
                     # Map self.transaction_type (string) to BPM Options enum
                     tx_type = (getattr(self, "transaction_type", "") or "").strip()
                     selected_type = []
@@ -324,12 +329,12 @@ class FircoPage:
                     logging.info(
                         "BPM search invoked from Firco; result: %s", bpm_result
                     )
+                    # Cache BPM result regardless of success for downstream messaging
+                    try:
+                        self._last_bpm_result = bpm_result if isinstance(bpm_result, dict) else {}
+                    except Exception:  # noqa: BLE001
+                        pass
                     if isinstance(bpm_result, dict) and bpm_result.get("success"):
-                        # Cache BPM result so the caller can enrich the final message with ENV info
-                        try:
-                            self._last_bpm_result = bpm_result
-                        except Exception:  # noqa: BLE001
-                            pass
                         return str(bpm_result.get("status") or "handled_in_bpm")
                     return False
                 except Exception as e:  # noqa: BLE001
@@ -655,10 +660,25 @@ class FircoPage:
                 )
                 result["error_code"] = 0
             elif handled is False:
-                result["success"] = False
-                result["status"] = "not_found"
-                result["message"] = f"Transaction {transaction} not found."
-                result["error_code"] = 404
+                # If BPM was invoked, surface its message and avoid 404/network_error on the UI.
+                # We return success=True with a specific status_detail so the frontend records a
+                # failed entry without throwing.
+                if getattr(self, "_bpm_invoked", False):
+                    result["success"] = True
+                    result["status"] = "failed"
+                    # Provide a status_detail the frontend recognizes
+                    result["status_detail"] = "transaction_not_found_in_any_tab"
+                    bpm_msg = (
+                        (getattr(self, "_last_bpm_result", None) or {}).get("message")
+                        or "BPM search did not locate the transaction"
+                    )
+                    result["message"] = f"Transaction {transaction} failed in BPM: {bpm_msg}."
+                    result["error_code"] = 0
+                else:
+                    result["success"] = False
+                    result["status"] = "not_found"
+                    result["message"] = f"Transaction {transaction} not found."
+                    result["error_code"] = 404
             else:
                 result["success"] = False
                 result["status"] = "processing_error"

@@ -325,6 +325,11 @@ class FircoPage:
                         "BPM search invoked from Firco; result: %s", bpm_result
                     )
                     if isinstance(bpm_result, dict) and bpm_result.get("success"):
+                        # Cache BPM result so the caller can enrich the final message with ENV info
+                        try:
+                            self._last_bpm_result = bpm_result
+                        except Exception:  # noqa: BLE001
+                            pass
                         return str(bpm_result.get("status") or "handled_in_bpm")
                     return False
                 except Exception as e:  # noqa: BLE001
@@ -620,6 +625,8 @@ class FircoPage:
         }
 
         try:
+            # Reset any cached BPM result to avoid leaking previous run info
+            self._last_bpm_result = None
             login_to(self.page, TEST_URL, USERNAME, PASSWORD)
             self.go_to_live_messages_root()
             self.clear_filtered_column()
@@ -657,6 +664,14 @@ class FircoPage:
                 result["status"] = "processing_error"
                 result["message"] = f"Transaction {transaction} failed to process."
                 result["error_code"] = 500
+
+            # If BPM search was invoked and environment is BUAT, append ENV info to message
+            try:
+                bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get("environment")
+                if bpm_env and str(bpm_env).upper() == "BUAT":
+                    result["message"] = (result.get("message") or "").rstrip() + " ENV: BUAT"
+            except Exception:  # noqa: BLE001
+                pass
         except PlaywrightTimeoutError as e:
             logging.error("flow_start triggered timeout.")
             logging.error("flow_start error: %s", e)

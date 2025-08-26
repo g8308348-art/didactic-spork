@@ -21,6 +21,7 @@ from bpm.bpm_page_simple import (
     click_search_tab as simple_click_search_tab,
     wait_for_page_to_load as simple_wait_for_page_to_load,
     get_row_columns_for_number as simple_get_row_columns_for_number,
+    map_transaction_type_to_option as _simple_map_transaction_type_to_option,
 )
 
 
@@ -483,23 +484,15 @@ def run_bpm_search(
 
 # ------------------------------------------------------------------
 # Mapping helper used by Flask layer (/api/bpm)
+# Delegate to the stateless implementation in bpm_page_simple to avoid duplication
 # ------------------------------------------------------------------
-def map_transaction_type_to_option(market_type: str) -> list[Options]:
-    """Map a frontend market_type string to a list containing the matching Options.
 
-    Accepts either the enum NAME (e.g., 'CBPR_MX') or the enum VALUE (e.g., 'CBPR-MX').
-    Returns an empty list if no match is found.
+
+def map_transaction_type_to_option(market_type: str) -> list[Options]:
+    """Adapter around bpm_page_simple.map_transaction_type_to_option.
+
+    - Reuses the single-source implementation.
+    - Adapts return to List[Options] as expected by flask_server.
     """
-    if not market_type:
-        return []
-    s = market_type.strip()
-    # Try by enum NAME first
-    try:
-        return [Options[s]]
-    except Exception:  # noqa: BLE001
-        pass
-    # Fallback: match by enum VALUE
-    for opt in Options:
-        if opt.value == s:
-            return [opt]
-    return []
+    opt = _simple_map_transaction_type_to_option(market_type, Options)
+    return [opt] if opt else []

@@ -17,7 +17,8 @@ let retryBtn;
 
 // Validation patterns
 const VALIDATION_PATTERNS = {
-    transactionId: /^[A-Za-z0-9]{10,20}$/,
+    // Backend (flask_server.py) allows 3-50 chars, alphanumeric, hyphen, underscore
+    transactionId: /^[A-Za-z0-9_-]{3,50}$/,
     marketTypes: [
         'UNCLASSIFIED', 'APS_MT', 'CBPR_MX', 'SEPA_CLASSIC', 'RITS_MX',
         'LYNX_MX', 'ENTERPRISE_ISO', 'CHAPS_MX', 'T2S_MX', 'BESS_MT',
@@ -162,9 +163,9 @@ function handleTransactionIdInput(event) {
     if (value.length > 0) {
         if (VALIDATION_PATTERNS.transactionId.test(value)) {
             input.classList.add('valid');
-        } else if (value.length >= 5) { // Only show invalid after reasonable input
+        } else if (value.length >= 3) { // Only show invalid after reasonable input
             input.classList.add('invalid');
-            showFieldError('transaction-id-error', 'Transaction ID must be 10-20 alphanumeric characters');
+            showFieldError('transaction-id-error', 'Use 3-50 characters: letters, numbers, hyphens (-), or underscores (_)');
         }
     }
 }
@@ -223,7 +224,7 @@ function validateForm() {
         transactionIdInput.classList.add('invalid');
         isValid = false;
     } else if (!VALIDATION_PATTERNS.transactionId.test(transactionId)) {
-        showFieldError('transaction-id-error', 'Transaction ID must be 10-20 alphanumeric characters');
+        showFieldError('transaction-id-error', 'Use 3-50 characters: letters, numbers, hyphens (-), or underscores (_)');
         transactionIdInput.classList.add('invalid');
         isValid = false;
     } else {
@@ -261,7 +262,7 @@ function validateTransactionIdField() {
             transactionIdInput.classList.add('valid');
         } else {
             transactionIdInput.classList.add('invalid');
-            showFieldError('transaction-id-error', 'Transaction ID must be 10-20 alphanumeric characters');
+            showFieldError('transaction-id-error', 'Use 3-50 characters: letters, numbers, hyphens (-), or underscores (_)');
         }
     }
 }
@@ -567,22 +568,23 @@ function showNoResults(results) {
  * Check if the response indicates no results found
  */
 function isNoResultsResponse(results) {
-    // Check various indicators for no results
-    if (results.bmpResult && results.bmpResult.searchResults) {
-        const [fourthColumn, lastColumn] = results.bmpResult.searchResults;
-        return fourthColumn === "NotFound" && lastColumn === "NotFound";
+    // Prefer backend schema from bpm_page.search_results(): status not_found
+    if (results.bmpResult) {
+        const r = results.bmpResult;
+        if ((r.status && r.status.toLowerCase() === 'not_found') || r.message === 'No results') {
+            return true;
+        }
     }
-    
-    // Check for explicit no results indicators
+
+    // Backward compatibility flags if present
     if (results.noResults === true || results.transactionFound === false) {
         return true;
     }
-    
-    // Check if results array is empty
+
     if (results.multipleResults && Array.isArray(results.multipleResults) && results.multipleResults.length === 0) {
         return true;
     }
-    
+
     return false;
 }
 
@@ -600,8 +602,13 @@ function buildSearchSummary(results) {
         html += `<p><strong>Mapped Options:</strong> <span class="highlight-value">${results.mappedOptions.map(opt => sanitizeInput(opt)).join(', ')}</span></p>`;
     }
     
-    if (results.searchDuration) {
-        html += `<p><strong>Search Duration:</strong> <span class="highlight-value">${results.searchDuration}ms</span></p>`;
+    // Backend sends executionTime in results
+    if (results.executionTime) {
+        html += `<p><strong>Execution Time:</strong> <span class="highlight-value">${results.executionTime}ms</span></p>`;
+    }
+    // Also surface environment if computed
+    if (results.bmpResult && results.bmpResult.environment) {
+        html += `<p><strong>Environment:</strong> <span class="highlight-value">${sanitizeInput(results.bmpResult.environment)}</span></p>`;
     }
     
     html += '</div>';
@@ -616,42 +623,56 @@ function buildBmpResults(results) {
     html += '<h4><i class="fas fa-cogs"></i> BPM Automation Results</h4>';
     
     if (results.bmpResult) {
-        const bmpResult = results.bmpResult;
-        
-        // Check if search results are available
-        if (bmpResult.searchResults) {
-            const [fourthColumn, lastColumn] = bmpResult.searchResults;
-            if (fourthColumn === "NotFound" && lastColumn === "NotFound") {
-                html += '<div class="no-transaction-found">';
-                html += '<i class="fas fa-exclamation-triangle"></i>';
-                html += '<p>Transaction not found in BPM system</p>';
-                html += '</div>';
-            } else {
-                html += '<div class="transaction-found">';
-                html += '<i class="fas fa-check-circle"></i>';
-                html += '<p><strong>Transaction Found!</strong></p>';
-                html += `<p><strong>4th Column Value:</strong> <span class="highlight-value">${sanitizeInput(fourthColumn)}</span></p>`;
-                html += `<p><strong>Last Column Value:</strong> <span class="highlight-value">${sanitizeInput(lastColumn)}</span></p>`;
-                html += '</div>';
-            }
+        const r = results.bmpResult;
+
+        // Status line
+        if (typeof r.status === 'string') {
+            html += `<p><strong>Status:</strong> <span class="status-${r.status.toLowerCase()}">${sanitizeInput(r.status)}</span></p>`;
         }
-        
-        // Display additional BPM result details if available
-        if (bmpResult.status) {
-            html += `<p><strong>Status:</strong> <span class="status-${bmpResult.status.toLowerCase()}">${sanitizeInput(bmpResult.status)}</span></p>`;
+
+        // Outcome badges
+        if (r.success === true) {
+            html += '<div class="transaction-found">';
+            html += '<i class="fas fa-check-circle"></i>';
+            html += '<p><strong>Transaction validated successfully.</strong></p>';
+            html += '</div>';
+        } else if (r.status && r.status.toLowerCase() === 'not_found') {
+            html += '<div class="no-transaction-found">';
+            html += '<i class="fas fa-exclamation-triangle"></i>';
+            html += '<p>Transaction not found in BPM system</p>';
+            html += '</div>';
+        } else if (r.status && (r.status.toLowerCase() === 'failure' || r.status.toLowerCase() === 'error')) {
+            html += '<div class="no-transaction-found">';
+            html += '<i class="fas fa-exclamation-triangle"></i>';
+            html += '<p>Transaction validation failed</p>';
+            html += '</div>';
         }
-        
-        if (bmpResult.message) {
-            html += `<p><strong>Message:</strong> ${sanitizeInput(bmpResult.message)}</p>`;
+
+        // Message
+        if (r.message) {
+            html += `<p><strong>Message:</strong> ${sanitizeInput(r.message)}</p>`;
         }
-        
-        if (bmpResult.executionTime) {
-            html += `<p><strong>Execution Time:</strong> ${bmpResult.executionTime}ms</p>`;
+
+        // Environment and details
+        if (r.environment) {
+            html += `<p><strong>Environment:</strong> <span class="highlight-value">${sanitizeInput(r.environment)}</span></p>`;
+        }
+
+        if (r.details && typeof r.details === 'object') {
+            html += '<details class="bpm-details">';
+            html += '<summary>Details</summary>';
+            const d = r.details;
+            if (d.reference) html += `<p><strong>Reference (col 2):</strong> ${sanitizeInput(String(d.reference))}</p>`;
+            if (d.current_status) html += `<p><strong>Current Status (col 4):</strong> ${sanitizeInput(String(d.current_status))}</p>`;
+            if (d.bpm_status) html += `<p><strong>BPM Status (col 11):</strong> ${sanitizeInput(String(d.bpm_status))}</p>`;
+            if (d.holding_qm) html += `<p><strong>Holding QM (col 10):</strong> ${sanitizeInput(String(d.holding_qm))}</p>`;
+            if (d.columns_len !== undefined) html += `<p><strong>Columns Count:</strong> ${sanitizeInput(String(d.columns_len))}</p>`;
+            html += '</details>';
         }
     } else {
         html += '<div class="search-completed">';
         html += '<i class="fas fa-info-circle"></i>';
-        html += '<p>BPM search completed successfully</p>';
+        html += '<p>BPM search completed</p>';
         html += '</div>';
     }
     

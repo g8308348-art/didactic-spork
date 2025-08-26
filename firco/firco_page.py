@@ -667,9 +667,13 @@ class FircoPage:
 
             # If BPM search was invoked and environment is BUAT, append ENV info to message
             try:
-                bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get("environment")
+                bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get(
+                    "environment"
+                )
                 if bpm_env and str(bpm_env).upper() == "BUAT":
-                    result["message"] = (result.get("message") or "").rstrip() + " ENV: BUAT"
+                    result["message"] = (
+                        result.get("message") or ""
+                    ).rstrip() + " Envirement: BUAT"
             except Exception:  # noqa: BLE001
                 pass
         except PlaywrightTimeoutError as e:

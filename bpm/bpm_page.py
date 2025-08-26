@@ -479,3 +479,27 @@ def run_bpm_search(
     except Exception as e:  # noqa: BLE001
         logging.error("BPM search error using provided page: %s", e)
         return {"success": False, "status": "error", "message": str(e)}
+
+
+# ------------------------------------------------------------------
+# Mapping helper used by Flask layer (/api/bpm)
+# ------------------------------------------------------------------
+def map_transaction_type_to_option(market_type: str) -> list[Options]:
+    """Map a frontend market_type string to a list containing the matching Options.
+
+    Accepts either the enum NAME (e.g., 'CBPR_MX') or the enum VALUE (e.g., 'CBPR-MX').
+    Returns an empty list if no match is found.
+    """
+    if not market_type:
+        return []
+    s = market_type.strip()
+    # Try by enum NAME first
+    try:
+        return [Options[s]]
+    except Exception:  # noqa: BLE001
+        pass
+    # Fallback: match by enum VALUE
+    for opt in Options:
+        if opt.value == s:
+            return [opt]
+    return []

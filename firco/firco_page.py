@@ -203,11 +203,32 @@ class FircoPage:
         was successful and logs detailed feedback.
         """
         try:
-            if self.selectors.filtered_column_icon.is_visible(timeout=5000):
+            # Check visibility without using timeout parameter on is_visible (incompatible in some versions)
+            is_filter_icon_visible = False
+            try:
+                self.selectors.filtered_column_icon.wait_for(
+                    state="visible", timeout=5000
+                )
+                is_filter_icon_visible = True
+            except PlaywrightTimeoutError:
+                is_filter_icon_visible = False
+
+            if (
+                is_filter_icon_visible
+                or self.selectors.filtered_column_icon.is_visible()
+            ):
                 logging.debug("Filter icon detected. Attempting to clear filter.")
                 self.selectors.filtered_column_icon.click()
                 # Verify if the filter icon is still visible after clicking
-                if self.selectors.filtered_column_icon.is_visible(timeout=2000):
+                try:
+                    self.selectors.filtered_column_icon.wait_for(
+                        state="visible", timeout=2000
+                    )
+                    still_visible = True
+                except PlaywrightTimeoutError:
+                    still_visible = self.selectors.filtered_column_icon.is_visible()
+
+                if still_visible:
                     logging.warning(
                         "Filter icon still visible after click. Filter may not have cleared."
                     )

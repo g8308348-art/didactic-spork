@@ -670,7 +670,7 @@ class FircoPage:
                     result["status"] = "No action"
                     result["status_detail"] = handled
                     result["message"] = (
-                        f"Transaction {transaction} processed with unmapped state: {handled}. Marked as 'No action'."
+                        f"Transaction {transaction} is in unmapped state: {handled}."
                     )
                     result["error_code"] = 0
                 else:

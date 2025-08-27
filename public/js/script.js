@@ -428,7 +428,14 @@ transactionForm.addEventListener('submit', async (e) => {
                 
                 try {
                     const response = await sendTransactionToServer(data);
-                    
+                    // Debug: show what backend sent (only the fields we use)
+                    console.debug('[API]', txn, {
+                        success: response.success,
+                        status: response.status,
+                        status_detail: response.status_detail,
+                        message: response.message
+                    });
+
                     // Handle network errors or server errors
                     if (response.status_detail === 'network_error' || !response.success) {
                         throw new Error(response.message || 'Transaction processing failed');
@@ -454,7 +461,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     
                     // If we get here, the transaction was successful
                     // Prefer backend high-level status (e.g., 'No action') and keep raw detail
-                    saveTransaction({
+                    const recordToSave = {
                         transaction: txn,
                         comment: commentValue,
                         action: actionValue,
@@ -463,7 +470,9 @@ transactionForm.addEventListener('submit', async (e) => {
                         status_detail: response.status_detail || response.status || 'success',
                         statusMessage: response.message,
                         transactionId: response.transactionId
-                    });
+                    };
+                    console.debug('[SAVE]', txn, recordToSave);
+                    saveTransaction(recordToSave);
                     successCount++;
                     succeededTransactions.push(txn);
                     
@@ -609,6 +618,7 @@ const response = await fetch(API_URL, {
         return {
             success: responseData.success, // Overall success boolean
             message: responseData.message, // Detailed message for tooltip
+            status: responseData.status, // High-level status (e.g., 'No action')
             status_detail: responseData.status_detail, // Specific status string from backend
             transactionId: responseData.transactionId,
             errorCode: responseData.errorCode // Ensure errorCode is passed through
@@ -789,6 +799,15 @@ function loadTransactions() {
             tooltip += (tooltip ? ' | ' : '') + `Error code: ${escapeHtml(transaction.errorCode)}`;
         }
         
+        // Debug: show how the badge is determined for each row
+        console.debug('[RENDER]', transaction.transaction, {
+            stored_status: transaction.status,
+            stored_status_detail: transaction.status_detail,
+            msg: transaction.statusMessage,
+            computed_text: statusText,
+            computed_class: statusClass
+        });
+
         statusHtml = `<span class='${statusClass}'${tooltip ? ` data-tooltip='${tooltip}'` : ''}>${escapeHtml(statusText)}</span>`;
         
         row.innerHTML = `

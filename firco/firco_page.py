@@ -331,7 +331,9 @@ class FircoPage:
                     )
                     # Cache BPM result regardless of success for downstream messaging
                     try:
-                        self._last_bpm_result = bpm_result if isinstance(bpm_result, dict) else {}
+                        self._last_bpm_result = (
+                            bpm_result if isinstance(bpm_result, dict) else {}
+                        )
                     except Exception:  # noqa: BLE001
                         pass
                     if isinstance(bpm_result, dict) and bpm_result.get("success"):
@@ -364,10 +366,13 @@ class FircoPage:
             }.get(state)
 
             if not handler:
-                # Stop execution on unknown state (as requested)
-                raise Exception(
-                    f"Unknown transaction status: {state} for transaction: {transaction}"
+                # Instead of raising, return the raw state so the caller can surface it to the UI
+                logging.warning(
+                    "Unmapped transaction status encountered: %s for transaction: %s",
+                    state,
+                    transaction,
                 )
+                return state
 
             return handler(transaction, action, comment, tab)
 
@@ -668,11 +673,12 @@ class FircoPage:
                     result["status"] = "failed"
                     # Provide a status_detail the frontend recognizes
                     result["status_detail"] = "transaction_not_found_in_any_tab"
-                    bpm_msg = (
-                        (getattr(self, "_last_bpm_result", None) or {}).get("message")
-                        or "BPM search did not locate the transaction"
+                    bpm_msg = (getattr(self, "_last_bpm_result", None) or {}).get(
+                        "message"
+                    ) or "BPM search did not locate the transaction"
+                    result["message"] = (
+                        f"Transaction {transaction} failed in BPM: {bpm_msg}."
                     )
-                    result["message"] = f"Transaction {transaction} failed in BPM: {bpm_msg}."
                     result["error_code"] = 0
                 else:
                     result["success"] = False

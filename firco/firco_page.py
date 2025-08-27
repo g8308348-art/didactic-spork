@@ -372,6 +372,10 @@ class FircoPage:
                     state,
                     transaction,
                 )
+                try:
+                    self._unmapped_state = True
+                except Exception:  # noqa: BLE001
+                    pass
                 return state
 
             return handler(transaction, action, comment, tab)
@@ -637,6 +641,8 @@ class FircoPage:
         try:
             # Reset any cached BPM result to avoid leaking previous run info
             self._last_bpm_result = None
+            # Reset unmapped-state flag at the start of each flow
+            self._unmapped_state = False
             login_to(self.page, TEST_URL, USERNAME, PASSWORD)
             self.go_to_live_messages_root()
             self.clear_filtered_column()
@@ -657,13 +663,24 @@ class FircoPage:
                 )
                 result["error_code"] = 0
             elif isinstance(handled, str):
-                # When verify_first_row returns a state string (e.g., FILTER/CU_FILTER/HISTORY state)
-                result["success"] = True
-                result["status"] = handled
-                result["message"] = (
-                    f"Transaction {transaction} processed with state: {handled}."
-                )
-                result["error_code"] = 0
+                # When verify_first_row returns a state string.
+                # If it was an unmapped state, treat overall as "No action" but expose the raw state in status_detail.
+                if getattr(self, "_unmapped_state", False):
+                    result["success"] = True
+                    result["status"] = "No action"
+                    result["status_detail"] = handled
+                    result["message"] = (
+                        f"Transaction {transaction} processed with unmapped state: {handled}. Marked as 'No action'."
+                    )
+                    result["error_code"] = 0
+                else:
+                    # HISTORY states or mapped string outcomes
+                    result["success"] = True
+                    result["status"] = handled
+                    result["message"] = (
+                        f"Transaction {transaction} processed with state: {handled}."
+                    )
+                    result["error_code"] = 0
             elif handled is False:
                 # If BPM was invoked, surface its message and avoid 404/network_error on the UI.
                 # We return success=True with a specific status_detail so the frontend records a

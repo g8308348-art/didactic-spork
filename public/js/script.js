@@ -453,13 +453,14 @@ transactionForm.addEventListener('submit', async (e) => {
                     }
                     
                     // If we get here, the transaction was successful
+                    // Prefer backend high-level status (e.g., 'No action') and keep raw detail
                     saveTransaction({
                         transaction: txn,
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
-                        status: response.status_detail || 'success',
-                        status_detail: response.status_detail || 'success',
+                        status: response.status || response.status_detail || 'success',
+                        status_detail: response.status_detail || response.status || 'success',
                         statusMessage: response.message,
                         transactionId: response.transactionId
                     });

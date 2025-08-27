@@ -262,11 +262,15 @@ class FircoPage:
     def detect_tab(self) -> TabContext:
         """Decide which tab we're on once, then reuse."""
         try:
-            # If a 'History Messages' marker is visible quickly, treat as HISTORY.
-            if self.selectors.live_messages.filter(
-                has_text="History Messages"
-            ).is_visible(timeout=800):
+            # If a 'History Messages' marker becomes visible quickly, treat as HISTORY.
+            try:
+                self.selectors.live_messages.filter(
+                    has_text="History Messages"
+                ).wait_for(state="visible", timeout=800)
                 return TabContext.HISTORY
+            except PlaywrightTimeoutError:
+                pass
+            
         except PlaywrightTimeoutError:
             pass
         return TabContext.LIVE
@@ -448,9 +452,15 @@ class FircoPage:
 
     def unlock_transaction(self):
         """unlock transaction"""
-        if self.selectors.first_row_active.is_visible(timeout=0):
+        try:
+            # Try immediate wait; if it fails, fall back to a non-timeout check
+            self.selectors.first_row_active.wait_for(state="visible", timeout=0)
             logging.debug("Transaction already unlocked")
             return True
+        except PlaywrightTimeoutError:
+            if self.selectors.first_row_active.is_visible():
+                logging.debug("Transaction already unlocked")
+                return True
 
         logging.debug("Unlocking transaction")
         try:

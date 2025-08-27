@@ -482,10 +482,11 @@ transactionForm.addEventListener('submit', async (e) => {
                     };
                     console.debug('[SAVE]', txn, recordToSave);
                     saveTransaction(recordToSave);
-                    successCount++;
-                    succeededTransactions.push(txn);
                     if ((recordToSave.status || '').toLowerCase() === 'no action') {
                         noActionProcessedCount++;
+                    } else {
+                        successCount++;
+                        succeededTransactions.push(txn);
                     }
                     
                 } catch (error) {
@@ -523,14 +524,9 @@ transactionForm.addEventListener('submit', async (e) => {
                 });
                 return savedTxn && savedTxn.status_detail === 'transaction_not_found_in_any_tab';
             });
-            // If all transactions were skipped (no success/fail), show no-action only
-            if (noActionLocal.length === transactionsArray.length && successCount === 0 && failCount === 0) {
+            // If all transactions resulted in No action (either skipped duplicates or processed as No action)
+            if ((noActionLocal.length + noActionProcessedCount) === transactionsArray.length && failCount === 0) {
                 submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}.`;
-                submissionStatus.className = 'submission-status no-action';
-                submissionStatus.style.display = 'block';
-            } else if (failCount === 0 && successCount > 0 && noActionProcessedCount === successCount) {
-                // All processed transactions resulted in 'No action' (not duplicates). Show concise No action message.
-                submissionStatus.innerHTML = `No action taken on transaction${succeededTransactions.length > 1 ? 's' : ''} ${succeededTransactions.join(', ')}.`;
                 submissionStatus.className = 'submission-status no-action';
                 submissionStatus.style.display = 'block';
             } else {

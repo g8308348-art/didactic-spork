@@ -462,13 +462,21 @@ transactionForm.addEventListener('submit', async (e) => {
                     
                     // If we get here, the transaction was successful
                     // Prefer backend high-level status (e.g., 'No action') and keep raw detail
+                    let computedStatus = response.status || response.status_detail || 'success';
+                    let computedDetail = response.status_detail || response.status || 'success';
+                    // Heuristic: if backend succeeded but did not return a transactionId, we likely found it in HISTORY → No action
+                    if (!response.transactionId && computedStatus.toLowerCase() !== 'failed') {
+                        console.debug('[SAVE] no-transactionId → marking as No action');
+                        computedDetail = computedDetail; // keep raw state in detail if present
+                        computedStatus = 'No action';
+                    }
                     const recordToSave = {
                         transaction: txn,
                         comment: commentValue,
                         action: actionValue,
                         timestamp: data.timestamp,
-                        status: response.status || response.status_detail || 'success',
-                        status_detail: response.status_detail || response.status || 'success',
+                        status: computedStatus,
+                        status_detail: computedDetail,
                         statusMessage: response.message,
                         transactionId: response.transactionId
                     };
@@ -498,9 +506,10 @@ transactionForm.addEventListener('submit', async (e) => {
                     failedTransactions.push({txn, error: errorMessage});
                 }
             }
-            // Show summary message
+            // Show summary message with No action count included
+            const totalNoAction = noActionProcessedCount + noActionLocal.length;
             let summary = `<strong>Processed ${transactionsArray.length} transaction(s):</strong> <br>`;
-            summary += `<span class='success'>${successCount} succeeded</span>, <span class='error'>${failCount} failed</span>`;
+            summary += `<span class='success'>${successCount} succeeded</span>, <span class='error'>${failCount} failed</span>, <span class='no-action'>${totalNoAction} no action</span>`;
             if (failCount > 0) {
                 summary += '<br>Failed: ' + failedTransactions.map(f => `${escapeHtml(f.txn)} (${escapeHtml(f.error)})`).join(', ');
             }

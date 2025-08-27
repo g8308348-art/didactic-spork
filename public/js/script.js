@@ -720,8 +720,23 @@ function loadTransactions() {
         let statusText = 'Unknown'; // Default text
         let statusClass = 'status-badge'; // Base class
 
+        // Normalize values for consistent display handling
+        const statusVal = (transaction.status || '').trim();
+        const statusDetailVal = (transaction.status_detail || '').trim();
+
+        // Force 'No action' styling if either high-level status or detail indicates No action
+        if (statusVal.toLowerCase() === 'no action' || statusDetailVal.toLowerCase() === 'no action') {
+            statusText = 'No action';
+            statusClass += ' no-action';
+        } else {
+        // If the backend message explicitly says it's marked as No action, reflect that
+        const msg = (transaction.statusMessage || '').toLowerCase();
+        if (statusVal.toLowerCase() === 'success' && msg.includes('no action')) {
+            statusText = 'No action';
+            statusClass += ' no-action';
+        } else {
         // Determine status display based on detailed status
-        switch (transaction.status) {
+        switch (statusVal) {
             case 'No action':
                 statusText = 'No action';
                 statusClass += ' no-action'; // Light blue for no action
@@ -758,6 +773,8 @@ function loadTransactions() {
                 statusText = 'Success'; // Or 'Info'
                 statusClass += ' success'; // Default success color
                 break;
+        }
+        }
         }
 
         let tooltip = '';

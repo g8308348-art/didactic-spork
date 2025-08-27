@@ -21,9 +21,13 @@ from typing import Any, Dict
 from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask_cors import CORS  # third-party
 from playwright.sync_api import sync_playwright  # third-party
+from dotenv import load_dotenv  # third-party
 
 from firco.firco_page import FircoPage  # first-party
 from server import create_output_structure, move_screenshots_to_folder  # first-party
+
+# Load environment variables from .env if present
+load_dotenv()
 
 # Create Flask application
 app = Flask(__name__, static_folder="public")
@@ -476,7 +480,7 @@ def process_bpm_search():
     # Call BPM automation with comprehensive error handling
     start_time = time.time()
     try:
-        from bpm.bpm import main as bpm_main
+        from bpm.bpm import bpm_search
         from bpm.bpm_page import map_transaction_type_to_option, Options
 
         logging.info(
@@ -505,9 +509,40 @@ def process_bpm_search():
                 400,
             )
 
-        # Call the BPM main function with timeout handling
+        # Resolve BPM configuration from environment
+        bpm_url = os.getenv("BPM_URL") or os.getenv("TEST_URL")
+        bpm_user = os.getenv("USERNAME")
+        bpm_pass = os.getenv("PASSWORD")
+
+        if not bpm_url or not bpm_user or not bpm_pass:
+            logging.error(
+                "Missing BPM configuration - ID: %s, BPM_URL=%s, USERNAME set=%s, PASSWORD set=%s",
+                request_id,
+                bool(bpm_url),
+                bool(bpm_user),
+                bool(bpm_pass),
+            )
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "BPM system configuration is incomplete. Please set BPM_URL (or TEST_URL), USERNAME, and PASSWORD in environment or .env.",
+                        "errorCode": "BPM_CONFIGURATION_MISSING",
+                        "requestId": request_id,
+                    }
+                ),
+                500,
+            )
+
+        # Call the BPM search function with timeout handling
         try:
-            bpm_result = bpm_main(market_type, transaction_id)
+            bpm_result = bpm_search(
+                bpm_url,
+                bpm_user,
+                bpm_pass,
+                transaction_id,
+                mapped_options,
+            )
             execution_time = round(
                 (time.time() - start_time) * 1000, 2
             )  # Convert to milliseconds

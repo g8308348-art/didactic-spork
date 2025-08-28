@@ -461,15 +461,9 @@ transactionForm.addEventListener('submit', async (e) => {
                     }
                     
                     // If we get here, the transaction was successful
-                    // Prefer backend high-level status (e.g., 'No action') and keep raw detail
+                    // Use backend-provided status and detail as-is (do not infer 'No action' from missing transactionId)
                     let computedStatus = response.status || response.status_detail || 'success';
                     let computedDetail = response.status_detail || response.status || 'success';
-                    // Heuristic: if backend succeeded but did not return a transactionId, we likely found it in HISTORY → No action
-                    if (!response.transactionId && computedStatus.toLowerCase() !== 'failed') {
-                        console.debug('[SAVE] no-transactionId → marking as No action');
-                        computedDetail = computedDetail; // keep raw state in detail if present
-                        computedStatus = 'No action';
-                    }
                     const recordToSave = {
                         transaction: txn,
                         comment: commentValue,
@@ -482,7 +476,9 @@ transactionForm.addEventListener('submit', async (e) => {
                     };
                     console.debug('[SAVE]', txn, recordToSave);
                     saveTransaction(recordToSave);
-                    if ((recordToSave.status || '').toLowerCase() === 'no action') {
+                    // Consider only explicit No action-like statuses for counting
+                    const statusLower = (recordToSave.status || '').toLowerCase();
+                    if (statusLower === 'no action' || statusLower === 'already_handled' || statusLower === 'found_in_bpm') {
                         noActionProcessedCount++;
                     } else {
                         successCount++;

@@ -107,6 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize clear buttons on all inputs
     setupClearableInputs();
+
+    // Live validation for transactions: enforce per-ID max length (64)
+    const checkTransactionsLive = () => {
+        const value = transactionsInput.value || '';
+        const tokens = value.split(',').map(t => t.trim()).filter(Boolean);
+        const tooLong = tokens.find(t => t.length > 64);
+        if (tooLong) {
+            showError(transactionsError, 'Identifier exceeds 64 characters');
+        } else {
+            hideError(transactionsError);
+        }
+    };
+    transactionsInput.addEventListener('input', checkTransactionsLive);
 });
 
 // Navigation links

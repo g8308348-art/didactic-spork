@@ -555,21 +555,31 @@ footer {
 
 .transaction-input-col {
   flex: 8 1 0%;
-  display: flex;
-  flex-direction: column;
+  display: grid; /* grid to align label + error on same row */
+  grid-template-columns: max-content 1fr; /* label then free space */
+  grid-auto-rows: auto;
+  column-gap: 8px;
+  row-gap: var(--spacing-sm);
+  align-items: baseline;
 }
 
-/* Keep the error inline with the label for Transaction number without affecting layout */
 .transaction-input-col .transaction-details-label {
-  display: inline-block; /* was block via base label */
-  margin-bottom: var(--spacing-sm);
+  grid-column: 1;
+  grid-row: 1;
+  margin-bottom: 0; /* prevent extra spacing */
 }
 
 #transactions-error {
-  display: inline-block; /* inline next to label */
-  margin-left: 8px;
+  grid-column: 2;
+  grid-row: 1;
   margin-top: 0; /* override default .error-message top margin */
-  vertical-align: baseline;
+  white-space: nowrap; /* keep inline */
+}
+
+/* Ensure the input (or its wrapper) spans the full width in the next row */
+.transaction-input-col > .input-wrapper,
+.transaction-input-col > input[type="text"] {
+  grid-column: 1 / span 2;
 }
 
 .transaction-type-col {

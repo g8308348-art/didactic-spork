@@ -3,3 +3,4 @@ Flask==2.2.3
 Flask-Cors==3.0.10
 filelock==3.14.0
 python-dotenv==1.0.0
+waitress==3.0.0

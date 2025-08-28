@@ -27,6 +27,7 @@ class Selectors:
     """Container for page selectors to reduce attribute count in the main class."""
 
     def __init__(self, page: Page):
+
         # Navigation selectors
         self.menu_item = page.locator("li#root-menu-0")
         self.history_item = page.locator("li#root-menu-1")
@@ -270,7 +271,7 @@ class FircoPage:
                 return TabContext.HISTORY
             except PlaywrightTimeoutError:
                 pass
-            
+
         except PlaywrightTimeoutError:
             pass
         return TabContext.LIVE

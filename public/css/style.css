@@ -559,6 +559,19 @@ footer {
   flex-direction: column;
 }
 
+/* Keep the error inline with the label for Transaction number without affecting layout */
+.transaction-input-col .transaction-details-label {
+  display: inline-block; /* was block via base label */
+  margin-bottom: var(--spacing-sm);
+}
+
+#transactions-error {
+  display: inline-block; /* inline next to label */
+  margin-left: 8px;
+  margin-top: 0; /* override default .error-message top margin */
+  vertical-align: baseline;
+}
+
 .transaction-type-col {
   flex: 2 1 0%;
   display: flex;

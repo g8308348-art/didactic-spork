@@ -90,5 +90,24 @@ pytest -q
 - Add new tool modules under `src/mcp_api_hub/tools/` with a `register(mcp)` function that decorates functions using `@mcp.tool()`.
 - They will be auto-registered at startup.
 
-*** cd C:\path\to\stt-murdock
-python -c "import sys; sys.path.insert(0, r'mcp-api-hub\src'); from mcp_api_hub.server import main; main()" ***
+## mcp.json config
+
+```json
+{
+  "servers": {
+    "wojtek-mcp": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-c",
+        "import sys; sys.path.insert(0, 'mcp-api-hub\\\\src'); from mcp_api_hub.server import main; main()"
+      ],
+      "env": {
+        "BPM_URL": "http://localhost:8088",
+        "DEFAULT_TIMEOUT": "60"
+      }
+    }
+  },
+  "inputs": []
+}
+```

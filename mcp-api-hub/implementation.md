@@ -4,7 +4,7 @@ Goal: build a single, reusable MCP server that can expose multiple tools/endpoin
 
 1) Name the project & repo
 
-Pick a neutral, extensible name, e.g. mcp-api-hub, mcp-toolbox, or mcp-gateway.
+mcp-api-hub
 
 Target Python ≥3.9. Use pip for env & packaging.
 
@@ -16,9 +16,7 @@ Actions
 
 mkdir mcp-api-hub && cd mcp-api-hub
 
-uv venv && source .venv/bin/activate (or python -m venv .venv)
-
-uv pip install mcp pydantic python-dotenv httpx tenacity structlog pytest responses
+pip install mcp pydantic python-dotenv httpx tenacity structlog pytest responses
 
 The Server Quickstart shows stdio-based servers and how to connect from clients like Claude Desktop. 
 Model Context Protocol

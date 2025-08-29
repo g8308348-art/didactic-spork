@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, Field
@@ -30,19 +28,22 @@ def _base_url() -> str:
 
 def register(mcp) -> None:
     @mcp.tool()
-    async def firco_process_tool(payload: FircoRequest) -> dict:
+    async def firco_process_tool(payload: dict) -> dict:
         """Execute a Firco automation via the Flask `/api` endpoint.
         
         Expects {transaction, action, comment, transactionType?, performOnLatest?} and forwards them.
         Returns backend JSON with `_clientMeta` and `isError` normalization.
         """
+        # Validate and normalize input with Pydantic v2
+        req = FircoRequest.model_validate(payload)
+
         url = f"{_base_url()}/api"
         body = {
-            "transaction": payload.transaction,
-            "action": payload.action,
-            "comment": payload.comment,
-            "transactionType": payload.transactionType or "",
-            "performOnLatest": bool(payload.performOnLatest or False),
+            "transaction": req.transaction,
+            "action": req.action,
+            "comment": req.comment,
+            "transactionType": req.transactionType or "",
+            "performOnLatest": bool(req.performOnLatest or False),
         }
 
         headers: Dict[str, str] = {}
@@ -52,7 +53,7 @@ def register(mcp) -> None:
             url,
             json_body=body,
             headers=headers,
-            timeout_seconds=payload.timeoutSeconds,
+            timeout_seconds=req.timeoutSeconds,
         )
 
         is_error = status >= 400 or (isinstance(data, dict) and data.get("success") is False) or (

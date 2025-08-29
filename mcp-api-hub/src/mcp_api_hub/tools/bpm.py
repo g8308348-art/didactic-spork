@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, Field
@@ -31,14 +29,17 @@ def _bpm_base_url() -> str:
 
 def register(mcp) -> None:
     @mcp.tool()
-    async def bpm_search_tool(payload: BpmRequest) -> dict:
+    async def bpm_search_tool(payload: dict) -> dict:
         """Search BPM for a transaction.
         
         Calls the local Flask endpoint `/api/bpm` with JSON body {transactionId, marketType}.
         Returns backend JSON with added _clientMeta. Sets isError when HTTP>=400 or status=='error'.
         """
+        # Validate and normalize input using Pydantic v2
+        req = BpmRequest.model_validate(payload)
+
         url = f"{_bpm_base_url()}/api/bpm"
-        body = {"transactionId": payload.transactionId, "marketType": payload.marketType}
+        body = {"transactionId": req.transactionId, "marketType": req.marketType}
 
         headers: Dict[str, str] = {}
 
@@ -47,7 +48,7 @@ def register(mcp) -> None:
             url,
             json_body=body,
             headers=headers,
-            timeout_seconds=payload.timeoutSeconds,
+            timeout_seconds=req.timeoutSeconds,
         )
 
         # Normalize envelope

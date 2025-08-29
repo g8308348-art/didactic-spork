@@ -25,7 +25,7 @@ def _bpm_base_url() -> str:
 
 def register(mcp) -> None:
     @mcp.tool()
-    async def bpm_search_tool(payload: BpmRequest) -> Dict[str, Any]:
+    async def bpm_search_tool(payload: BpmRequest) -> dict:
         """Search BPM for a transaction.
         
         Calls the local Flask endpoint `/api/bpm` with JSON body {transactionId, marketType}.

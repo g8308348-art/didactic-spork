@@ -29,7 +29,7 @@ def _base_url() -> str:
 
 def register(mcp) -> None:
     @mcp.tool()
-    async def firco_process_tool(payload: FircoRequest) -> Dict[str, Any]:
+    async def firco_process_tool(payload: FircoRequest) -> dict:
         """Execute a Firco automation via the Flask `/api` endpoint.
         
         Expects {transaction, action, comment, transactionType?, performOnLatest?} and forwards them.

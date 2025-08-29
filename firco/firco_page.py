@@ -59,12 +59,10 @@ class Selectors:
             page.locator("tr.odd-row").first.locator("td").first
         )
         # rows
-        self.first_row_active = page.locator(
-            "table#table-element-1 tbody tr.even-row.clickable-row"
-        ).first
+        self.first_row_active = page.locator("tr.even-row.clickable-row").first()
         self.first_row_not_active = page.locator(
             "table#table-element-1 tbody tr.lowlightedRow"
-        ).first
+        ).first()
         self.padlock_icon = page.locator("div.sprite.table-icon.admin-locked-icon")
         self.unlock_overlay_titlebar = page.locator("div#overlay-titlebar")
         # Button ID contains spaces; use attribute selector to avoid CSS escaping issues
@@ -88,7 +86,7 @@ class Selectors:
         self.table = page.locator("table#table-element-1")
         self.table_rows = self.table.locator("tbody tr")
         # Avoid evaluating locators during initialization; evaluate lazily later
-        self.table_rows_first = self.table_rows.first
+        self.table_rows_first = self.table_rows.first()
 
         self.data_filters = page.locator("text=Data filters...")
         self.data_filters_input = page.locator("id=text-input-element-44")

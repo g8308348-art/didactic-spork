@@ -25,7 +25,8 @@ def autodiscover_and_register(package: str, mcp_instance) -> None:
             mod = importlib.import_module(name)
             _register_module(mod, mcp_instance)
         except Exception as exc:  # pragma: no cover
-            logger.error("Failed importing tool module %s: %s", name, exc)
+            # Include traceback to diagnose issues like type inspection errors on some platforms
+            logger.error("Failed importing tool module %s: %s", name, exc, exc_info=True)
 
 
 def _register_module(mod: ModuleType, mcp_instance) -> None:

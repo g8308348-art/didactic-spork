@@ -1,8 +1,25 @@
 from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, Field
-from pydantic import StringConstraints
-from typing_extensions import Annotated
+import pydantic as _pyd
+
+# Pydantic v1/v2 compatible constrained string aliases
+try:  # v2 path
+    _V_MAJOR = int(getattr(_pyd, "VERSION", "2").split(".")[0])
+except Exception:  # pragma: no cover - defensive
+    _V_MAJOR = 2
+
+if _V_MAJOR >= 2:  # Pydantic v2
+    from pydantic import StringConstraints  # type: ignore
+    from typing_extensions import Annotated  # Py3.10 compat
+
+    Str_3_50_ws = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=50)]
+    Str_1p_ws = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+else:  # Pydantic v1
+    from pydantic import constr  # type: ignore
+
+    Str_3_50_ws = constr(strip_whitespace=True, min_length=3, max_length=50)  # type: ignore
+    Str_1p_ws = constr(strip_whitespace=True, min_length=1)  # type: ignore
 
 from ..config import settings
 from ..http_client import request_json
@@ -12,12 +29,8 @@ log = get_logger(__name__)
 
 
 class BpmRequest(BaseModel):
-    transactionId: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=3, max_length=50)
-    ]
-    marketType: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1)
-    ]
+    transactionId: Str_3_50_ws
+    marketType: Str_1p_ws
     timeoutSeconds: Optional[int] = Field(
         default=None, description="Override timeout for this call in seconds"
     )

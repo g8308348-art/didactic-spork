@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Optional, Dict, Any
 
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 from ..config import settings
 from ..http_client import request_json
@@ -12,9 +13,9 @@ log = get_logger(__name__)
 
 
 class FircoRequest(BaseModel):
-    transaction: constr(strip_whitespace=True, min_length=1)
-    action: constr(strip_whitespace=True, min_length=1)
-    comment: constr(strip_whitespace=True) = ""
+    transaction: Annotated[str, Field(strip_whitespace=True, min_length=1)]
+    action: Annotated[str, Field(strip_whitespace=True, min_length=1)]
+    comment: Annotated[str, Field(strip_whitespace=True)] = ""
     transactionType: Optional[str] = Field(default="", description="Optional transaction type")
     performOnLatest: Optional[bool] = Field(default=False, description="If true, perform action on the latest")
     timeoutSeconds: Optional[int] = Field(

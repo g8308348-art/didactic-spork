@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Optional, Dict, Any
 
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field
+from pydantic import StringConstraints
+from typing_extensions import Annotated
 
 from ..config import settings
 from ..http_client import request_json
@@ -12,8 +14,12 @@ log = get_logger(__name__)
 
 
 class BpmRequest(BaseModel):
-    transactionId: constr(strip_whitespace=True, min_length=3, max_length=50)
-    marketType: constr(strip_whitespace=True, min_length=1)
+    transactionId: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=3, max_length=50)
+    ]
+    marketType: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1)
+    ]
     timeoutSeconds: Optional[int] = Field(
         default=None, description="Override timeout for this call in seconds"
     )

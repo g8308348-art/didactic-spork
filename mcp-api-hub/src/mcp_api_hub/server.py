@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import os
-
-from dotenv import load_dotenv
-
 from mcp.server.fastmcp import FastMCP
 
 from .config import settings
@@ -13,7 +9,6 @@ from .registry import autodiscover_and_register
 
 def main() -> None:
     # Load environment and configure logging early
-    load_dotenv()
     setup_logging(settings.LOG_LEVEL)
     log = get_logger(__name__)
 

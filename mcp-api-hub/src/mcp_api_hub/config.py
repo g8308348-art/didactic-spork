@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pydantic import BaseSettings, Field, AnyHttpUrl
+from pydantic import Field, AnyHttpUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
@@ -19,9 +20,12 @@ class Settings(BaseSettings):
     # Debug
     LOG_LEVEL: str = Field("INFO", description="Logging level: DEBUG, INFO, WARNING, ERROR")
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    # Pydantic v2 settings config
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 settings = Settings()

@@ -59,7 +59,9 @@ class Selectors:
             page.locator("tr.odd-row").first.locator("td").first
         )
         # rows
-        self.first_row_active = page.locator("tr.even-row.clickable-row")
+        self.first_row_active = page.locator(
+            "table#table-element-1 tbody tr.even-row.clickable-row"
+        ).first
         self.first_row_not_active = page.locator(
             "table#table-element-1 tbody tr.lowlightedRow"
         ).first

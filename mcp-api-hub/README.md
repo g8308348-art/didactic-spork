@@ -90,4 +90,5 @@ pytest -q
 - Add new tool modules under `src/mcp_api_hub/tools/` with a `register(mcp)` function that decorates functions using `@mcp.tool()`.
 - They will be auto-registered at startup.
 
-PYTHONPATH=mcp-api-hub/src python3 -c "from mcp_api_hub.server import main; main()"
+*** cd C:\path\to\stt-murdock
+python -c "import sys; sys.path.insert(0, r'mcp-api-hub\src'); from mcp_api_hub.server import main; main()" ***

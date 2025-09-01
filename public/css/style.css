@@ -10,15 +10,15 @@
   --bg-secondary: #d3d3d3;
   --text-color: #333333;
   --text-secondary: #666666;
-  --primary-color: #6495ed;
+  --primary-color: #0047FF; /* brand blue */
   --secondary-color: #2ECC71;
   --error-color: #E74C3C;
   --border-color: #dee2e6;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --hover-color: #f1f1f1;
   /* Branding */
-  --topbar-color: #000063; /* deep navy for top bar */
-  --privacy-panel-bg: #6495ed; /* cornflower blue */
+  --topbar-color: #ffffff; /* white navbar like screenshot */
+  --privacy-panel-bg: #F1F7FF; /* very light blue panel */
   
   /* Common Variables */
   --border-radius: 4px;
@@ -96,7 +96,7 @@ a:hover {
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
   background-color: var(--topbar-color);
-  box-shadow: 0 2px 4px var(--shadow-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .logo h1 {
@@ -108,7 +108,7 @@ a:hover {
 /* Optional logo image support */
 .logo img.logo-img {
   display: block;
-  height: 71px;
+  height: 40px;
   width: auto;
 }
 
@@ -118,17 +118,17 @@ a:hover {
 }
 
 .nav-link {
-  color: #e6e6e6; /* lighter text on dark top bar */
-  font-weight: 500;
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
-  border: 1px solid #ffffff; /* white border around nav button */
-  transition: color var(--transition-speed), background-color var(--transition-speed);
+  color: var(--primary-color);
+  font-weight: 600;
+  padding: var(--spacing-sm) 0;
+  border-radius: 0;
+  border: none;
+  transition: color var(--transition-speed);
 }
 
 .nav-link:hover, .nav-link.active {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--primary-color);
+  text-decoration: underline;
 }
 
 /* Theme Toggle */
@@ -140,7 +140,7 @@ a:hover {
 #theme-toggle-btn {
   background: none;
   border: none;
-  color: #e6e6e6;
+  color: var(--primary-color);
   font-size: 1.2rem;
   cursor: pointer;
   padding: var(--spacing-sm);

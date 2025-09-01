@@ -96,7 +96,7 @@ a:hover {
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
   background-color: var(--topbar-color);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--primary-color);
 }
 
 .logo h1 {
@@ -120,9 +120,9 @@ a:hover {
 .nav-link {
   color: var(--primary-color);
   font-weight: 600;
-  padding: var(--spacing-sm) 0;
-  border-radius: 0;
-  border: none;
+  padding: calc(var(--spacing-sm) - 1px) var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--primary-color);
   transition: color var(--transition-speed);
 }
 
@@ -544,7 +544,8 @@ footer {
   padding: var(--spacing-lg) 0;
   text-align: center;
   margin-top: var(--spacing-xl);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--primary-color);
+  border-bottom: 1px solid var(--primary-color);
 }
 
 .transaction-row {

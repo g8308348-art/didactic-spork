@@ -3,18 +3,7 @@
  * Main Stylesheet
  */
 
-/* Typography: import brand fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Load Lab Antiqua from provided OTF in public/fonts/ */
-@font-face {
-  font-family: 'Lab Antiqua';
-  src: local('Lab Antiqua Small Condensed'),
-       url('../fonts/LABANTIQUA-SMALLCONDENSED.OTF') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Typography: system fonts (Arial stack) */
 
 /* CSS Variables for Theming */
 :root {
@@ -23,15 +12,25 @@
   --bg-secondary: #d3d3d3;
   --text-color: #333333;
   --text-secondary: #666666;
-  --primary-color: #0047FF; /* brand blue */
+
+  /* Brand Palette (Ultramarine scale) */
+  /* U-10 Navy: value pending confirmation */
+  --u10-navy: #0a0f2a; /* placeholder; update when exact hex is provided */
+  --u7-ultramarine: #0047FF;
+  --u5: #4489FF;
+  --u3: #A3CDFF;
+  --u1-sky: #F1F7FF; /* provisional sky */
+
+  /* Theme tokens mapped to palette */
+  --primary-color: var(--u7-ultramarine);
   --secondary-color: #2ECC71;
   --error-color: #E74C3C;
   --border-color: #dee2e6;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --hover-color: #f1f1f1;
   /* Branding */
-  --topbar-color: #ffffff; /* white navbar like screenshot */
-  --privacy-panel-bg: #F1F7FF; /* very light blue panel */
+  --topbar-color: #ffffff; /* white navbar */
+  --privacy-panel-bg: var(--u1-sky); /* very light blue panel */
   
   /* Common Variables */
   --border-radius: 4px;
@@ -64,8 +63,8 @@
 }
 
 body {
-  /* Use Lab Antiqua everywhere by default */
-  font-family: 'Lab Antiqua', 'Inter', 'Times New Roman', Times, Georgia, serif;
+  /* Use Arial everywhere by default */
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.6;

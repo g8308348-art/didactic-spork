@@ -6,21 +6,12 @@
 /* Typography: import brand fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* If you have the Lab Antiqua font files, place them under
-   public/fonts/lab-antiqua/ and these sources will load them. */
+/* Load Lab Antiqua from provided OTF in public/fonts/ */
 @font-face {
   font-family: 'Lab Antiqua';
-  src: url('../fonts/lab-antiqua/LabAntiqua-Regular.woff2') format('woff2'),
-       url('../fonts/lab-antiqua/LabAntiqua-Regular.woff') format('woff');
+  src: local('Lab Antiqua Small Condensed'),
+       url('../fonts/LABANTIQUA-SMALLCONDENSED.OTF') format('opentype');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Lab Antiqua';
-  src: url('../fonts/lab-antiqua/LabAntiqua-Bold.woff2') format('woff2'),
-       url('../fonts/lab-antiqua/LabAntiqua-Bold.woff') format('woff');
-  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
@@ -69,10 +60,12 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: inherit; /* ensure inheritance cascades */
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+  /* Use Lab Antiqua everywhere by default */
+  font-family: 'Lab Antiqua', 'Inter', 'Times New Roman', Times, Georgia, serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.6;
@@ -90,7 +83,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-md);
   font-weight: 600;
-  font-family: 'Lab Antiqua', 'Times New Roman', Times, Georgia, serif;
+  font-family: inherit; /* inherit Lab Antiqua from body */
 }
 
 h1 {
@@ -235,6 +228,7 @@ input, textarea, select {
   background-color: var(--bg-secondary);
   color: var(--text-color);
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+  font-family: inherit; /* use Inter as base */
 }
 
 input:focus, textarea:focus, select:focus {
@@ -274,6 +268,7 @@ textarea {
   border: none;
   border-radius: 6px; /* per request */
   font-weight: 500;
+  font-family: inherit; /* Inter */
   cursor: pointer;
   transition: background-color var(--transition-speed), transform var(--transition-speed);
 }

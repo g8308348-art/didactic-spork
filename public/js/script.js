@@ -17,6 +17,9 @@ const transactionsTableBody = document.getElementById('transactions-table-body')
 const filterAction = document.getElementById('filter-action');
 const searchTransactions = document.getElementById('search-transactions');
 
+// Tracks transactions explicitly retried from history UI (case-insensitive keys)
+const forcedRetrySet = new Set();
+
 // Error message elements
 const transactionsError = document.getElementById('transactions-error');
 const commentError = document.getElementById('comment-error');
@@ -405,9 +408,10 @@ transactionForm.addEventListener('submit', async (e) => {
                     const shouldRetry = saved.status === 'failed' && 
                                       saved.statusMessage && 
                                       saved.statusMessage.includes('waiting for locator("tr.even-row.clickable-row")');
+                    const isForcedRetry = forcedRetrySet.has(normalizedTxn);
                     
                     // If it's not a retryable error, skip it
-                    if (!shouldRetry) {
+                    if (!shouldRetry && !isForcedRetry) {
                         saveTransaction({
                             transaction: txn,
                             comment: commentValue,
@@ -420,8 +424,12 @@ transactionForm.addEventListener('submit', async (e) => {
                         noActionLocal.push(txn);
                         continue;
                     }
-                    // If shouldRetry is true, we'll proceed with processing this transaction
-                    console.log(`Retrying failed transaction with locator error: ${txn}`);
+                    // If shouldRetry or forced retry is true, proceed with processing this transaction
+                    if (isForcedRetry) {
+                        console.log(`Retrying transaction via UI request: ${txn}`);
+                    } else {
+                        console.log(`Retrying failed transaction with locator error: ${txn}`);
+                    }
                 }
                 
                 // Validate each transaction again for safety
@@ -515,6 +523,8 @@ transactionForm.addEventListener('submit', async (e) => {
                     failCount++;
                     failedTransactions.push({txn, error: errorMessage});
                 }
+                // Clear forced retry flag for this txn (if set)
+                forcedRetrySet.delete(normalizedTxn);
             }
             // Show summary message with No action count included
             const totalNoAction = noActionProcessedCount + noActionLocal.length;
@@ -737,7 +747,7 @@ function loadTransactions() {
     if (transactions.length === 0) {
         const noDataRow = document.createElement('tr');
         noDataRow.className = 'no-data';
-        noDataRow.innerHTML = '<td colspan="5">No transaction data available</td>';
+        noDataRow.innerHTML = '<td colspan="6">No transaction data available</td>';
         transactionsTableBody.appendChild(noDataRow);
         return;
     }
@@ -833,12 +843,19 @@ function loadTransactions() {
 
         statusHtml = `<span class='${statusClass}'${tooltip ? ` data-tooltip='${tooltip}'` : ''}>${escapeHtml(statusText)}</span>`;
         
+        // Actions column: show Retry for Failed rows
+        const isFailed = statusText.toLowerCase() === 'failed';
+        const actionsHtml = isFailed
+            ? `<button type="button" class="btn btn-secondary retry-btn" data-txn="${escapeHtml(transaction.transaction)}" data-action="${escapeHtml(transaction.action || '')}" data-comment="${escapeHtml(transaction.comment || '')}">Retry</button>`
+            : '<span class="muted">—</span>';
+
         row.innerHTML = `
             <td>${formattedDate}</td>
             <td>${escapeHtml(transaction.transaction)}</td>
             <td>${escapeHtml(transaction.comment || '')}</td>
             <td>${escapeHtml(transaction.action)}</td>
             <td>${statusHtml}</td>
+            <td>${actionsHtml}</td>
         `;
         
         transactionsTableBody.appendChild(row);
@@ -861,3 +878,43 @@ function escapeHtml(unsafe) {
 // Filter and search functionality
 filterAction.addEventListener('change', loadTransactions);
 searchTransactions.addEventListener('input', loadTransactions);
+
+// Delegated handler for Retry buttons in history table
+transactionsTableBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.retry-btn');
+    if (!btn) return;
+    e.preventDefault();
+
+    const txn = (btn.dataset.txn || '').trim();
+    if (!txn) return;
+    const comment = (btn.dataset.comment || 'MURDOCK').trim() || 'MURDOCK';
+    const action = (btn.dataset.action || 'Release').trim();
+
+    // Prefill form fields
+    transactionsInput.value = txn;
+    commentInput.value = comment;
+    // Validate action value; fallback to Release if invalid
+    const validActions = ['Release', 'Block', 'Reject', 'STP-Release'];
+    actionSelect.value = validActions.includes(action) ? action : 'Release';
+
+    // Switch UI to the form section and set nav link active for clarity
+    document.querySelectorAll('.section').forEach(section => {
+        section.style.display = 'none';
+    });
+    const formSection = document.getElementById('transaction-form');
+    if (formSection) formSection.style.display = 'block';
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const formNav = document.querySelector('.nav-link[href="#transaction-form"]');
+    if (formNav) formNav.classList.add('active');
+
+    // Mark this transaction for forced retry to bypass duplicate skip
+    const normalized = txn.toLowerCase();
+    forcedRetrySet.add(normalized);
+
+    // Submit the form to reuse existing processing/validation flow
+    if (typeof transactionForm.requestSubmit === 'function') {
+        transactionForm.requestSubmit();
+    } else {
+        transactionForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
+});

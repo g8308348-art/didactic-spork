@@ -3,6 +3,28 @@
  * Main Stylesheet
  */
 
+/* Typography: import brand fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* If you have the Lab Antiqua font files, place them under
+   public/fonts/lab-antiqua/ and these sources will load them. */
+@font-face {
+  font-family: 'Lab Antiqua';
+  src: url('../fonts/lab-antiqua/LabAntiqua-Regular.woff2') format('woff2'),
+       url('../fonts/lab-antiqua/LabAntiqua-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lab Antiqua';
+  src: url('../fonts/lab-antiqua/LabAntiqua-Bold.woff2') format('woff2'),
+       url('../fonts/lab-antiqua/LabAntiqua-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* CSS Variables for Theming */
 :root {
   /* Light Mode Colors */
@@ -50,7 +72,7 @@
 }
 
 body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.6;
@@ -68,6 +90,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-md);
   font-weight: 600;
+  font-family: 'Lab Antiqua', 'Times New Roman', Times, Georgia, serif;
 }
 
 h1 {

@@ -700,12 +700,20 @@ class FircoPage:
                 try:
                     if getattr(self, "_bpm_invoked", False):
                         bpm_info = getattr(self, "_last_bpm_result", None) or {}
-                        bpm_env = (bpm_info or {}).get("environment")
-                        current_status = str(handled).strip()
+                        bpm_env = bpm_info.get("environment")
+                        # Prefer BPM JSON 4th column value (details.current_status); fallback to handled
+                        current_status = str(
+                            (
+                                (bpm_info.get("details") or {}).get("current_status")
+                                or handled
+                            )
+                        ).strip()
                         status_upper = current_status.upper()
                         logging.debug("BPM environment: %s", bpm_env)
-                        logging.debug("BPM status: %s", current_status)
-                        logging.debug("BPM status upper: %s", status_upper)
+                        logging.debug(
+                            "BPM CURRENT STATUS (4th col): %s", current_status
+                        )
+                        logging.debug("BPM CURRENT STATUS upper: %s", status_upper)
                         # BUAT: always No action, message = exact 4th column value
                         if bpm_env and str(bpm_env).upper() == "BUAT":
                             result["success"] = True

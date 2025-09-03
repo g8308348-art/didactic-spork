@@ -696,28 +696,25 @@ class FircoPage:
                 result["error_code"] = 0
             elif isinstance(handled, str):
                 # When verify_first_row returns a state string.
-                # Special-case A: BPM success state explicitly says NO HIT Transaction -> No action
+                # Special-case B: if the string came from a successful BPM search
+                # and env is not BUAT,
+                # and CURRENT STATUS is NO HIT Transaction -> surface as No action.
                 try:
-                    if getattr(self, "_bpm_invoked", False) and str(handled).strip().upper() == "NO HIT TRANSACTION":
+                    bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get(
+                        "environment"
+                    )
+                    if (
+                        getattr(self, "_bpm_invoked", False)
+                        and bpm_env
+                        and str(bpm_env).upper() != "BUAT"
+                        and str(handled).strip().upper() == "NO HIT TRANSACTION"
+                    ):
                         result["success"] = True
                         result["status"] = "No action"
                         result["status_detail"] = handled
+                        # Ensure the message contains the exact phrase "NO HIT Transaction"
                         result["message"] = (
-                            f"Transaction {transaction} found in BPM with status: {handled}. No action performed."
-                        )
-                        result["error_code"] = 0
-                        return result
-                except Exception:
-                    pass
-                # Special-case B: if the string came from a successful BPM search and env is BUAT, surface as No action.
-                try:
-                    bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get("environment")
-                    if getattr(self, "_bpm_invoked", False) and bpm_env and str(bpm_env).upper() == "BUAT":
-                        result["success"] = True
-                        result["status"] = "No action"
-                        result["status_detail"] = handled
-                        result["message"] = (
-                            f"Transaction {transaction} found in BPM (BUAT) with state: {handled}. No action performed."
+                            f"Transaction {transaction} found in BPM with status: NO HIT Transaction. No action performed."
                         )
                         result["error_code"] = 0
                         # Short-circuit further handling

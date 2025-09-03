@@ -69,6 +69,10 @@ body {
   color: var(--text-color);
   line-height: 1.6;
   transition: background-color var(--transition-speed), color var(--transition-speed);
+  /* Sticky footer layout */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
@@ -172,6 +176,11 @@ a:hover {
 /* Sections */
 .section {
   padding: var(--spacing-xl) 0;
+}
+
+/* Let main content grow to push footer to bottom on short pages */
+main {
+  flex: 1 0 auto;
 }
 
 /* Forms */
@@ -565,6 +574,8 @@ footer {
   border-top: 1px solid var(--primary-color);
   border-bottom: 1px solid var(--primary-color);
   color: #ffffff;
+  /* Ensure footer does not shrink in flex layout */
+  flex-shrink: 0;
 }
 
 .transaction-row {

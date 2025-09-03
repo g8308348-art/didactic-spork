@@ -390,6 +390,7 @@ transactionForm.addEventListener('submit', async (e) => {
             let failedTransactions = [];
             let succeededTransactions = [];
             let noActionProcessedCount = 0; // count of processed results with status 'No action'
+            let noActionProcessedTxns = []; // list of processed txns that resulted in 'No action'
             
             for (const txn of transactionsArray) {
                 // Check if this transaction was previously processed
@@ -501,6 +502,7 @@ transactionForm.addEventListener('submit', async (e) => {
                     const statusLower = (recordToSave.status || '').toLowerCase();
                     if (statusLower === 'no action' || statusLower === 'already_handled' || statusLower === 'found_in_bpm') {
                         noActionProcessedCount++;
+                        noActionProcessedTxns.push(txn);
                     } else {
                         successCount++;
                         succeededTransactions.push(txn);
@@ -545,7 +547,8 @@ transactionForm.addEventListener('submit', async (e) => {
             });
             // If all transactions resulted in No action (either skipped duplicates or processed as No action)
             if ((noActionLocal.length + noActionProcessedCount) === transactionsArray.length && failCount === 0) {
-                submissionStatus.innerHTML = `No action taken on transaction${noActionLocal.length > 1 ? 's' : ''} ${noActionLocal.join(', ')}.`;
+                const allNoActionTxns = [...noActionLocal, ...noActionProcessedTxns];
+                submissionStatus.innerHTML = `No action taken on transaction${allNoActionTxns.length > 1 ? 's' : ''} ${allNoActionTxns.join(', ')}.`;
                 submissionStatus.className = 'submission-status no-action';
                 submissionStatus.style.display = 'block';
             } else {

@@ -248,7 +248,9 @@ class FircoPage:
         """search for transaction number"""
         try:
             logging.debug("Applying data filters for transaction: %s", transaction)
+            self.selectors.menu_opener.wait_for(state="visible", timeout=1000)
             self.selectors.menu_opener.click()
+            self.selectors.data_filters.wait_for(state="visible", timeout=1000)
             self.selectors.data_filters.click()
             self.page.fill("id=text-input-element-44", transaction)
             self.page.click("id=Add Filter Button")
@@ -827,6 +829,11 @@ class FircoPage:
             try:
                 archived = archive_screenshots(transaction)
                 result["screenshot_path"] = str(archived) if archived else None
+                logging.info(
+                    "Finished processing transaction %s. Screenshots archived to %s",
+                    transaction,
+                    archived,
+                )
             except Exception as e:
                 logging.error("_archive_screenshots error: %s", e)
         return result

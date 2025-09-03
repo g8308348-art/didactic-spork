@@ -270,6 +270,8 @@ function processBatch() {
           row.cells[4].textContent = finalReason;
           }
         }
+        // Close the outer 'else' started after client-side validation
+        }
       } catch (err) {
         finalStatus = 'processing_error';
         finalReason = (err && err.message) ? err.message : 'Unexpected error';

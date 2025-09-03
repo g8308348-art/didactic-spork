@@ -51,9 +51,35 @@ function processBatch() {
       return;
     }
 
-    const total = lines.length - 1; // exclude header
+    // Build data lines excluding empty/invalid rows
+    const dataLines = lines.slice(1).filter((ln) => {
+      const cols = ln.split(/,\s*/);
+      return !(cols.length < 3 || cols.every((c) => c.trim() === ""));
+    });
+    const total = dataLines.length; // number of valid transactions
     let processed = 0;
     let csvOutput = [...ACCEPTED_HEADERS, "Status", "Error Reason"].join(",") + "\n";
+
+    // Validation constants (keep in sync with script.js and bpm_page.Options)
+    const VALID_ACTIONS = ['STP-Release', 'Release', 'Block', 'Reject'];
+    const VALID_MARKETS = [
+      'Unclassified', 'APS-MT', 'CBPR-MX', 'SEPA-Classic', 'RITS-MX', 'LYNX-MX',
+      'EnterpriseISO', 'CHAPS-MX', 'T2S-MX', 'BESS-MT', 'CHIPS-MX', 'SEPA-Instant',
+      'FEDWIRE', 'Taiwan-MX', 'CHATS-MX', 'PEPPLUS-IAT', 'TSF-TRIGGER'
+    ];
+
+    const validateCsvRow = (transaction, market, action) => {
+      if (!transaction || transaction.length > 64) {
+        return { ok: false, reason: 'Transaction must be 1-64 characters' };
+      }
+      if (!VALID_ACTIONS.includes(action)) {
+        return { ok: false, reason: `Invalid action: ${action}` };
+      }
+      if (!VALID_MARKETS.includes(market)) {
+        return { ok: false, reason: `Invalid market: ${market}` };
+      }
+      return { ok: true };
+    };
 
     // Helper to POST JSON and parse result
     const postJson = async (url, payload) => {
@@ -145,7 +171,7 @@ function processBatch() {
     };
 
     const processLine = async (index) => {
-      if (index >= lines.length) {
+      if (index >= dataLines.length) {
         // Finished processing
         const blob = new Blob([csvOutput], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
@@ -156,12 +182,7 @@ function processBatch() {
         return;
       }
 
-      const cols = lines[index].split(/,\s*/);
-      if (cols.length < 3 || cols.every(c => c.trim() === "")) {
-        // skip empty/invalid line
-        await Promise.resolve();
-        return processLine(index + 1);
-      }
+      const cols = dataLines[index].split(/,\s*/);
 
       const [transaction, market, action] = cols.map(c => c.trim());
       // Add to table early
@@ -176,10 +197,19 @@ function processBatch() {
       `;
       tableBody.appendChild(row);
 
-      let finalStatus = ""; // what goes into Status column
-      let finalReason = ""; // what goes into Error Reason column
+      let finalStatus = "";
+      let finalReason = "";
 
       try {
+        // Client-side validation first
+        const val = validateCsvRow(transaction, market, action);
+        if (!val.ok) {
+          finalStatus = 'validation_error';
+          finalReason = val.reason;
+          row.className = 'fail-row';
+          row.cells[3].textContent = finalStatus;
+          row.cells[4].textContent = finalReason;
+        } else {
         // 1) BPM validation
         const bpmPayload = { transactionId: transaction, marketType: market };
         const bpmResp = await postJson('/api/bpm', bpmPayload);
@@ -259,7 +289,7 @@ function processBatch() {
     };
 
     // Start processing from first data line
-    processLine(1);
+    processLine(0);
 
 
   };

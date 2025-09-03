@@ -696,47 +696,48 @@ class FircoPage:
                 result["error_code"] = 0
             elif isinstance(handled, str):
                 # When verify_first_row returns a state string.
-                # Special-case A: BPM success state explicitly says NO HIT Transaction -> No action
+                # BPM mapping rules (apply only if BPM was invoked)
                 try:
-                    if (
-                        getattr(self, "_bpm_invoked", False)
-                        and str(handled).strip().upper() == "NO HIT TRANSACTION"
-                    ):
-                        result["success"] = True
-                        result["status"] = "No action"
-                        result["status_detail"] = handled
-                        result["message"] = (
-                            f"Transaction {transaction} found in BPM with status: {handled}. No action performed."
-                        )
-                        result["error_code"] = 0
-                        return result
+                    if getattr(self, "_bpm_invoked", False):
+                        bpm_info = (getattr(self, "_last_bpm_result", None) or {})
+                        bpm_env = (bpm_info or {}).get("environment")
+                        current_status = str(handled).strip()
+                        status_upper = current_status.upper()
+
+                        # BUAT: always No action, message = exact 4th column value
+                        if bpm_env and str(bpm_env).upper() == "BUAT":
+                            result["success"] = True
+                            result["status"] = "No action"
+                            result["status_detail"] = current_status
+                            result["message"] = current_status
+                            result["error_code"] = 0
+                            return result
+
+                        # Non-BUAT rules based on 4th column
+                        if bpm_env and str(bpm_env).upper() != "BUAT":
+                            if (
+                                "SENDRESPONSETO" in status_upper
+                                or "BUSINESSRESPONSEPROCESSED" in status_upper
+                            ):
+                                result["success"] = True
+                                result["status"] = "No action"
+                                result["status_detail"] = current_status
+                                result["message"] = "Transaction found processed in BPM"
+                                result["error_code"] = 0
+                                return result
+                            if "POSTEDTXNTOFIRCO" in status_upper:
+                                result["success"] = True
+                                result["status"] = "Failed"
+                                result["status_detail"] = "PostedTxnToFirco"
+                                result["message"] = (
+                                    "Transaction not found in Firco, but BPM send to Firco. Firco is down?"
+                                )
+                                result["error_code"] = 0
+                                return result
                 except Exception:
+                    # If BPM metadata is unavailable, fall through to standard handling
                     pass
-                # Special-case B: if the string came from a successful BPM search
-                # and env is not BUAT,
-                # and CURRENT STATUS is NO HIT Transaction -> surface as No action.
-                try:
-                    bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get(
-                        "environment"
-                    )
-                    if (
-                        getattr(self, "_bpm_invoked", False)
-                        and bpm_env
-                        and str(bpm_env).upper() != "BUAT"
-                        and str(handled).strip().upper() == "NO HIT TRANSACTION"
-                    ):
-                        result["success"] = True
-                        result["status"] = "No action"
-                        result["status_detail"] = handled
-                        # Ensure the message contains the exact phrase "NO HIT Transaction"
-                        result["message"] = (
-                            f"Transaction {transaction} found in BPM with status: NO HIT Transaction. No action performed."
-                        )
-                        result["error_code"] = 0
-                        # Short-circuit further handling
-                        return result
-                except Exception:
-                    pass
+
                 # If it was an unmapped state, treat overall as "No action" but expose the raw state in status_detail.
                 if getattr(self, "_unmapped_state", False):
                     result["success"] = True
@@ -803,7 +804,7 @@ class FircoPage:
                 if bpm_env and str(bpm_env).upper() == "BUAT":
                     result["message"] = (
                         result.get("message") or ""
-                    ).rstrip() + " Envirement: BUAT"
+                    ).rstrip() + " Enviroment: BUAT"
             except Exception:  # noqa: BLE001
                 pass
         except PlaywrightTimeoutError as e:

@@ -719,14 +719,14 @@ class FircoPage:
                             result["success"] = True
                             result["status"] = "No action"
                             result["status_detail"] = current_status
-                            result["message"] = current_status
+                            result["message"] = f"Environment: BUAT. {current_status}"
                             result["error_code"] = 0
                             return result
 
                         # Non-BUAT rules based on 4th column
                         if bpm_env and str(bpm_env).upper() != "BUAT":
                             if (
-                                "SENDRESPONSETO" in status_upper
+                                "SENTRESPONSETO" in status_upper
                                 or "BUSINESSRESPONSEPROCESSED" in status_upper
                             ):
                                 result["success"] = True

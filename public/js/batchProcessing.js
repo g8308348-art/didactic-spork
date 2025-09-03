@@ -67,6 +67,83 @@ function processBatch() {
       return { ok: resp.ok, status: resp.status, data };
     };
 
+    // Decide whether to call /api based on BPM result
+    const decideFromBpm = (bpmResult) => {
+      // Default: do NOT call /api
+      const out = { callApi: false, reason: '', statusLabel: 'No action' };
+      if (!bpmResult || typeof bpmResult !== 'object') {
+        out.reason = 'Invalid BPM result';
+        return out;
+      }
+      const env = (bpmResult.environment || '').toString().trim().toUpperCase();
+      const details = bpmResult.details || {};
+      const col4 = (details.current_status || '').toString();
+      const col11 = (details.bpm_status || '').toString();
+      const col4Lower = col4.toLowerCase();
+      const col11Lower = col11.toLowerCase();
+
+      // Step 1 — Global short-circuit: BUAT -> do NOT call /api
+      if (env === 'BUAT') {
+        out.reason = 'BPM environment BUAT';
+        return out;
+      }
+
+      // Step 2 — Check 4th column
+      if (col4Lower.includes('undefined')) {
+        out.reason = 'CURRENT STATUS is UNDEFINED';
+        return out;
+      }
+      if (col4Lower.includes('sendresponseto') || col4Lower.includes('sentresponseto')) {
+        out.reason = 'NO HIT Transaction (SendResponseTo)';
+        return out;
+      }
+      if (col4Lower.includes('businessresponseprocessed')) {
+        out.reason = 'Response from Firco received';
+        return out;
+      }
+      const col4IsPosted = col4Lower.includes('postedtxntofirco');
+
+      // Step 3 — Check 11th column (STATUS)
+      const statusHasSuccess = col11Lower.includes('success');
+      const statusHasFailure = col11Lower.includes('failure');
+      const statusHasWarning = col11Lower.includes('warning');
+
+      if (statusHasFailure || statusHasWarning) {
+        out.reason = `BPM STATUS indicates ${statusHasFailure ? 'FAILURE' : 'WARNING'}: ${col11}`;
+        return out;
+      }
+
+      if (statusHasSuccess) {
+        if (col4Lower.includes('sendresponseto') || col4Lower.includes('sentresponseto')) {
+          out.reason = 'SUCCESS + SendResponseTo => No action';
+          return out;
+        }
+        if (col4Lower.includes('businessresponseprocessed')) {
+          out.reason = 'SUCCESS + BusinessResponseProcessed => No action';
+          return out;
+        }
+        if (col4IsPosted) {
+          out.callApi = true;
+          out.reason = 'SUCCESS + PostedTxnToFirco => proceed';
+          out.statusLabel = 'BPM_OK';
+          return out;
+        }
+      }
+
+      // Step 2 allowed calling when PostedTxnToFirco regardless of status; but Step 3 refines on SUCCESS.
+      // If none matched yet, and 4th is PostedTxnToFirco without explicit SUCCESS, still allow per Step 2.
+      if (col4IsPosted) {
+        out.callApi = true;
+        out.reason = 'PostedTxnToFirco => proceed';
+        out.statusLabel = 'BPM_OK';
+        return out;
+      }
+
+      // Step 4 — Default: do NOT call /api
+      out.reason = 'BPM rules: default skip';
+      return out;
+    };
+
     const processLine = async (index) => {
       if (index >= lines.length) {
         // Finished processing
@@ -115,10 +192,27 @@ function processBatch() {
           row.cells[3].textContent = finalStatus;
           row.cells[4].textContent = finalReason;
         } else {
-          // Show quick BPM success feedback
-          row.className = 'success-row';
-          row.cells[3].textContent = 'BPM_OK';
-          row.cells[4].textContent = '';
+          // Evaluate BPM result to decide whether to proceed with /api
+          const bpm = (bpmResp.data && bpmResp.data.results && bpmResp.data.results.bpmResult) || {};
+          const decision = decideFromBpm(bpm);
+
+          if (!decision.callApi) {
+            // Skip /api per BPM rules
+            finalStatus = decision.statusLabel || 'No action';
+            // Prefer specific mapping from 4th column scenarios when available
+            if (decision.reason) {
+              finalReason = `BPM: ${decision.reason}`;
+            } else {
+              finalReason = bpm?.message || 'BPM rule decided to skip';
+            }
+            row.className = 'success-row';
+            row.cells[3].textContent = finalStatus;
+            row.cells[4].textContent = finalReason;
+          } else {
+            // Show quick BPM success feedback
+            row.className = 'success-row';
+            row.cells[3].textContent = decision.statusLabel || 'BPM_OK';
+            row.cells[4].textContent = '';
 
           // 2) Proceed to main /api call, using FircoPage.flow_start() semantics
           const apiPayload = {
@@ -144,6 +238,7 @@ function processBatch() {
           finalReason = message || (apiResp.ok ? '' : `Processing failed (HTTP ${apiResp.status})`);
           row.cells[3].textContent = finalStatus;
           row.cells[4].textContent = finalReason;
+          }
         }
       } catch (err) {
         finalStatus = 'processing_error';

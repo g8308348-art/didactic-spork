@@ -696,7 +696,20 @@ class FircoPage:
                 result["error_code"] = 0
             elif isinstance(handled, str):
                 # When verify_first_row returns a state string.
-                # Special-case: if the string came from a successful BPM search and env is BUAT, surface as No action.
+                # Special-case A: BPM success state explicitly says NO HIT Transaction -> No action
+                try:
+                    if getattr(self, "_bpm_invoked", False) and str(handled).strip().upper() == "NO HIT TRANSACTION":
+                        result["success"] = True
+                        result["status"] = "No action"
+                        result["status_detail"] = handled
+                        result["message"] = (
+                            f"Transaction {transaction} found in BPM with status: {handled}. No action performed."
+                        )
+                        result["error_code"] = 0
+                        return result
+                except Exception:
+                    pass
+                # Special-case B: if the string came from a successful BPM search and env is BUAT, surface as No action.
                 try:
                     bpm_env = (getattr(self, "_last_bpm_result", None) or {}).get("environment")
                     if getattr(self, "_bpm_invoked", False) and bpm_env and str(bpm_env).upper() == "BUAT":

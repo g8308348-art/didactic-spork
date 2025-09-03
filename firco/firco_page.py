@@ -699,11 +699,13 @@ class FircoPage:
                 # BPM mapping rules (apply only if BPM was invoked)
                 try:
                     if getattr(self, "_bpm_invoked", False):
-                        bpm_info = (getattr(self, "_last_bpm_result", None) or {})
+                        bpm_info = getattr(self, "_last_bpm_result", None) or {}
                         bpm_env = (bpm_info or {}).get("environment")
                         current_status = str(handled).strip()
                         status_upper = current_status.upper()
-
+                        logging.debug("BPM environment: %s", bpm_env)
+                        logging.debug("BPM status: %s", current_status)
+                        logging.debug("BPM status upper: %s", status_upper)
                         # BUAT: always No action, message = exact 4th column value
                         if bpm_env and str(bpm_env).upper() == "BUAT":
                             result["success"] = True

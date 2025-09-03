@@ -165,8 +165,8 @@ function processBatch() {
         return out;
       }
 
-      // Step 4 — Default: do NOT call /api
-      out.reason = 'BPM rules: default skip';
+      // Step 4 — Default: do NOT call /api; carry BPM message when available
+      out.reason = (bpmResult && bpmResult.message) ? bpmResult.message : 'BPM rules: default skip';
       return out;
     };
 

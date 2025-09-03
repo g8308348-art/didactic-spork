@@ -706,13 +706,27 @@ class FircoPage:
                     )
                     result["error_code"] = 0
                 else:
-                    # HISTORY states or mapped string outcomes
-                    result["success"] = True
-                    result["status"] = handled
-                    result["message"] = (
-                        f"Transaction {transaction} processed with state: {handled}."
-                    )
-                    result["error_code"] = 0
+                    # If we are in HISTORY tab, do not perform any action; surface as No action with detail
+                    try:
+                        current_tab = self.detect_tab()
+                    except Exception:
+                        current_tab = TabContext.LIVE
+                    if current_tab == TabContext.HISTORY:
+                        result["success"] = True
+                        result["status"] = "No action"
+                        result["status_detail"] = handled
+                        result["message"] = (
+                            f"Transaction {transaction} found in History with state: {handled}. No action performed."
+                        )
+                        result["error_code"] = 0
+                    else:
+                        # LIVE mapped string outcomes
+                        result["success"] = True
+                        result["status"] = handled
+                        result["message"] = (
+                            f"Transaction {transaction} processed with state: {handled}."
+                        )
+                        result["error_code"] = 0
             elif handled is False:
                 # If BPM was invoked, surface its message and avoid 404/network_error on the UI.
                 # We return success=True with a specific status_detail so the frontend records a

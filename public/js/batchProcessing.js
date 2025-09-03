@@ -55,7 +55,19 @@ function processBatch() {
     let processed = 0;
     let csvOutput = [...ACCEPTED_HEADERS, "Status", "Error Reason"].join(",") + "\n";
 
-    const processLine = (index) => {
+    // Helper to POST JSON and parse result
+    const postJson = async (url, payload) => {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data = {};
+      try { data = await resp.json(); } catch (_) { /* keep empty */ }
+      return { ok: resp.ok, status: resp.status, data };
+    };
+
+    const processLine = async (index) => {
       if (index >= lines.length) {
         // Finished processing
         const blob = new Blob([csvOutput], { type: "text/csv;charset=utf-8;" });
@@ -70,36 +82,85 @@ function processBatch() {
       const cols = lines[index].split(/,\s*/);
       if (cols.length < 3 || cols.every(c => c.trim() === "")) {
         // skip empty/invalid line
-        processLine(index + 1);
-        return;
+        await Promise.resolve();
+        return processLine(index + 1);
       }
 
-      const [transaction, market, action] = cols;
-      // Simulate processing logic - replace with real API call
-      const isSuccess = Math.random() >= 0.5;
-      const errorReason = isSuccess ? "" : "Processing error";
-      const statusText = isSuccess ? "SUCCESS" : "FAIL";
-
-      // Add to table
+      const [transaction, market, action] = cols.map(c => c.trim());
+      // Add to table early
       const row = document.createElement("tr");
-      row.className = isSuccess ? "success-row" : "fail-row";
+      row.className = "pending-row";
       row.innerHTML = `
         <td>${transaction}</td>
         <td>${market}</td>
         <td>${action}</td>
-        <td>${statusText}</td>
-        <td>${errorReason}</td>
+        <td>VALIDATING</td>
+        <td></td>
       `;
       tableBody.appendChild(row);
 
-      // Append to CSV
-      csvOutput += `${transaction},${market},${action},${statusText},${errorReason}\n`;
+      let finalStatus = ""; // what goes into Status column
+      let finalReason = ""; // what goes into Error Reason column
 
-      processed++;
-      progressInfo.innerText = `Processed ${processed} of ${total} transactions.`;
+      try {
+        // 1) BPM validation
+        const bpmPayload = { transactionId: transaction, marketType: market };
+        const bpmResp = await postJson('/api/bpm', bpmPayload);
 
-      // Process next line asynchronously to allow UI update
-      setTimeout(() => processLine(index + 1), 0);
+        if (!bpmResp.ok || !bpmResp.data || bpmResp.data.status !== 'ok') {
+          // BPM failed -> stop here
+          finalStatus = 'FAIL';
+          finalReason = bpmResp.data?.message || `BPM validation failed (HTTP ${bpmResp.status})`;
+          row.className = 'fail-row';
+          row.cells[3].textContent = finalStatus;
+          row.cells[4].textContent = finalReason;
+        } else {
+          // Show quick BPM success feedback
+          row.className = 'success-row';
+          row.cells[3].textContent = 'BPM_OK';
+          row.cells[4].textContent = '';
+
+          // 2) Proceed to main /api call, using FircoPage.flow_start() semantics
+          const apiPayload = {
+            transaction: transaction,
+            action: action,
+            comment: 'Batch Processing',
+            transactionType: market,
+          };
+          const apiResp = await postJson('/api', apiPayload);
+
+          // Map UI strictly based on backend result fields
+          const r = apiResp.data || {};
+          const success = Boolean(r.success);
+          const status = r.status || (apiResp.ok ? 'unknown' : 'processing_error');
+          const statusDetail = r.status_detail || '';
+          const message = r.message || '';
+
+          // Determine row class by success flag
+          row.className = success ? 'success-row' : 'fail-row';
+          // Status column shows the backend status (not SUCCESS/FAIL), per flow_start logic
+          finalStatus = statusDetail ? `${status} (${statusDetail})` : status;
+          // Error reason shows backend message when present
+          finalReason = message || (apiResp.ok ? '' : `Processing failed (HTTP ${apiResp.status})`);
+          row.cells[3].textContent = finalStatus;
+          row.cells[4].textContent = finalReason;
+        }
+      } catch (err) {
+        finalStatus = 'processing_error';
+        finalReason = (err && err.message) ? err.message : 'Unexpected error';
+        row.className = 'fail-row';
+        row.cells[3].textContent = finalStatus;
+        row.cells[4].textContent = finalReason;
+      } finally {
+        // Append to CSV with sanitized reason (no newlines/commas)
+        csvOutput += `${transaction},${market},${action},${finalStatus},${(finalReason || '').replace(/\n|\r|,/g, ' ')}` + "\n";
+
+        processed++;
+        progressInfo.innerText = `Processed ${processed} of ${total} transactions.`;
+
+        // Continue sequentially, yielding to UI
+        setTimeout(() => { processLine(index + 1); }, 0);
+      }
     };
 
     // Start processing from first data line

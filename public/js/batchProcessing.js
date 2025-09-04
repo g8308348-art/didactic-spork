@@ -20,6 +20,12 @@ function processBatch() {
     const progressInfo = document.getElementById("progressInfo");
     const batchTable = document.getElementById("batchTable");
   const tableBody = batchTable.querySelector("tbody");
+  const processBtn = document.getElementById("processBatchBtn");
+  const setBatchBusy = (busy) => {
+    if (!processBtn) return;
+    processBtn.disabled = !!busy;
+    processBtn.textContent = busy ? 'Processing ...' : 'Process Batch';
+  };
   batchTable.classList.remove("hidden");
   tableBody.innerHTML = ""; // Clear previous results
 
@@ -35,11 +41,14 @@ function processBatch() {
 
     if (file.name.split(".").pop().toLowerCase() !== "csv") {
     resultDiv.innerHTML = '<p style="color: red;">File must be a CSV.</p>';
+    setBatchBusy(false); // Add this line
     return;
   }
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
+  setBatchBusy(true); // Add this line
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
         const text = e.target.result;
     const lines = text.trim().split(/\r?\n/);
 
@@ -47,6 +56,7 @@ function processBatch() {
     const headers = lines[0].split(/,\s*/);
     const isHeaderValid = ACCEPTED_HEADERS.every((h, idx) => headers[idx] && headers[idx].trim() === h);
     if (!isHeaderValid) {
+      setBatchBusy(false);
       resultDiv.innerHTML = `<p style="color:red;">Invalid CSV header. Expected columns: ${ACCEPTED_HEADERS.join(", ")}</p>`;
       return;
     }
@@ -179,6 +189,7 @@ function processBatch() {
         downloadLink.style.display = "block";
         downloadLink.innerText = "Download Results";
         progressInfo.innerText = `Processed ${processed} of ${total} transactions.`;
+        setBatchBusy(false);
         return;
       }
 
@@ -296,5 +307,7 @@ function processBatch() {
 
   };
 
+  // Start busy state once we actually begin reading/processing
+  setBatchBusy(true);
   reader.readAsText(file);
 }

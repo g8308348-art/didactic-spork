@@ -208,8 +208,9 @@ button:hover:not(:disabled) {
     .form-actions { grid-template-columns: 1fr; }
 }
 
-/* Transaction type dropdown */
-select[data-tag="transactionType"] {
+/* Transaction type + format-direction dropdowns */
+select[data-tag="transactionType"],
+#format-direction {
     width: 100%;
     /* max-width: 400px; */
     padding: 10px;
@@ -219,6 +220,50 @@ select[data-tag="transactionType"] {
     background: var(--color-background);
     color: var(--color-text);
     margin-bottom: 15px;
+}
+
+/* Inline row for Transaction Type + Format & Direction */
+.form-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline; /* align label baselines */
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1 1 0;
+    margin-bottom: 0; /* remove extra spacing when inline */
+}
+
+/* Ensure both selects expand equally */
+#format-direction,
+select[data-tag="transactionType"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Keep disabled select visually consistent (size stays the same) */
+.form-row select:disabled {
+    opacity: 1; /* avoid dimming which can make it look thinner */
+    background-color: var(--color-background);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+/* Consistent label spacing within inline row */
+.form-row label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+@media (max-width: 640px) {
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .form-row .form-group {
+        width: 100%;
+    }
 }
 #status {
     margin-top: 20px;

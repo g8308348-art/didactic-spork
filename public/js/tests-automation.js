@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const generatedFilesDiv = document.getElementById('generated-files');
     const customFieldsDiv = document.getElementById('custom-fields');
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const formatDirectionSelect = document.getElementById('format-direction');
     
     // State
     let currentTest = null;
@@ -46,15 +47,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Load format/direction options from JSON and react to transaction type changes
+    let testFormats = {};
+    async function loadTestFormats() {
+        try {
+            const res = await fetch('/data/test-formats.json');
+            testFormats = await res.json();
+        } catch (e) {
+            console.warn('Failed to load test formats', e);
+            testFormats = {};
+        }
+    }
+
+    function populateFormatDirection(txType) {
+        // reset
+        formatDirectionSelect.innerHTML = '<option value="" selected>Select a format (e.g., pacs.009 ib)</option>';
+        formatDirectionSelect.disabled = true;
+        if (!txType || !testFormats[txType]) return;
+        const { formats } = testFormats[txType];
+        const opts = [];
+        formats.forEach(f => {
+            (f.directions || ['ib','ob']).forEach(dir => {
+                const val = `${f.code} ${dir}`;
+                opts.push(`<option value="${val}">${val}</option>`);
+            });
+        });
+        formatDirectionSelect.insertAdjacentHTML('beforeend', opts.join(''));
+        formatDirectionSelect.disabled = false;
+    }
+
     // Enable / disable tests whenever transaction type changes
     if (transactionTypeSelect) {
         transactionTypeSelect.addEventListener('change', () => {
             updateTestOptionState();
             updateCustomFields();
             clearStatus();
+            populateFormatDirection(transactionTypeSelect.value);
         });
         // initial state on page load
         updateTestOptionState();
+        loadTestFormats().then(() => populateFormatDirection(transactionTypeSelect.value));
     }
 
     testOptions.forEach(option => {
@@ -158,7 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const requestBody = {
                 testName: currentTest,
-                placeholders: {}
+                placeholders: {
+                    formatDirection: formatDirectionSelect && formatDirectionSelect.value ? formatDirectionSelect.value : ''
+                }
             };
             
             console.log('Sending request:', {

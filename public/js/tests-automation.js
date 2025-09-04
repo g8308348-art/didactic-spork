@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const testOptions = document.querySelectorAll('input[name="test"]');
+    const testOptionsContainer = document.getElementById('test-options');
+    let testSelect = null;
     const transactionTypeSelect = document.getElementById('transaction-type');
     const generateBtn = document.getElementById('generate-btn');
     const uploadBtn = document.getElementById('upload-btn');
@@ -36,6 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!hasSelection) {
             currentTest = null;
             generateBtn.disabled = true;
+            if (testSelect) testSelect.value = '';
+        }
+        // Enable/disable dropdown as a whole
+        if (testSelect) {
+            testSelect.disabled = !hasSelection;
         }
     }
 
@@ -63,8 +70,54 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadBtn.disabled = true;
             dispositionBtn.disabled = true;
             pdfBtn.disabled = true;
+            if (testSelect) testSelect.value = this.value;
         });
     });
+
+    // Initialize a dropdown to replace the visible radio list
+    function initTestDropdown() {
+        if (!testOptionsContainer) return;
+        // Create select only once
+        if (!testSelect) {
+            testSelect = document.createElement('select');
+            testSelect.id = 'test-select';
+            // Default option
+            const def = document.createElement('option');
+            def.value = '';
+            def.textContent = 'Select a test';
+            testSelect.appendChild(def);
+            // Build from radio options
+            testOptions.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.value;
+                // Try to find matching label text
+                const label = document.querySelector(`label[for="${r.id}"]`);
+                opt.textContent = label ? label.textContent.trim() : r.value;
+                testSelect.appendChild(opt);
+            });
+            // Insert before the hidden list
+            testOptionsContainer.parentNode.insertBefore(testSelect, testOptionsContainer);
+            // Hook change handler
+            testSelect.addEventListener('change', function() {
+                const val = this.value;
+                currentTest = val || null;
+                // Reflect back to radios for any code relying on them
+                testOptions.forEach(r => { r.checked = (r.value === val); });
+                // Update buttons/flow
+                const hasVal = !!val;
+                generateBtn.disabled = !hasVal;
+                updateCustomFields();
+                clearStatus();
+                generatedFilesDiv.innerHTML = '';
+                stage = 'none';
+                uploadBtn.disabled = true;
+                dispositionBtn.disabled = true;
+                pdfBtn.disabled = true;
+            });
+        }
+        // Set initial disabled state
+        testSelect.disabled = !(transactionTypeSelect && transactionTypeSelect.value !== '');
+    }
     
     // Theme toggle functionality
     themeToggleBtn.addEventListener('click', function () {
@@ -89,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize
     updateCustomFields();
+    initTestDropdown();
     
     // Main Functions
     async function generateTestFiles() {

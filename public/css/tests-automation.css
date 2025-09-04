@@ -1,28 +1,35 @@
 /* CSS Variables for Theming */
 :root {
-    /* Light Mode Colors */
-    --color-primary: #222831;
-    --color-secondary: #393E46;
-    --color-accent: #00ADB5;
-    --color-background: #EEEEEE;
-    --color-text: #222831;
-    --color-border: #393E46;
-    --color-button: #00ADB5;
-    --color-button-hover: #008b92;
+    /* Ultramarine palette from COLORS.md */
+    --u10-navy: #0a0f2a; /* placeholder until confirmed */
+    --u7-ultramarine: #0047FF; /* Primary accents */
+    --u5: #4489FF;            /* Lighter accent */
+    --u3: #A3CDFF;            /* Lightest accent */
+    --u1-sky: #F1F7FF;        /* provisional sky */
+
+    /* Theme tokens mapped to palette */
+    --color-background: #f8f9fa;         /* light background */
+    --color-surface: #d3d3d3;            /* panel bg (matches app) */
+    --color-text: #333333;               /* primary text */
+    --color-text-secondary: #666666;     /* secondary text */
+    --color-border: #dee2e6;             /* subtle border */
+    --color-accent: var(--u7-ultramarine); /* links/badges */
+    --color-button: var(--u7-ultramarine);
+    --color-button-hover: #2962ff;       /* slightly darker than U-7 */
     --color-disabled: #a0a0a0;
 }
 
 /* Dark Mode Colors */
 :root.dark-mode {
-    /* Using darker background and light text */
-    --color-background: #2C3639; /* darkest shade */
-    --color-secondary: #3F4E4F; /* container background */
-    --color-accent: #A27B5C;    /* accent */
-    --color-primary: #DCD7C9;   /* primary text */
-    --color-text: #DCD7C9;
-    --color-border: #3F4E4F;
-    --color-button: #A27B5C;
-    --color-button-hover: #8a6a4e;
+    /* Dark theme tokens */
+    --color-background: #1A1A1A;
+    --color-surface: #2D2D2D;
+    --color-text: #FFFFFF;
+    --color-text-secondary: #CCCCCC;
+    --color-border: #444444;
+    --color-accent: var(--u5);
+    --color-button: var(--u5);
+    --color-button-hover: #2f6fe6;
     --color-disabled: #7a7a7a;
 }
 
@@ -36,30 +43,80 @@ body {
 body {
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0 20px 20px 20px; /* remove top padding so navbar touches top */
     line-height: 1.6;
     color: var(--color-text);
 }
 .container {
-    background-color: var(--color-secondary);
-    color: var(--color-primary);
+    background-color: var(--color-surface);
+    color: var(--color-text);
     padding: 20px;
     border-radius: 5px;
     margin-bottom: 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Light mode override: use grey container background */
-.light-mode .container {
-    background-color: #d3d3d3;
-}
-.test-option {
-    margin: 10px 0;
+/* Light mode uses surface already; keep for clarity */
+.light-mode .container { background-color: var(--color-surface); }
+/* Render test options as a dropdown, not visible list */
+#test-options .test-option { display: none; }
+
+/* Style for dynamically injected test dropdown */
+#test-select {
+    width: 100%;
     padding: 10px;
-    background: var(--color-background);
+    font-size: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
-    transition: transform 0.2s ease;
+    background: var(--color-background);
+    color: var(--color-text);
+    margin-bottom: 15px;
+}
+
+/* Header navbar: logo left, links right, similar styling to footer */
+header .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--u7-ultramarine);
+    color: #ffffff;
+    padding: 8px 8px 16px 16px; 
+    border-radius: 0 0 6px 6px; /* flat on top to sit flush with top edge */
+    margin-bottom: 16px;
+}
+
+header .logo img.logo-img {
+    display: block;
+    height: 28px;
+    width: auto;
+}
+
+header .nav-links {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+}
+
+header .nav-link {
+    color: var(--u7-ultramarine);
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--u7-ultramarine);
+    background: #ffffff;
+    text-decoration: none;
+}
+
+header .nav-link.active,
+header .nav-link:hover {
+    background: #ffffff;
+    text-decoration: underline;
+}
+
+/* Make the theme toggle participate in the navbar flow on the right */
+header .theme-toggle {
+    position: static;
+    margin-left: 12px;
 }
 
 .test-option:hover {
@@ -75,12 +132,10 @@ input[type="radio"]:disabled + label {
     cursor: not-allowed;
 }
 
-h1, h2 {
-    color: var(--color-primary);
-}
+h1, h2 { color: var(--color-text); }
 button {
     background-color: var(--color-button);
-    color: var(--color-background);
+    color: #ffffff;
     padding: 10px 15px;
     border: none;
     border-radius: 4px;
@@ -100,14 +155,24 @@ button:hover:not(:disabled) {
 }
 
 /* Action buttons container */
-.action-buttons {
-    display: flex;
-    flex-direction: column;
+.form-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+    width: 100%;
 }
 
-.action-buttons button {
+.form-actions .btn,
+.form-actions button {
     width: 100%;
+}
+
+@media (max-width: 900px) {
+    .form-actions { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+    .form-actions { grid-template-columns: 1fr; }
 }
 
 /* Transaction type dropdown */
@@ -126,22 +191,22 @@ select[data-tag="transactionType"] {
     margin-top: 20px;
     padding: 10px;
     border-radius: 4px;
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
+    background-color: var(--u1-sky);
+    border: 1px solid var(--u3);
 }
 
 .success {
-    background-color: rgba(0, 173, 181, 0.2); /* Light version of accent color */
-    color: var(--color-primary);
+    background-color: rgba(68, 137, 255, 0.15); /* U-5 tint */
+    color: var(--color-text);
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
-    border-left: 4px solid var(--color-accent);
+    border-left: 4px solid var(--u5);
 }
 
 .error {
     background-color: rgba(220, 53, 69, 0.2);
-    color: var(--color-primary);
+    color: var(--color-text);
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
@@ -149,12 +214,12 @@ select[data-tag="transactionType"] {
 }
 
 .info {
-    background-color: rgba(162, 123, 92, 0.2); /* Light version of dark mode accent */
-    color: var(--color-primary);
+    background-color: rgba(163, 205, 255, 0.3); /* U-3 tint */
+    color: var(--color-text);
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
-    border-left: 4px solid var(--color-accent);
+    border-left: 4px solid var(--u3);
 }
 
 .file-list {
@@ -175,7 +240,7 @@ select[data-tag="transactionType"] {
 }
 
 .file-item a {
-    color: var(--color-accent);
+    color: var(--u7-ultramarine);
     text-decoration: none;
 }
 

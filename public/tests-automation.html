@@ -3,79 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guardian</title>
+    <title>MURDOCK - Test Automation</title>
     <link rel="stylesheet" href="css/tests-automation.css">
 </head>
-<body>
-    <div class="theme-toggle">
-        <button id="theme-toggle-btn">
-            <span>🌙</span> Toggle Dark Mode
-        </button>
-    </div>
-    <h1>Test Automation</h1>
-    
-    <div class="container">
-        <h3>Transaction Type:</h3>
-        <select id="transaction-type" data-tag="transactionType">
-            <option value="" selected>select a transaction type</option>
-            <option value="PCC_TAIWAN_ISO">PCC TAIWAN ISO</option>
-            <option value="ENTERPRISE_ISO">Enterprise ISO</option>
-        </select>
-        <h3>Select Test:</h3>
-        <div id="test-options">
-            <div class="test-option">
-                <input type="radio" id="screening-bpm" name="test" value="Screening BPM response validation" disabled>
-                <label for="screening-bpm" class="disabled-label">Screening BPM response validation</label>
+<body class="light-mode">
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <img id="O365_MainLink_TenantLogoImg" class="logo-img" alt="State Street Logo" title="State Street Logo" src="data:image/png;
+                base64,
+                iVBORw0KGgoAAAANSUhEUgAAAAgAAAAKCAIAAACKxxr4AAAACXBIWXMAAAsSAAALEwEAmpwYAAAAB3RJTUUH5AEE6lEQVRogc1a7XUaOxC98w4FUMKmgkcqsFL
+                BIXwAkzCuwfABcQXgCsyrgHUf2Q7YGVA6uPmhEQghgfobTwT9z/HxIS2MpJXmUy4QJQAcARi63yJSTztCPABTavAG0RkQmOdS
+                +HFQiS1eZhSvfA5h3yWJ1SJIJfxj7jBziKJyRXJHdMCTYLiVkMJU2JGOI2oD82a9B93PTm
+                cKbcEBvzhbYAMTlUZQne9Jgy7LbJkw6NVA5Imyz0OicA1m3k/OqD3pA+NiHAFMCxVgbwLCKVnrQhGsAtf4tPL47AMbj
+                +X1IZ5sv60AYERV0lCAQAZmeC4pgUuJxwxHPJvjGtslrxsVmL4SXJLa8mdCdm+GVjpqg6zk89nEfjV2r/
+                jqcLbJei3jqDtmfOR1RBaB2pgT2ETIdpAGe1INb6UmT+09TwFMSdZOlohsmuWgcNXZOM17Uadw651TPKxo/Ndkgz5X0KR3uGMmbju/
+                E9pDwbu4BHZL2ofblFns7wPV9Z2OSu1UNX1XlSuBZ7PEG8X9jJYg4M6u7sf+sjqXXR5DSSuH+Acbn/JXkFxGpc
+                +TpBvkhk8rrKsX0YlgbpAD1pG5KHa687yLPwT8UvdNaExPnhg8osY6DUzAJalQaQvrtQHGfId3kzJrbXyJ0xwO9ba3tecZJmJ08ALJzfUa3b0Jqa
+                3GQQwCHUnerPWeaFpgJ5gQ0stn8aADcB8RuDtivvqXNPQIWxsO8q+QQM95764qfe8PfHHKIkDscQuGi53m1CkRYi8MnD8wAw6BwVdIdvh110f+k
+                w+WUbeM/PCZpnAEt9gfWbm3woDKsFd2eiu1iETafpCsceZk3FqxWk19SYTQfslNHzMVi7btLzziGkcH7x8TZj1zMJS2DJ0QScusNy+YTt/
+                HPrCfZkFTOvY/sEbWB9H0L7YLv5yCK+kYi8OJ
+                +QonfVhE0goONPEvQHuVpn216hqzS3WliVSxqc8DEQkW8kZDB8K2trSNNJ19B9v2M0xEZYoYh9I0Rsd8dyiO99pJwZM1/jjEfq4Ez+gY
+                UEJ5eK1DAGDghoJ7Mqf59W/NeANwD2mIKcm3TxBp9g/aivBMN/pd1C108Pn7zTSP2sKAnwta+ZpdXce9Pk1rddQxsZah4z6rsZ8XS
+                xoxrB236fcu5GL7ulv0q8Zw7L19Ayn66wsdGMPlLGEriJibVDp7VhBWb4VYtGLckPWtKaqs8jXkRK3sZkry/
+                54s4j8GOae7MbrDPi6aQjb3xkW+j
+                +ZboHkdF8BPOHcsY8AjEh0NRQrg3FDGMsd6x6f7D03dUFwAHBZZC3CXVYDgDUoVabRufNwDuhFT7szISggaXoZBRvYkkzMHHYJtzrSVqHns
+                3sAhi+Pl1PQ+FPHquFMPNn3hzlZZF8cu8rVzIie7iCzj0YY9Jb3HQv8N4hyJ8o/R9oJqjQ6bGEAAiTKCXvp5UWln6h3alWuiim
+                +1qA8fA/pmL75K4MNKFk0sb+uuVGMf0M9R3JGYAJ+4GfVPmw/VDdjBRJidkjkJNwd8n872Dii9s+ICT77Gd4IbhI05w/
+                KBF8f2D82tZHicgpbgRsR2ZPBvstGG8D7bIv+S0whXtUGsAXYYfC5J27OKSSPn2kabaphD0P9p+dyS/wGOJLbmqyTPgMAAAAASUVORK5CYII=">
             </div>
-            <div class="test-option">
-                <input type="radio" id="cuban" name="test" value="Cuban Filter Validation" disabled>
-                <label for="cuban">Cuban Filter Validation</label>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/tests-automation" class="nav-link active">Tests Automation</a>
             </div>
-            <div class="test-option">
-                <input type="radio" id="unit" name="test" value="Unit Validation" disabled>
-                <label for="unit" class="disabled-label">Unit Validation</label>
+            <div class="theme-toggle">
+                <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+                    <span>🌙</span>
+                </button>
             </div>
-            <div class="test-option">
-                <input type="radio" id="value-date" name="test" value="Value Date Incorrect Format Validation" disabled>
-                <label for="value-date" class="disabled-label">Value Date Incorrect Format Validation</label>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="container">
+                <h1>Test Automation</h1>
+
+                <div class="form-group">
+                    <label for="transaction-type">Transaction Type:</label>
+                    <select id="transaction-type" data-tag="transactionType">
+                        <option value="" selected>Select a transaction type</option>
+                        <option value="PCC_TAIWAN_ISO">PCC TAIWAN ISO</option>
+                        <option value="ENTERPRISE_ISO">Enterprise ISO</option>
+                    </select>
+                </div>
+
+                <h3>Select Test:</h3>
+                <div id="test-options" class="form-group">
+                    <div class="test-option">
+                        <input type="radio" id="screening-bpm" name="test" value="Screening BPM response validation" disabled>
+                        <label for="screening-bpm" class="disabled-label">Screening BPM response validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="cuban" name="test" value="Cuban Filter Validation" disabled>
+                        <label for="cuban">Cuban Filter Validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="unit" name="test" value="Unit Validation" disabled>
+                        <label for="unit" class="disabled-label">Unit Validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="value-date" name="test" value="Value Date Incorrect Format Validation" disabled>
+                        <label for="value-date" class="disabled-label">Value Date Incorrect Format Validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="no-hit" name="test" value="No hit Validation" disabled>
+                        <label for="no-hit" class="disabled-label">No hit Validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="special-char" name="test" value="Special Character" disabled>
+                        <label for="special-char" class="disabled-label">Special Character</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="exception" name="test" value="Exception validation" disabled>
+                        <label for="exception" class="disabled-label">Exception validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="reference-field" name="test" value="Referrence Field Lenght Validation" disabled>
+                        <label for="reference-field" class="disabled-label">Referrence Field Lenght Validation</label>
+                    </div>
+                    <div class="test-option">
+                        <input type="radio" id="user-profile" name="test" value="User Profile Unit Validation" disabled>
+                        <label for="user-profile" class="disabled-label">User Profile Unit Validation</label>
+                    </div>
+                </div>
+
+                <div id="custom-fields" class="form-group">
+                    <!-- Dynamic fields will be added here -->
+                </div>
+
+                <div class="form-actions">
+                    <button id="generate-btn" class="btn btn-primary">Generate Test Files</button>
+                    <button id="upload-btn" class="btn btn-secondary" disabled>Upload to MTex</button>
+                    <button id="disposition-btn" class="btn btn-secondary" disabled>Disposition Transactions</button>
+                    <button id="pdf-btn" class="btn btn-secondary" disabled>Generate PDF</button>
+                </div>
+
+                <div id="status" class="submission-status" aria-live="polite"></div>
+                <div id="generated-files" class="file-list"></div>
             </div>
-            <div class="test-option">
-                <input type="radio" id="no-hit" name="test" value="No hit Validation" disabled>
-                <label for="no-hit" class="disabled-label">No hit Validation</label>
-            </div>
-            <div class="test-option">
-                <input type="radio" id="special-char" name="test" value="Special Character" disabled>
-                <label for="special-char" class="disabled-label">Special Character</label>
-            </div>
-            <div class="test-option">
-                <input type="radio" id="exception" name="test" value="Exception validation" disabled>
-                <label for="exception" class="disabled-label">Exception validation</label>
-            </div>
-            <div class="test-option">
-                <input type="radio" id="reference-field" name="test" value="Referrence Field Lenght Validation" disabled>
-                <label for="reference-field" class="disabled-label">Referrence Field Lenght Validation</label>
-            </div>
-            <div class="test-option">
-                <input type="radio" id="user-profile" name="test" value="User Profile Unit Validation" disabled>
-                <label for="user-profile" class="disabled-label">User Profile Unit Validation</label>
-            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <small>&copy; 2025 GUARDIAN - tests automation tool</small>
         </div>
-        
-        <div id="custom-fields" style="margin-top: 20px;">
-            <!-- Dynamic fields will be added here -->
-        </div>
-        
-        <div class="action-buttons" style="margin-top: 20px;">
-            <button id="generate-btn">Generate Test Files</button>
-            <button id="upload-btn" disabled>Upload to MTex</button>
-            <button id="disposition-btn" disabled>Disposition Transactions</button>
-            <button id="pdf-btn" disabled>Generate PDF</button>
-        </div>
-        
-        <div id="status"></div>
-        <div id="generated-files" class="file-list"></div>
-    </div>
-    
+    </footer>
+
     <script src="js/tests-automation.js"></script>
 </body>
 </html>

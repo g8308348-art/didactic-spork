@@ -172,9 +172,27 @@ def generate_test_files():
         return jsonify(success=False, error="testName is required"), 400
 
     try:
-        from tests_automation.xml_processor import (
-            XMLTemplateProcessor,  # type: ignore # pylint: disable=import-error,import-outside-toplevel
-        )
+        # Robust import: support folder name with hyphen (tests-automation)
+        try:
+            from tests_automation.xml_processor import (
+                XMLTemplateProcessor,  # type: ignore # pylint: disable=import-error,import-outside-toplevel
+            )
+        except Exception:  # pragma: no cover
+            import importlib.util
+            module_path = os.path.join(
+                os.path.dirname(__file__), "tests-automation", "xml_processor.py"
+            )
+            spec = importlib.util.spec_from_file_location(
+                "tests_automation.xml_processor", module_path
+            )
+            if not spec or not spec.loader:
+                raise ImportError(
+                    f"Cannot load xml_processor from path: {module_path}"
+                )
+            xml_mod = importlib.util.module_from_spec(spec)
+            sys.modules["tests_automation.xml_processor"] = xml_mod
+            spec.loader.exec_module(xml_mod)  # type: ignore[attr-defined]
+            XMLTemplateProcessor = getattr(xml_mod, "XMLTemplateProcessor")
 
         template_file = os.path.join(
             os.path.dirname(__file__),
@@ -206,6 +224,45 @@ def generate_test_files():
         ),
         200,
     )
+
+
+@app.route("/api/upload-to-mtex", methods=["POST", "OPTIONS"])
+def upload_to_mtex():
+    """Stub endpoint to upload generated files to MTex.
+
+    Accepts JSON {files: string[], outputDir: string}. Returns JSON {success, message}.
+    For now, this endpoint validates input and responds success without
+    invoking browser automation (mtex). We can wire to mtex later.
+    """
+    if request.method == "OPTIONS":
+        return make_response("", 200)
+
+    try:
+        payload = request.get_json(force=True)
+    except Exception:
+        return jsonify(success=False, error="Invalid JSON"), 400
+
+    files = payload.get("files") or []
+    output_dir = (payload.get("outputDir") or "").strip()
+    if not isinstance(files, list) or not output_dir:
+        return jsonify(success=False, error="Missing files or outputDir"), 400
+
+    # Basic path sanity check against public dir
+    try:
+        # Ensure referenced files are under our public dir (relative paths from frontend)
+        for rel in files:
+            if not isinstance(rel, str):
+                continue
+            rel_norm = os.path.normpath(rel).lstrip(os.sep)
+            abs_path = os.path.join(app.static_folder, rel_norm)
+            # Existence is optional for now; just avoid path traversal
+            if not abs_path.startswith(app.static_folder):
+                return jsonify(success=False, error="Invalid file path"), 400
+    except Exception as exc:  # pragma: no cover
+        return jsonify(success=False, error=str(exc)), 400
+
+    logging.info("MTex upload request: %d files, outputDir=%s", len(files), output_dir)
+    return jsonify(success=True, message="Upload to MTex request accepted"), 200
 
 
 @app.route("/api", methods=["POST"])

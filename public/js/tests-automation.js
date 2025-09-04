@@ -59,21 +59,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function populateTransactionTypes() {
+        if (!transactionTypeSelect) return;
+        // Reset to placeholder
+        const placeholder = '<option value="" selected>Select a transaction type</option>';
+        transactionTypeSelect.innerHTML = placeholder;
+        // Build options from JSON entries
+        const entries = Object.entries(testFormats || {});
+        // Sort by label for stable UX
+        entries.sort((a, b) => {
+            const la = (a[1]?.label || a[0]).toLowerCase();
+            const lb = (b[1]?.label || b[0]).toLowerCase();
+            return la.localeCompare(lb);
+        });
+        const opts = entries.map(([key, obj]) => {
+            const label = (obj && obj.label) ? obj.label : key;
+            return `<option value="${key}">${label}</option>`;
+        });
+        transactionTypeSelect.insertAdjacentHTML('beforeend', opts.join(''));
+    }
+
     function populateFormatDirection(txType) {
         // reset
         formatDirectionSelect.innerHTML = '<option value="" selected>Select a format (e.g., pacs.009 ib)</option>';
         formatDirectionSelect.disabled = true;
         if (!txType || !testFormats[txType]) return;
-        const { formats } = testFormats[txType];
+        const { formats, directions } = testFormats[txType];
+        // DRY: use per-type directions if provided, else default to ["IB","OB"]
+        const dirs = (directions && directions.length ? directions : ["IB","OB"]);
         const opts = [];
         formats.forEach(f => {
-            (f.directions || ['ib','ob']).forEach(dir => {
+            dirs.forEach(dir => {
                 const val = `${f.code} ${dir}`;
                 opts.push(`<option value="${val}">${val}</option>`);
             });
         });
         formatDirectionSelect.insertAdjacentHTML('beforeend', opts.join(''));
         formatDirectionSelect.disabled = false;
+        // If exactly one option (one format and one direction), preselect it
+        if (opts.length === 1) {
+            formatDirectionSelect.selectedIndex = 1; // select first real option
+        }
     }
 
     // Enable / disable tests whenever transaction type changes
@@ -86,7 +112,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         // initial state on page load
         updateTestOptionState();
-        loadTestFormats().then(() => populateFormatDirection(transactionTypeSelect.value));
+        loadTestFormats().then(() => {
+            populateTransactionTypes();
+            // If a value is preselected (e.g., from browser autofill), populate formats
+            populateFormatDirection(transactionTypeSelect.value);
+        });
     }
 
     testOptions.forEach(option => {

@@ -1,32 +1,129 @@
 {
-  "PCC_TAIWAN_ISO": {
-    "label": "PCC TAIWAN ISO",
+  "APS_MT": {
+    "label": "APS-MT",
     "formats": [
       {
-        "code": "pacs.009",
-        "directions": [
-          "ib",
-          "ob"
-        ]
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "CBPR_MX": {
+    "label": "CBPR-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "SEPA_CLASSIC": {
+    "label": "SEPA-Classic",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "RITS_MX": {
+    "label": "RITS-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "LYNX_MX": {
+    "label": "LYNX-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
       }
     ]
   },
   "ENTERPRISE_ISO": {
-    "label": "Enterprise ISO",
+    "label": "EnterpriseISO",
     "formats": [
       {
-        "code": "pacs.009",
-        "directions": [
-          "ib",
-          "ob"
-        ]
-      },
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "CHAPS_MX": {
+    "label": "CHAPS-MX",
+    "formats": [
       {
-        "code": "pacs.008",
-        "directions": [
-          "ib",
-          "ob"
-        ]
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "T2S_MX": {
+    "label": "T2S-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "BESS_MT": {
+    "label": "BESS-MT",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "CHIPS_MX": {
+    "label": "CHIPS-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "SEPA_INSTANT": {
+    "label": "SEPA-Instant",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "FEDWIRE": {
+    "label": "FEDWIRE",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "TAIWAN_MX": {
+    "label": "Taiwan-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "CHATS_MX": {
+    "label": "CHATS-MX",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "PEPPLUS_IAT": {
+    "label": "PEPPLUS-IAT",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
+      }
+    ]
+  },
+  "TSF_TRIGGER": {
+    "label": "TSF-TRIGGER",
+    "formats": [
+      {
+        "code": "NOT FOR NOW"
       }
     ]
   }

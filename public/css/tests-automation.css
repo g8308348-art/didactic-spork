@@ -107,16 +107,49 @@ header .nav-link {
     text-decoration: none;
 }
 
-header .nav-link.active,
+/* Hover: non-active links turn white chip on blue bar */
 header .nav-link:hover {
     background: #ffffff;
     text-decoration: underline;
+}
+
+/* Active: blue background (same as bar), white text and border */
+header .nav-link.active {
+    background: var(--u7-ultramarine);
+    color: #ffffff;
+    border-color: #ffffff;
+    text-decoration: none;
 }
 
 /* Make the theme toggle participate in the navbar flow on the right */
 header .theme-toggle {
     position: static;
     margin-left: 12px;
+}
+
+/* Match theme toggle button height/shape with nav links */
+header .theme-toggle #theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px; /* same as nav-link */
+    border-radius: 6px; /* same corner radius */
+    line-height: 1; /* avoid extra vertical space */
+    font-size: 1rem; /* match nav-link text size */
+    border: 1px solid #ffffff; /* match active nav-link border */
+    background: var(--u7-ultramarine); /* match bar */
+    color: #ffffff; /* white icon */
+    box-sizing: border-box;
+}
+
+/* Prevent hover/focus "jump"; keep same visuals as default */
+header .theme-toggle #theme-toggle-btn:hover,
+header .theme-toggle #theme-toggle-btn:focus {
+    background: var(--u7-ultramarine);
+    color: #ffffff;
+    border-color: #ffffff;
+    outline: none;
+    transform: none;
 }
 
 .test-option:hover {

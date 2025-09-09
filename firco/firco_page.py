@@ -739,7 +739,7 @@ class FircoPage:
                                 return result
                             if "POSTEDTXNTOFIRCO" in status_upper:
                                 result["success"] = True
-                                result["status"] = "Failed"
+                                result["status"] = "failed"
                                 result["status_detail"] = "PostedTxnToFirco"
                                 result["message"] = (
                                     "Transaction not found in Firco, but BPM send to Firco. Firco is down?"

@@ -46,33 +46,24 @@ class MtexPage:
     def __init__(self, page: Page):
         self.page = page
 
-    def login(self, url: str, username: str, password: str) -> None:
-        """Login to the MTex system."""
-        try:
-            logging.info("Logging to MTex as %s...", username)
-            self.page.goto(url)
-            expect(self.page).to_have_title("State Street Login")
-            self.page.fill("input[name='username']", username)
-            self.page.fill("input[name='PASSWORD']", password)
-            self.page.click("input[type='submit'][value='Submit']")
-            self.page.wait_for_load_state("networkidle")
-            logging.info("We are in MTex as %s.", username)
-        except Exception as e:
-            logging.error("Failed to login to MTex: %s", e)
-            raise
-
     def select_dropdown_option(
         self, dropdown_id: str, option_title: Union[str, BUWorkFlow]
     ) -> None:
-        """Select an option from a dropdown."""
+        """Select an option from a dropdown with detailed error handling."""
         try:
             title = (
                 option_title.value
                 if isinstance(option_title, BUWorkFlow)
                 else option_title
             )
-            self.page.click(f"input[id='{dropdown_id}']")
-            self.page.click(f"div[title='{title}']")
+            logging.debug("Selecting dropdown %s with title '%s'", dropdown_id, title)
+
+            # Click to open dropdown
+            self.page.click(f"input[id='{dropdown_id}']", timeout=5000)
+            logging.debug("Dropdown opened for %s", dropdown_id)
+
+            # Click the option
+            self.page.click(f"div[title='{title}']", timeout=5000)
             logging.info("Selected option '%s' from dropdown '%s'.", title, dropdown_id)
         except Exception as e:
             logging.error(
@@ -81,17 +72,20 @@ class MtexPage:
                 dropdown_id,
                 e,
             )
-            raise
+            raise ValueError(f"Dropdown selection failed for {dropdown_id} -> {option_title}: {e}") from e
 
     def upload_files_and_click_button(
         self, file_input_selector: str, file_paths: list, button_selector: str
     ) -> None:
-        """Upload files and click the Start Upload button."""
+        """Upload files and click the button with detailed error handling."""
         try:
-            self.page.set_input_files(file_input_selector, file_paths)
-            logging.info("Files uploaded: %s", file_paths)
-            self.page.click(button_selector)
-            logging.info("Clicked the 'Start Upload' button.")
+            logging.debug("Uploading files to selector '%s': %s", file_input_selector, file_paths)
+            self.page.set_input_files(file_input_selector, file_paths, timeout=10000)
+            logging.info("Files uploaded successfully: %s", file_paths)
+
+            logging.debug("Clicking button with selector '%s'", button_selector)
+            self.page.click(button_selector, timeout=5000)
+            logging.info("Clicked the upload button successfully.")
         except Exception as e:
             logging.error("Failed to upload files and click button: %s", e)
-            raise
+            raise ValueError(f"File upload failed: {e}") from e

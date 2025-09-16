@@ -1,25 +1,21 @@
-def solution(arr):
+def solution(sources, targets, profits, start, k):
     """
-    arr: flat list like ["A","B",5, "A","C",10, "B","C",15, "C","A",20, "A", 2]
-         (edges as triples, then start, then k)
-    returns: max achievable total profit (int), with <= k trades and no revisits
+    sources, targets, profits: parallel lists defining directed edges and their profit
+    start: starting asset (string)
+    k: maximum number of trades (int)
+    Returns: int = maximum total profit with <= k trades and no revisits
     """
-    if not arr or len(arr) < 5:
-        return 0
+    n = len(sources)
+    if not (len(targets) == n and len(profits) == n):
+        raise ValueError("sources, targets, profits must have the same length")
 
-    start = arr[-2]
-    k = int(arr[-1])
-    triples = arr[:-2]
-    if len(triples) % 3 != 0:
-        raise ValueError("Malformed input: edge triples are incomplete")
-
-    # Build adjacency without defaultdict
+    # Build adjacency list; also compute global best positive edge for pruning
     adj = {}
     max_pos_edge = 0
-    for i in range(0, len(triples), 3):
-        u = triples[i]
-        v = triples[i + 1]
-        w = int(triples[i + 2])
+    for i in range(n):
+        u = sources[i]
+        v = targets[i]
+        w = int(profits[i])
         if u in adj:
             adj[u].append((v, w))
         else:
@@ -27,18 +23,17 @@ def solution(arr):
         if w > max_pos_edge:
             max_pos_edge = w
 
-    # Sort outgoing edges by descending profit to tighten pruning early
+    # Explore higher-profit edges first to find good answers early (helps pruning)
     for u in adj:
         adj[u].sort(key=lambda x: x[1], reverse=True)
 
-    # Upper bound only benefits if positive
-    max_pos_edge = max(0, max_pos_edge)
+    max_pos_edge = max(0, max_pos_edge)  # only positive edges help the optimistic bound
 
     best = 0
     if k <= 0:
         return best
 
-    # If start has no outgoing edges, zero trades (profit 0) is optimal
+    # If start has no outgoing edges, best is 0 (we can choose to do 0 trades)
     if start not in adj:
         return 0
 
@@ -53,7 +48,8 @@ def solution(arr):
 
         remaining = k - depth
 
-        # Global optimistic bound prune
+        # Global optimistic bound: even if we take the best positive edge every remaining step
+        # can we beat current best? If not, prune.
         if max_pos_edge == 0 or curr + remaining * max_pos_edge <= best:
             return
 
@@ -68,7 +64,7 @@ def solution(arr):
             new_curr = curr + w
             rem_after = remaining - 1
 
-            # Child-specific bound prune
+            # Child-specific optimistic bound
             if rem_after >= 0 and new_curr + rem_after * max_pos_edge <= best:
                 continue
 
@@ -81,5 +77,8 @@ def solution(arr):
 
 
 # Example:
-# arr = ["A","B",5,"A","C",10,"B","C",15,"C","A",20,"A",2]
-# print(solution(arr))  # -> 20
+sources = ["A", "A", "B", "C"]
+targets = ["B", "C", "C", "A"]
+profits = [5, 10, 15, 20]
+print(solution(sources, targets, profits, "A", 2))
+

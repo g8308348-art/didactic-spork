@@ -339,7 +339,7 @@ async function performSearch() {
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
         
         BPMLogger.debug('Sending API request to /api/bpm');
         

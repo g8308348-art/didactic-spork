@@ -91,16 +91,34 @@ function processBatch() {
       return { ok: true };
     };
 
-    // Helper to POST JSON and parse result
+    // Helper to POST JSON and parse result with 60-second timeout
     const postJson = async (url, payload) => {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      let data = {};
-      try { data = await resp.json(); } catch (_) { /* keep empty */ }
-      return { ok: resp.ok, status: resp.status, data };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        let data = {};
+        try { data = await resp.json(); } catch (_) { /* keep empty */ }
+        return { ok: resp.ok, status: resp.status, data };
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          return { 
+            ok: false, 
+            status: 408, 
+            data: { message: 'Request timed out after 60 seconds' } 
+          };
+        }
+        throw error;
+      }
     };
 
     // Decide whether to call /api based on BPM result

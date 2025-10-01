@@ -638,32 +638,55 @@ async function sendTransactionToServer(data) {
 const API_URL = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== '')
   ? window.location.origin + '/api'
   : 'http://localhost:5000/api';
-const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
+
+        // Create AbortController for timeout (60 seconds max)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            
+            const responseData = await response.json();
+            return {
+                success: responseData.success, // Overall success boolean
+                message: responseData.message, // Detailed message for tooltip
+                status: responseData.status, // High-level status (e.g., 'No action')
+                status_detail: responseData.status_detail, // Specific status string from backend
+                transactionId: responseData.transactionId,
+                errorCode: responseData.errorCode // Ensure errorCode is passed through
+            };
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            throw fetchError;
         }
-        
-        const responseData = await response.json();
-        return {
-            success: responseData.success, // Overall success boolean
-            message: responseData.message, // Detailed message for tooltip
-            status: responseData.status, // High-level status (e.g., 'No action')
-            status_detail: responseData.status_detail, // Specific status string from backend
-            transactionId: responseData.transactionId,
-            errorCode: responseData.errorCode // Ensure errorCode is passed through
-        };
         
         // Use mock function for testing if server is unavailable
         // return await mockProcessTransaction(data);
     } catch (error) {
         console.error('Error sending transaction:', error);
+        
+        // Handle timeout specifically
+        if (error.name === 'AbortError') {
+            return {
+                success: false,
+                message: 'Request timed out after 60 seconds. The transaction may still be processing on the server.',
+                status_detail: 'timeout_error'
+            };
+        }
+        
         return {
             success: false,
             message: `Failed to process transaction: ${error.message}`,
